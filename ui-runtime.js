@@ -1148,7 +1148,7 @@
 
   // ── Composer Prism Box, Placeholder, Glyph & Mascot Clearance ──────────
   const T_TK = 'interaction-takeover-card', T_RP = 'running-items-panel', S_RP = '[data-testid="running-items-panel"]', S_IB = '[data-testid="agent-input-box"]', S_SUB = '[data-testid="subagent-tab-conversation"]';
-  const TK_SEL = '[data-testid="interaction-takeover-card"], [data-testid="side-question-panel"]', A_Q = 'data-ag-cs-queued', A_TK = 'data-ag-cs-takeover', A_TKO = A_TK + '-open', A_PB = 'data-ag-cs-prism-box';
+  const TK_SEL = '[data-testid="interaction-takeover-card"], [data-testid="side-question-panel"], .agy-takeover-frame', A_Q = 'data-ag-cs-queued', A_TK = 'data-ag-cs-takeover', A_TKO = A_TK + '-open', A_PB = 'data-ag-cs-prism-box';
   const seenClrWraps = new WeakSet();
   const setClr = (el, a, on, gap = '46px') => {
     if (!el) return;

@@ -2404,6 +2404,7 @@
       let sRaf = 0;
       let sIdleTimer = null;
       let running = false;
+      let peekHidden = yieldMode === 'peek';
       let lastStepAt = 0;
       let lastNuzzleAt = 0;
 
@@ -2419,7 +2420,7 @@
       };
 
       const needsFastLoop = () => {
-        if (reducedMotion) return false;
+        if (reducedMotion || peekHidden) return false;
         if (yarn.active) return true;
         for (const c of cats) {
           if (c.dragging || c.state === 'walk' || c.vy !== 0 || (c.y < 0 && c.atProp !== 'cushion')) return true;
@@ -2428,7 +2429,7 @@
       };
 
       const scheduleNext = () => {
-        if (!running || disposed || !catOnly) return;
+        if (!running || disposed || !catOnly || peekHidden) return;
         cancelSched();
         if (needsFastLoop() && typeof win.requestAnimationFrame === 'function') {
           sRaf = win.requestAnimationFrame(onFrame);
@@ -2442,13 +2443,13 @@
       };
 
       const wakeLoop = () => {
-        if (!running || disposed || !catOnly) return;
+        if (!running || disposed || !catOnly || peekHidden) return;
         if (needsFastLoop() && !sRaf) scheduleNext();
       };
 
       const onFrame = (ts) => {
         sRaf = 0;
-        if (!running || disposed || !catOnly) return;
+        if (!running || disposed || !catOnly || peekHidden) return;
         const now = ts || performance.now();
         if (now - lastStepAt >= 28) {
           step(now);
@@ -2457,7 +2458,7 @@
       };
 
       const step = (nowArg) => {
-        if (disposed || !catOnly) return;
+        if (disposed || !catOnly || peekHidden) return;
         if (isVramSleepState() || isWindowBlurred()) return;
         const now = typeof nowArg === 'number' ? nowArg : performance.now();
         const dt = lastStepAt ? Math.min(80, Math.max(12, now - lastStepAt)) : 32;
@@ -2634,6 +2635,21 @@
         wrap.style.display = 'none';
         cancelSched();
       };
+      const setPeek = (hidden) => {
+        const next = Boolean(hidden);
+        if (peekHidden === next) return;
+        peekHidden = next;
+        if (peekHidden) {
+          cancelSched();
+          for (const c of cats) {
+            if (c.dragging) { c.dragging = false; c.y = 0; c.vy = 0; }
+          }
+        } else if (running && catOnly && !disposed) {
+          lastStepAt = 0;
+          step(performance.now());
+          scheduleNext();
+        }
+      };
       const dispose = () => {
         stop();
         win.removeEventListener('pointermove', onGlobalMove);
@@ -2651,7 +2667,7 @@
         }
         wrap.remove();
       };
-      sanctuary = { start, stop, step, onStreamingChange, dispose };
+      sanctuary = { start, stop, step, onStreamingChange, setPeek, dispose };
       return sanctuary;
     };
     const syncSanctuaryMode = () => {
@@ -5942,6 +5958,7 @@
       for (const mc of miniCrabs) {
         if (mc?.el?.style) mc.el.style.pointerEvents = isPeek ? 'none' : 'auto';
       }
+      if (sanctuary) sanctuary.setPeek(isPeek);
     };
 
     syncPeekInteractivity();
