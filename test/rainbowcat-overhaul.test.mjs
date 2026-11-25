@@ -16,18 +16,25 @@ const settingsPanel = require(path.join(ROOT, 'settings-panel.js'));
 const bridgeMod = require(path.join(ROOT, 'pulse-vial-bridge.js'));
 const dualMascotMod = require(path.join(ROOT, 'dual-mascot-rig.js'));
 const rippleCore = require(path.join(ROOT, 'ripple-core.js'));
+const usageCore = require(path.join(ROOT, 'usage-core.js'));
+const inlineFallback = require(path.join(ROOT, 'vendor', 'pulse-dashboard', 'inline-fallback.js'));
 
 function makeMiniEl(tag, attrs = {}) {
   const map = new Map(Object.entries(attrs).map(([k, v]) => [k, String(v)]));
   const listeners = new Map();
   const children = [];
   const styleMap = new Map();
+  let _text = '';
   const el = {
     nodeType: 1,
     tagName: String(tag || 'div').toUpperCase(),
     id: attrs.id || '',
     className: attrs.class || '',
-    textContent: '',
+    get textContent() { return _text; },
+    set textContent(v) {
+      _text = String(v ?? '');
+      children.length = 0;
+    },
     value: undefined,
     hidden: false,
     removed: false,
@@ -519,5 +526,221 @@ test('7. PrismDaemon edge-triggered no-port backoff eliminates 3s repeated daemo
     assert.equal(edgeResets.length, 1, `active->missing edge must log backoff reset exactly once, got ${edgeResets.length}`);
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('8. usage-core.js accurately matches live Antigravity model labels to quota pools without misclassifying Gemini pool as Argon', () => {
+  const now = Date.now();
+  const liveGroups = [
+    {
+      id: 'gemini',
+      name: 'Gemini Models',
+      description: 'Models within this group: Gemini 4 Neon, Gemini 4 Carbon, Gemini 4 Argon, Gemini 4 Hydrogen, Orchestrator (Neon), Orchestrator (Carbon), Orchestrator (Argon), Gemini 3.8 Flash',
+      windows: {
+        '5h': { available: true, id: 'gemini-5h', remaining: 0.615, resetAt: new Date(now + 95 * 60 * 1000).toISOString() },
+        weekly: { available: true, id: 'gemini-weekly', remaining: 0.786, resetAt: new Date(now + 5.6 * 86400 * 1000).toISOString() },
+      },
+    },
+    {
+      id: '3p',
+      name: 'Claude and GPT models',
+      description: 'Models within this group: Claude Opus 5.5, Claude Sonnet 5.5, GPT-OSS 120B',
+      windows: {
+        '5h': { available: true, id: '3p-5h', remaining: 0.978, resetAt: new Date(now + 162 * 60 * 1000).toISOString() },
+        weekly: { available: true, id: '3p-weekly', remaining: 0.989, resetAt: new Date(now + 6.9 * 86400 * 1000).toISOString() },
+      },
+    },
+  ];
+
+  // Live Gemini pool whose description mentions Argon must still classify as 'gemini' (not 'gemini-argon')
+  assert.equal(usageCore.quotaGroupKind(liveGroups[0]), 'gemini');
+  assert.equal(usageCore.quotaGroupLabel(liveGroups[0], 'zh-CN'), 'Gemini');
+  assert.equal(usageCore.quotaGroupKind(liveGroups[1]), 'claude');
+  assert.equal(usageCore.quotaGroupLabel(liveGroups[1], 'zh-CN'), 'Claude / GPT');
+
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'Gemini 4 Neon Extra High').id, 'gemini');
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'Gemini 4 Hydrogen').id, 'gemini');
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'Orchestrator (Neon)').id, 'gemini');
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'Gemini 3.8 Flash').id, 'gemini');
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'Claude Opus 5.5').id, '3p');
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'Claude Sonnet 5.5').id, '3p');
+  assert.equal(usageCore.chooseQuotaGroup(liveGroups, 'GPT-OSS 120B').id, '3p');
+
+  // When a dedicated gemini-argon-wtu pool exists alongside gemini, Argon models still prefer gemini-argon-wtu
+  const withArgon = [
+    liveGroups[0],
+    {
+      id: 'gemini-argon-wtu',
+      name: 'Gemini (Argon)',
+      windows: { weekly: { available: true, id: 'gemini-argon-wtu-weekly', remaining: 0.25 } },
+    },
+    liveGroups[1],
+  ];
+  assert.equal(usageCore.quotaGroupKind(withArgon[1]), 'gemini-argon');
+  assert.equal(usageCore.chooseQuotaGroup(withArgon, 'Gemini 4 Argon (High)').id, 'gemini-argon-wtu');
+  assert.equal(usageCore.chooseQuotaGroup(withArgon, 'Gemini 4 Neon Extra High').id, 'gemini');
+});
+
+test('9. inline-fallback.js renders always-visible current-model quota pill (>50% ok, 21-50% tight, <=20% low), syncs on model switch, and highlights active pool in #quota-card', async () => {
+  const html = makeMiniEl('html', { 'data-ag-cs-lang': 'zh-CN', 'data-ag-cs-theme': 'light' });
+  const body = makeMiniEl('body');
+  html.appendChild(body);
+  const conv = makeMiniEl('div', { 'data-testid': 'conversation-view', 'data-cascade-id': '11111111-1111-1111-1111-111111111111' });
+  const footer = makeMiniEl('div', { class: 'agy-composer-footer' });
+  footer.getBoundingClientRect = () => ({ left: 0, top: 0, width: 750, height: 30, right: 750, bottom: 30 });
+  const leftSlot = makeMiniEl('div');
+  let triggerClicks = 0;
+  const modelTrigger = makeMiniEl('button', { 'data-testid': 'model-selector-trigger', 'aria-label': 'Select model, current: Gemini 4 Neon Extra High' });
+  modelTrigger.textContent = 'Gemini 4 Neon Extra High';
+  modelTrigger.click = () => { triggerClicks += 1; };
+  leftSlot.appendChild(modelTrigger);
+  const rightSlot = makeMiniEl('div');
+  footer.appendChild(leftSlot);
+  footer.appendChild(rightSlot);
+  conv.appendChild(footer);
+  body.appendChild(conv);
+
+  const docListeners = new Map();
+  const makeHostEl = (t) => {
+    const el = makeMiniEl(t);
+    el.attachShadow = () => {
+      const sr = makeMiniEl('shadow-root');
+      el.shadowRoot = sr;
+      return sr;
+    };
+    return el;
+  };
+  const doc = {
+    documentElement: html,
+    body,
+    hidden: false,
+    createElement: makeHostEl,
+    getElementById: (id) => html.getElementById(id),
+    querySelector: (s) => html.querySelector(s),
+    querySelectorAll: (s) => html.querySelectorAll(s),
+    addEventListener(type, fn) {
+      if (!docListeners.has(type)) docListeners.set(type, []);
+      docListeners.get(type).push(fn);
+    },
+    removeEventListener(type, fn) {
+      const arr = docListeners.get(type);
+      if (arr) { const i = arr.indexOf(fn); if (i >= 0) arr.splice(i, 1); }
+    },
+  };
+
+  let curRemGemini = 0.62;
+  let curRem3p = 0.98;
+  const now = Date.now();
+  const win = {
+    document: doc,
+    location: { pathname: '/c/11111111-1111-1111-1111-111111111111' },
+    __agCsUsageCore: usageCore,
+    addEventListener() {},
+    removeEventListener() {},
+    requestAnimationFrame: (fn) => { fn(0); return 0; },
+    cancelAnimationFrame() {},
+    ResizeObserver: class { observe() {} disconnect() {} },
+    MutationObserver: class {
+      constructor(cb) { this.cb = cb; win.__lastMo = this; }
+      observe() {}
+      disconnect() {}
+    },
+    __agPrismMetricsCall(payloadStr) {
+      const req = JSON.parse(payloadStr);
+      win.__agPrismMetricsResolve(req.id, {
+        connection: 'live',
+        groups: [
+          {
+            id: 'gemini',
+            name: 'Gemini Models',
+            description: 'Models within this group: Gemini 4 Neon, Gemini 4 Carbon, Gemini 4 Argon, Gemini 4 Hydrogen, Orchestrator (Neon)',
+            windows: {
+              '5h': { available: true, id: 'gemini-5h', remaining: curRemGemini, resetAt: new Date(now + 95 * 60 * 1000).toISOString() },
+              weekly: { available: true, id: 'gemini-weekly', remaining: 0.80, resetAt: new Date(now + 5 * 86400 * 1000).toISOString() },
+            },
+          },
+          {
+            id: '3p',
+            name: 'Claude and GPT models',
+            description: 'Models within this group: Claude Opus 5.5, Claude Sonnet 5.5, GPT-OSS 120B',
+            windows: {
+              '5h': { available: true, id: '3p-5h', remaining: curRem3p, resetAt: new Date(now + 160 * 60 * 1000).toISOString() },
+              weekly: { available: true, id: '3p-weekly', remaining: 0.99, resetAt: new Date(now + 6 * 86400 * 1000).toISOString() },
+            },
+          },
+        ],
+        speed: {
+          model: 'Gemini 4 Neon (XHigh)',
+          tps: 64.2,
+          rounds: 2,
+          cacheHitRate: 0.91,
+          context: { model: 'Gemini 4 Neon (XHigh)', usedTokens: 180000, maxTokens: 512000, usedFraction: 0.35 },
+        },
+      });
+    },
+  };
+
+  const ctl = inlineFallback.createTelemetryController({ window: win, document: doc });
+  try {
+    ctl.sync({ telemetryModule: 'on', language: 'zh-CN' });
+    await ctl.refresh();
+    const host = doc.getElementById('ag-prism-pulse-bar');
+    assert.ok(host && host.shadowRoot, '#ag-prism-pulse-bar must mount');
+    const sr = host.shadowRoot;
+    const qChip = sr.querySelector('[data-card="quota"]');
+    const qFill = sr.getElementById('quota-bar-fill');
+    const qTxt = sr.getElementById('quota-badge-txt');
+    const qCard = sr.getElementById('quota-card');
+    const qList = sr.getElementById('quota-card-list');
+
+    // 1) Always visible even above 35% (62% -> emerald 'ok')
+    assert.equal(qChip.hidden, false, 'Quota pill must be visible when remaining > 35% (62%)');
+    assert.equal(qChip.getAttribute('data-level'), 'ok');
+    assert.equal(qChip.getAttribute('data-pool'), 'gemini');
+    assert.equal(qTxt.textContent, '62%');
+    assert.equal(qFill.style.width, '62%');
+    assert.match(qChip.getAttribute('title') || '', /Gemini.*62%.*后重置/);
+
+    // 2) #quota-card highlights active Gemini pool first with data-active="1"
+    const rows1 = qList.querySelectorAll('.q-row');
+    assert.equal(rows1.length, 2);
+    assert.equal(rows1[0].getAttribute('data-pool'), 'gemini');
+    assert.equal(rows1[0].getAttribute('data-active'), '1');
+    assert.equal(rows1[1].getAttribute('data-pool'), '3p');
+    assert.equal(rows1[1].hasAttribute('data-active'), false);
+
+    // Clicking quota pill opens #quota-card; clicking switch button clicks model-selector-trigger
+    qChip.dispatchEvent({ type: 'click' });
+    assert.equal(qCard.hidden, false);
+    sr.getElementById('quota-switch-btn').dispatchEvent({ type: 'click' });
+    assert.equal(triggerClicks, 1);
+    assert.equal(qCard.hidden, true);
+
+    // 3) Instant model-switch sync: change composer model trigger to Claude Opus 5.5 (even though snap.speed.model is still Gemini!)
+    modelTrigger.textContent = 'Claude Opus 5.5';
+    modelTrigger.setAttribute('aria-label', 'Select model, current: Claude Opus 5.5');
+    for (const fn of docListeners.get('click') || []) fn({ target: body });
+    await new Promise((r) => setTimeout(r, 110));
+    assert.equal(qChip.getAttribute('data-pool'), '3p', 'Switching model trigger must immediately switch quota pill to Claude/GPT pool');
+    assert.equal(qTxt.textContent, '98%');
+    assert.equal(qChip.getAttribute('data-level'), 'ok');
+    assert.equal(qList.querySelectorAll('.q-row')[0].getAttribute('data-pool'), '3p');
+    assert.equal(qList.querySelectorAll('.q-row')[0].getAttribute('data-active'), '1');
+
+    // 4) Color tiers: 21-50% -> 'tight' (amber), <=20% -> 'low' (coral)
+    modelTrigger.textContent = 'Gemini 4 Neon Extra High';
+    curRemGemini = 0.42;
+    await ctl.refresh();
+    assert.equal(qChip.hidden, false);
+    assert.equal(qTxt.textContent, '42%');
+    assert.equal(qChip.getAttribute('data-level'), 'tight');
+
+    curRemGemini = 0.18;
+    await ctl.refresh();
+    assert.equal(qChip.hidden, false);
+    assert.equal(qTxt.textContent, '18%');
+    assert.equal(qChip.getAttribute('data-level'), 'low');
+  } finally {
+    ctl.destroy();
   }
 });

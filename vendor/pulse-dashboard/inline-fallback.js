@@ -31,17 +31,17 @@
     for (let i = 0; i < t.length; i++) s = s.split('$' + i).join(t[i]);
     return s.replace(/!(?!important)/g, '!important');
   };
-  const TIER_CSS = expCss('[hidden]{display:none!}:host{--e:cubic-bezier(.22,1,.36,1);--c:var(--pv-tint,var(--pulse-ring,#3186ff))}.bar{transition:gap .28s $0}.bar>:is(.chip,.dot){$4max-width:132px;opacity:1;transform-origin:right;transition:max-width .28s $0,opacity .17s ease-out,padding .28s $0,margin .28s $0,gap .28s $0,transform .28s $0,background .16s,border-color .22s,box-shadow .22s}.bar>[data-card="cache"]{max-width:240px}.bar>$2context"]{max-width:136px}.bar>.dot{max-width:16px}:where(.bar>.chip>*:not(.context-ring):not(svg)){$4max-width:108px;flex-shrink:0;opacity:1;transform-origin:right;transition:max-width .28s $0,opacity .17s ease-out,margin .28s $0,padding .28s $0,transform .28s $0}.context-ring{will-change:transform;transition:transform .28s $0}$12"]) :is(.cache-total,.sub-badge,$2cache"] .dim,.countdown),$14"]) $2context"] .context-label,$15"]) $2context"]>:not(.context-ring){max-width:0!important;flex-shrink:1!important;opacity:0!;margin:0!;padding:0!;$5}$13"]) .bar>:is($2cache"],$2week"]),$14"]) .bar>:is($2speed"],$2five"],.dot){max-width:0!;min-width:0!;flex-shrink:1!;opacity:0!;padding:0!;margin:0!;gap:0!;border:0!;$5}$14"]) .bar{gap:0}$15"]) $2context"]{width:26px!;min-width:26px!;height:26px!;padding:0!;gap:0!;$6999px!;justify-content:center!;$7$39%,transparent);border:1px solid $328%,rgba(148,163,184,.28))}$15"]) $2context"]:is(:hover,[aria-expanded="true"]){$7$317%,transparent);border-color:$348%,rgba(148,163,184,.4));box-shadow:0 0 10px -2px $345%,transparent)}$15"]) .context-ring{transform:scale(1.27)}:host([data-pv-motion="off"]) :is(.bar,.bar *),:host-context(html[data-ag-cs-resizing="1"]) :is(.bar,.bar *){transition:none!}@media (prefers-reduced-motion:reduce){:is(.bar,.bar *){transition:none!}}');
+  const TIER_CSS = expCss('[hidden]{display:none!}:host{--e:cubic-bezier(.22,1,.36,1);--c:var(--pv-tint,var(--pulse-ring,#3186ff))}.bar{transition:gap .28s $0}.bar>:is(.chip,.dot){$4max-width:132px;opacity:1;transform-origin:right;transition:max-width .28s $0,opacity .17s ease-out,padding .28s $0,margin .28s $0,gap .28s $0,transform .28s $0,background .16s,border-color .22s,box-shadow .22s}.bar>[data-card="cache"]{max-width:240px}.bar>$2context"]{max-width:136px}.bar>$2quota"]{max-width:140px}.bar>.dot{max-width:16px}:where(.bar>.chip>*:not(.context-ring):not(svg)){$4max-width:108px;flex-shrink:0;opacity:1;transform-origin:right;transition:max-width .28s $0,opacity .17s ease-out,margin .28s $0,padding .28s $0,transform .28s $0}.context-ring{will-change:transform;transition:transform .28s $0}$12"]) :is(.cache-total,.sub-badge,.quota-label,$2cache"] .dim,.countdown),$14"]) $2context"] .context-label,$14"]) $2quota"] .quota-bar,$15"]) $2context"]>:not(.context-ring){max-width:0!important;flex-shrink:1!important;opacity:0!;margin:0!;padding:0!;$5}$13"]) .bar>:is($2cache"],$2week"]),$14"]) .bar>:is($2speed"],$2five"],.dot),$15"]) .bar>$2quota"]{max-width:0!;min-width:0!;flex-shrink:1!;opacity:0!;padding:0!;margin:0!;gap:0!;border:0!;$5}$14"]) .bar{gap:0}$15"]) $2context"]{width:26px!;min-width:26px!;height:26px!;padding:0!;gap:0!;$6999px!;justify-content:center!;$7$39%,transparent);border:1px solid $328%,rgba(148,163,184,.28))}$15"]) $2context"]:is(:hover,[aria-expanded="true"]){$7$317%,transparent);border-color:$348%,rgba(148,163,184,.4));box-shadow:0 0 10px -2px $345%,transparent)}$15"]) .context-ring{transform:scale(1.27)}:host([data-pv-motion="off"]) :is(.bar,.bar *),:host-context(html[data-ag-cs-resizing="1"]) :is(.bar,.bar *){transition:none!}@media (prefers-reduced-motion:reduce){:is(.bar,.bar *){transition:none!}}');
 
-  const SHADOW_CSS = expCss(':host,*,::before,::after{box-sizing:border-box}:host,.bar,.chip{display:inline-flex;align-items:center}:host{--_dm:var(--muted-foreground,#94A3B8);--_sb:#C4B5FD;--_ca:#FBBF24;--_lo:#F87171;flex:0 0 auto;position:relative;font:11px/16px Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--foreground,#dae2f0);user-select:none;z-index:20}:host-context(html[data-ag-cs-theme="light"]),:host-context(.light){--_dm:#475569;--_sb:#6D28D9;--_ca:#B45309;--_lo:#B91C1C}:host([hidden]),.sub-badge[hidden],.card[hidden],.footnote[hidden],.footnote:empty,:host([data-layout="blocked"])>.bar{display:none!}:host([data-layout="blocked"]){position:fixed!;left:-9999px!;top:-9999px!;width:0!;height:0!;margin:0!;padding:0!;overflow:hidden!;visibility:hidden!;pointer-events:none!}.bar{gap:3px}.chip{gap:3.5px;height:24px;padding:0 6px;border:0;$66px;$7transparent;color:inherit;font:inherit;cursor:pointer;font-variant-numeric:tabular-nums;transition:background .15s,color .15s}.chip:hover,.chip[aria-expanded="true"]{$7rgba(128,138,158,.12)}.chip svg{width:12px;height:12px;stroke:currentColor;stroke-width:1.5;fill:none;opacity:.85;flex:none}.dim{color:var(--_dm);opacity:1;font-size:10.5px}.sub-badge{font-size:10.5px;opacity:1;color:var(--_sb);font-weight:600}.chip[data-card="context"][data-caution="1"]{$7rgba(217,119,6,.12);color:var(--_ca)}.chip.quota-warn{padding:0 7px;height:20px;font-size:10.5px;font-weight:600;$6999px;border:1px solid rgba(217,119,6,.38);$7rgba(245,158,11,.14);color:var(--_ca)}.chip.quota-warn[data-level="low"]{border-color:rgba(220,38,38,.4);$7rgba(239,68,68,.13);color:var(--_lo)}.context-ring{width:11px;height:11px;$650%;$7conic-gradient(var(--pv-tint,#3186ff) var(--used-angle,36deg),rgba(148,163,184,.28) 0);display:inline-block;position:relative;flex:none}.context-ring::after{content:"";position:absolute;inset:2.2px;$650%;$7var(--card,#141720)}.card{position:absolute;right:0;left:auto;bottom:calc(100% + 10px);width:min(304px,calc(100vw - 24px));padding:12px 13px;$610px;border:1px solid rgba(148,163,184,.22);$7var(--card,#12151ef5);color:var(--foreground,#eef1f7);box-shadow:0 16px 40px rgba(0,0,0,.36);z-index:9999}$14"]) .card{right:-84px;width:min(296px,calc(100vw - 32px))}.heading{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;font-weight:600;margin-bottom:6px}.heading>span:first-child{white-space:nowrap}#context-summary{display:block;font-size:13px;font-weight:600;margin-bottom:2px}#context-tokens{margin:0 0 8px;font-size:11px;color:var(--_dm)}.track{height:5px;$6999px;$7rgba(148,163,184,.18);overflow:hidden;margin:6px 0 10px}.track>i{display:block;height:100%;width:0%;$6999px;$7linear-gradient(90deg,#2563eb,#38bdf8)}dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:8px 0;font-size:11px}dt{color:var(--_dm);opacity:1}dd{margin:0;text-align:right;font-weight:500;$4text-overflow:ellipsis}.q-list{display:flex;flex-direction:column;gap:5px;margin:6px 0}.q-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 7px;$66px;border:1px solid rgba(148,163,184,.2);$7rgba(128,138,158,.08);font-size:11px;color:inherit;width:100%;cursor:pointer;text-align:left}.q-row:hover{$7rgba(128,138,158,.16)}.q-val{font-weight:600;font-variant-numeric:tabular-nums}.q-val[data-level="tight"]{color:var(--_ca)}.q-val[data-level="low"]{color:var(--_lo)}.act-btn{margin-top:6px;width:100%;height:26px;padding:0 10px;$66px;border:1px solid rgba(148,163,184,.28);$7rgba(128,138,158,.1);color:inherit;font:500 11px/1 inherit;cursor:pointer}.act-btn:hover{$7rgba(128,138,158,.18)}.footnote{margin:6px 0 0;font-size:10.5px;color:var(--_dm);opacity:1}') + TIER_CSS;
+  const SHADOW_CSS = expCss(':host,*,::before,::after{box-sizing:border-box}:host,.bar,.chip{display:inline-flex;align-items:center}:host{--_dm:var(--muted-foreground,#94A3B8);--_sb:#C4B5FD;--_ok:#10B981;--_ok-t:#10B981;--_ca:#F59E0B;--_ca-t:#F59E0B;--_lo:#F43F5E;--_lo-t:#F43F5E;--_qtr:rgba(148,163,184,.26);flex:0 0 auto;position:relative;font:11px/16px Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--foreground,#dae2f0);user-select:none;z-index:20}:host-context(html[data-ag-cs-theme="light"]),:host-context(.light),:host([data-pv-light="1"]){--_dm:#475569;--_sb:#6D28D9;--_ok:#059669;--_ok-t:#047857;--_ca:#D97706;--_ca-t:#B45309;--_lo:#E11D48;--_lo-t:#BE123C;--_qtr:rgba(15,23,42,.13)}:host([hidden]),.sub-badge[hidden],.card[hidden],.footnote[hidden],.footnote:empty,:host([data-layout="blocked"])>.bar{display:none!}:host([data-layout="blocked"]){position:fixed!;left:-9999px!;top:-9999px!;width:0!;height:0!;margin:0!;padding:0!;overflow:hidden!;visibility:hidden!;pointer-events:none!}.bar{gap:3px}.chip{gap:3.5px;height:24px;padding:0 6px;border:0;$66px;$7transparent;color:inherit;font:inherit;cursor:pointer;font-variant-numeric:tabular-nums;transition:background .15s,color .15s}.chip:hover,.chip[aria-expanded="true"]{$7rgba(128,138,158,.12)}.chip svg{width:12px;height:12px;stroke:currentColor;stroke-width:1.5;fill:none;opacity:.85;flex:none}.dim{color:var(--_dm);opacity:1;font-size:10.5px}.sub-badge{font-size:10.5px;opacity:1;color:var(--_sb);font-weight:600}.chip[data-card="context"][data-caution="1"]{$7rgba(217,119,6,.12);color:var(--_ca-t)}.bar .chip[data-card="quota"]{gap:4px}.bar .chip[data-card="quota"] .quota-label{color:var(--_dm);opacity:1;font-size:10.5px}.bar .chip[data-card="quota"] .quota-bar{width:24px;height:5px;$6999px;$7var(--_qtr);overflow:hidden;display:inline-flex;align-items:center;flex:none}.bar .chip[data-card="quota"] .quota-bar>i{display:block;height:100%;width:0%;$6999px;$7var(--_ok);transition:width .24s ease,background .18s ease}.bar .chip[data-card="quota"][data-level="tight"] .quota-bar>i{$7var(--_ca)}.bar .chip[data-card="quota"][data-level="low"] .quota-bar>i{$7var(--_lo)}.bar .chip[data-card="quota"] .quota-pct{font-weight:600;color:var(--_ok-t)}.bar .chip[data-card="quota"][data-level="tight"] .quota-pct{color:var(--_ca-t)}.bar .chip[data-card="quota"][data-level="low"] .quota-pct{color:var(--_lo-t)}.context-ring{width:11px;height:11px;$650%;$7conic-gradient(var(--pv-tint,#3186ff) var(--used-angle,36deg),rgba(148,163,184,.28) 0);display:inline-block;position:relative;flex:none}.context-ring::after{content:"";position:absolute;inset:2.2px;$650%;$7var(--card,#141720)}.card{position:absolute;right:0;left:auto;bottom:calc(100% + 10px);width:min(304px,calc(100vw - 24px));padding:12px 13px;$610px;border:1px solid rgba(148,163,184,.22);$7var(--card,#12151ef5);color:var(--foreground,#eef1f7);box-shadow:0 16px 40px rgba(0,0,0,.36);z-index:9999}:host-context(html[data-ag-cs-theme="light"]) .card,:host-context(.light) .card,:host([data-pv-light="1"]) .card{$7var(--card,#fffffff7);color:var(--foreground,#0f172a);border-color:rgba(15,23,42,.12);box-shadow:0 14px 36px rgba(15,23,42,.14)}$14"]) .card{right:-84px;width:min(296px,calc(100vw - 32px))}.heading{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;font-weight:600;margin-bottom:6px}.heading>span:first-child{white-space:nowrap}.q-head-model{font-size:10px;font-weight:500;color:var(--_dm);$4text-overflow:ellipsis;max-width:170px}#context-summary{display:block;font-size:13px;font-weight:600;margin-bottom:2px}#context-tokens{margin:0 0 8px;font-size:11px;color:var(--_dm)}.track{height:5px;$6999px;$7rgba(148,163,184,.18);overflow:hidden;margin:6px 0 10px}.track>i{display:block;height:100%;width:0%;$6999px;$7linear-gradient(90deg,#2563eb,#38bdf8)}dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:8px 0;font-size:11px}dt{color:var(--_dm);opacity:1}dd{margin:0;text-align:right;font-weight:500;$4text-overflow:ellipsis}.q-list{display:flex;flex-direction:column;gap:6px;margin:6px 0}.q-row{display:flex;flex-direction:column;gap:5px;padding:7px 9px;$68px;border:1px solid rgba(148,163,184,.2);$7rgba(128,138,158,.06);font-size:11px;color:inherit;width:100%;cursor:pointer;text-align:left;transition:background .15s,border-color .15s}.q-row:hover{$7rgba(128,138,158,.14)}.q-row.q-active{border-color:color-mix(in srgb,var(--_ok) 46%,transparent);$7color-mix(in srgb,var(--_ok) 9%,transparent)}.q-row.q-active[data-level="tight"]{border-color:color-mix(in srgb,var(--_ca) 48%,transparent);$7color-mix(in srgb,var(--_ca) 10%,transparent)}.q-row.q-active[data-level="low"]{border-color:color-mix(in srgb,var(--_lo) 50%,transparent);$7color-mix(in srgb,var(--_lo) 10%,transparent)}.q-top{display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%}.q-name-wrap{display:inline-flex;align-items:center;gap:5px;min-width:0}.q-name{font-weight:600;$4text-overflow:ellipsis}.q-tag{font-size:9.5px;font-weight:600;padding:1px 5px;$6999px;$7color-mix(in srgb,var(--_ok) 18%,transparent);color:var(--_ok-t);flex:none}.q-row[data-level="tight"] .q-tag{$7color-mix(in srgb,var(--_ca) 18%,transparent);color:var(--_ca-t)}.q-row[data-level="low"] .q-tag{$7color-mix(in srgb,var(--_lo) 18%,transparent);color:var(--_lo-t)}.q-val{font-weight:600;font-variant-numeric:tabular-nums;color:var(--_ok-t);flex:none}.q-val[data-level="tight"]{color:var(--_ca-t)}.q-val[data-level="low"]{color:var(--_lo-t)}.q-wins{display:flex;flex-direction:column;gap:4px;width:100%}.q-win{display:flex;flex-direction:column;gap:2.5px;width:100%}.q-win-meta{display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:10px;color:var(--_dm);font-variant-numeric:tabular-nums}.q-bar{width:100%;height:5px;$6999px;$7var(--_qtr);overflow:hidden}.q-bar.q-bar-sm{height:4px}.q-bar>i{display:block;height:100%;$6999px;$7var(--_ok)}.q-bar>i[data-level="tight"]{$7var(--_ca)}.q-bar>i[data-level="low"]{$7var(--_lo)}.act-btn{margin-top:6px;width:100%;height:26px;padding:0 10px;$66px;border:1px solid rgba(148,163,184,.28);$7rgba(128,138,158,.1);color:inherit;font:500 11px/1 inherit;cursor:pointer}.act-btn:hover{$7rgba(128,138,158,.18)}.footnote{margin:6px 0 0;font-size:10.5px;color:var(--_dm);opacity:1}') + TIER_CSS;
 
   const isFin = (v) => typeof v === 'number' && Number.isFinite(v);
   const FB_ROWS = {
-    'zh-CN': '缓存|吞吐速率|首字延迟|最近速率|上下文窗口|当前模型|已用|剩余|代理|缓存与子代理|命中率|估算节省|活跃子代理|会话总计|轮次/耗时|用量分布|模型配额预警|切换模型|查看子代理面板',
-    'zh-TW': '快取|吞吐速率|首字延遲|最近速率|上下文視窗|目前模型|已用|剩餘|代理|快取與子代理|命中率|估算節省|活躍子代理|會話總計|輪次/耗時|用量分布|模型配額預警|切換模型|檢視子代理面板',
-    yue: '快取|吞吐速率|首字延遲|最近速率|上下文視窗|目前模型|已用|剩低|代理|快取同子代理|命中率|估算慳咗|活躍子代理|會話總計|輪次/耗時|用量分布|模型配額預警|切換模型|睇子代理面板',
-    en: 'Cache|Throughput|TTFT|Latest Rate|Context Window|Active Model|used|free| sub|Cache & Subagents|Hit Rate|Est. Saved|Subagents|Session Total|Rounds / Time|Token Split|Quota Alert|Switch Model|Inspect Subagents',
-    ja: 'キャッシュ|スループット|初回応答|最新速度|コンテキスト|現在のモデル|使用|残り| sub|キャッシュとサブ|ヒット率|節約推定|サブエージェント|セッション計|回数/所要|内訳|クォータ警告|モデル切替|サブ一覧を開く',
+    'zh-CN': '缓存|吞吐速率|首字延迟|最近速率|上下文窗口|当前模型|已用|剩余|代理|缓存与子代理|命中率|估算节省|活跃子代理|会话总计|轮次/耗时|用量分布|模型配额|切换模型|查看子代理面板|余量|当前|后重置',
+    'zh-TW': '快取|吞吐速率|首字延遲|最近速率|上下文視窗|目前模型|已用|剩餘|代理|快取與子代理|命中率|估算節省|活躍子代理|會話總計|輪次/耗時|用量分布|模型配額|切換模型|檢視子代理面板|餘量|目前|後重設',
+    yue: '快取|吞吐速率|首字延遲|最近速率|上下文視窗|目前模型|已用|剩低|代理|快取同子代理|命中率|估算慳咗|活躍子代理|會話總計|輪次/耗時|用量分布|模型配額|切換模型|睇子代理面板|餘量|而家|後重設',
+    en: 'Cache|Throughput|TTFT|Latest Rate|Context Window|Active Model|used|free| sub|Cache & Subagents|Hit Rate|Est. Saved|Subagents|Session Total|Rounds / Time|Token Split|Model Quota|Switch Model|Inspect Subagents|Quota|Active|resets in',
+    ja: 'キャッシュ|スループット|初回応答|最新速度|コンテキスト|現在のモデル|使用|残り| sub|キャッシュとサブ|ヒット率|節約推定|サブエージェント|セッション計|回数/所要|内訳|モデル残量|モデル切替|サブ一覧を開く|残量|使用中|後に更新',
   };
   const FB_I18N = Object.fromEntries(
     Object.entries(FB_ROWS).map(([lk, s]) => {
@@ -49,12 +49,16 @@
       return [
         lk,
         {
+          lang: lk,
           cache: r[0], speedHeading: r[1], ttft: r[2], latestRate: r[3],
           ctxHeading: r[4], curModel: r[5],
           summary: (p, rem) => `${p}% ${r[6]} · ${rem}% ${r[7]}`,
           agents: (n) => `· ${n}${r[8]}`,
           cacheHeading: r[9], hitRate: r[10], savedTok: r[11], activeSubs: r[12], totalTok: r[13],
           elapsed: r[14], tokSplit: r[15], quotaHeading: r[16], switchModel: r[17], openSubs: r[18],
+          quotaShort: r[19], curPool: r[20],
+          resetFmt: (eta) => !eta ? '' : (lk === 'en' ? `${r[21]} ${eta}` : `${eta}${r[21]}`),
+          remFmt: (p) => (lk === 'en' ? `${p}% left` : `${r[7]} ${p}%`),
         },
       ];
     })
@@ -92,6 +96,7 @@
     let hasHost = false, yielded = false, lastSig = '', detAt = 0;
     let docOff = null, popOff = null, lastSnap = null, mApi = null, mRes = null, seatObs = null, healTm = null;
     let locSnap = null, locAt = 0, expLang = '';
+    let lastModelLbl = '', modelSyncTm = null, lastProc = false, lastRounds = 0, lastQuotaSyncAt = 0;
     let tierRo = null, tierEl = null, tierRaf = 0, curTier = 0, pendTierW = 0, hasPendTierW = false, lastTv = '', winResOff = null;
     let winBlur = false, pollSusp = false, blurOff = null, blurObs = null;
     const pend = new Map();
@@ -392,6 +397,7 @@
       clrWait();
       clrPoll();
       clrBlur();
+      if (modelSyncTm !== null) { clearTimeout(modelSyncTm); modelSyncTm = null; }
       if (docOff) { try { docOff(); } catch {} docOff = null; }
       if (!keepBridge) {
         clrSeat();
@@ -480,6 +486,86 @@
       return Promise.resolve(estSnap());
     };
 
+    const readLiveModel = (doc, fallback) => {
+      try {
+        const tr = doc?.querySelector?.('[data-testid="model-selector-trigger"]');
+        const txt = tr?.textContent?.trim();
+        if (txt) return txt;
+        const aria = tr?.getAttribute?.('aria-label') || '';
+        const m = aria.match(/current:\s*(.+)$/i);
+        if (m && m[1].trim()) return m[1].trim();
+        if (aria.trim()) return aria.trim();
+      } catch {}
+      return fallback || 'Antigravity Model';
+    };
+    const normModelKey = (raw) => String(raw || '')
+      .toLowerCase()
+      .replace(/^select model,\s*current:\s*/i, '')
+      .replace(/\b(?:extra\s+high|xhigh|high|medium|med|low|minimal|fast|thinking|off)\b/g, ' ')
+      .replace(/[()\[\]]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const fmtResetEta = (bk, lang, uCore) => {
+      const raw = bk?.resetAt ?? bk?.resetTime;
+      if (raw == null) return '';
+      const ms = typeof raw === 'number' ? (raw > 1e11 ? raw : raw * 1000) : Date.parse(String(raw));
+      if (!Number.isFinite(ms)) return '';
+      const left = ms - Date.now();
+      if (left <= 0) return '';
+      if (typeof uCore?.shortEta === 'function') return uCore.shortEta(left, lang);
+      const sec = Math.max(1, Math.round(left / 1000));
+      const d = Math.floor(sec / 86400), h = Math.floor((sec % 86400) / 3600), m = Math.floor((sec % 3600) / 60);
+      if (lang === 'en') return d > 0 ? `${d}d ${h}h` : h > 0 ? `${h}h ${m}m` : `${Math.max(1, m)}m`;
+      if (lang === 'ja') return d > 0 ? `${d}日${h}時間` : h > 0 ? `${h}時間${m}分` : `${Math.max(1, m)}分`;
+      if (lang === 'yue') return d > 0 ? `${d}日${h}個鐘` : h > 0 ? `${h}個鐘${m}分` : `${Math.max(1, m)}分鐘`;
+      if (lang === 'zh-TW') return d > 0 ? `${d}天${h}小時` : h > 0 ? `${h}小時${m}分` : `${Math.max(1, m)}分鐘`;
+      return d > 0 ? `${d}天${h}小时` : h > 0 ? `${h}小时${m}分` : `${Math.max(1, m)}分钟`;
+    };
+    const matchQuotaPool = (gs, modelLbl, uCore, pickWin) => {
+      if (!gs.length) return null;
+      if (typeof uCore?.chooseQuotaGroup === 'function') {
+        const chosen = uCore.chooseQuotaGroup(gs, modelLbl);
+        if (chosen) return chosen;
+      }
+      const low = String(modelLbl || '').toLowerCase();
+      const norm = normModelKey(low);
+      if (/argon/.test(low)) {
+        const arg = gs.find((g) => /argon|wtu/i.test(`${g?.id || ''} ${g?.name || ''}`));
+        if (arg) return arg;
+      }
+      if (norm.length >= 3) {
+        const descHit = gs.find((g) => {
+          const desc = String(g?.description || '');
+          if (!desc) return false;
+          const ci = desc.indexOf(':');
+          const entries = (ci >= 0 ? desc.slice(ci + 1) : desc).split(/[,;\n]+/).map(normModelKey).filter((s) => s.length >= 3);
+          return entries.some((e) => norm === e || norm.startsWith(e + ' ') || e.startsWith(norm + ' '));
+        });
+        if (descHit) return descHit;
+      }
+      if (/claude|anthropic|sonnet|opus|haiku|gpt|openai|\bo[134]\b/.test(low)) {
+        const cl = gs.find((g) => /claude|anthropic|gpt|openai|(?:^|\s)3p(?:\s|$|-)/i.test(`${g?.id || ''} ${g?.name || ''} ${g?.description || ''}`));
+        if (cl) return cl;
+      }
+      if (/gemini|neon|carbon|hydrogen|orchestrator|\bpro\b|flash|argon/.test(low)) {
+        const gm = gs.find((g) => /gemini|google/i.test(`${g?.id || ''} ${g?.name || ''} ${g?.description || ''}`));
+        if (gm) return gm;
+      }
+      return gs.find((g) => pickWin(g).length > 0) || gs[0];
+    };
+    const quotaLevel = (pct) => (pct <= 20 ? 'low' : pct <= 50 ? 'tight' : 'ok');
+    const schedModelSync = (delay = 35) => {
+      if (!fbEl || !lastSnap || mode === 'off') return;
+      if (modelSyncTm !== null) clearTimeout(modelSyncTm);
+      modelSyncTm = setTimeout(() => {
+        modelSyncTm = null;
+        if (!fbEl || !lastSnap || mode === 'off') return;
+        const nextModel = readLiveModel(gD(), '');
+        if (nextModel && nextModel !== lastModelLbl) applySnap(lastSnap);
+      }, delay);
+      modelSyncTm?.unref?.();
+    };
+
     const gStr = () => FB_I18N[gD()?.documentElement?.getAttribute?.('data-ag-cs-lang') || expLang || 'zh-CN'] || FB_I18N['zh-CN'];
     const syncLbls = () => {
       if (!srEl) return;
@@ -491,9 +577,13 @@
     };
 
     const applySnap = (snap) => {
-      if (snap && typeof snap === 'object') lastSnap = snap;
+      if (snap && typeof snap === 'object') {
+        const keepGroups = !snap.groups?.length && lastSnap?.groups?.length;
+        lastSnap = keepGroups ? { ...snap, groups: lastSnap.groups } : snap;
+      }
       if (!srEl || !fbEl) return;
-      const sp = snap?.speed || {}, ctx = sp.context || {};
+      const effSnap = snap && typeof snap === 'object' ? (snap.groups?.length ? snap : { ...snap, groups: lastSnap?.groups || snap.groups || [] }) : lastSnap;
+      const sp = effSnap?.speed || {}, ctx = sp.context || {};
       const maxTok = ctx.maxTokens > 0 ? ctx.maxTokens : 512000;
       const uf = isFin(ctx.usedFraction) ? Math.max(0, Math.min(1, ctx.usedFraction)) : 0.04;
       const uTok = isFin(ctx.usedTokens) ? ctx.usedTokens : Math.round(uf * maxTok);
@@ -556,53 +646,105 @@
       if (openSubBtn) openSubBtn.hidden = !(subs > 0);
 
       const qChipEl = srEl.querySelector?.('[data-card="quota"]');
+      const qFillEl = srEl.getElementById?.('quota-bar-fill');
       const qCardEl = srEl.getElementById?.('quota-card');
       const qListEl = srEl.getElementById?.('quota-card-list');
-      const gs = Array.isArray(snap?.groups) ? snap.groups : [];
+      const gs = Array.isArray(effSnap?.groups) ? effSnap.groups : [];
       const uCore = gW()?.__agCsUsageCore;
+      const liveModel = readLiveModel(gD(), model);
+      lastModelLbl = liveModel;
       const pickWin = (g) => {
         if (!g) return [];
         if (typeof uCore?.quotaWindows === 'function') return uCore.quotaWindows(g);
         const ws = g.windows || {};
         const out = [];
-        for (const k of ['5h', 'weekly']) if (ws[k] && ws[k].available !== false && isFin(ws[k].remaining)) out.push([k, ws[k]]);
+        for (const k of ['5h', 'weekly']) {
+          const b = ws[k];
+          const r = b && b.available !== false && b.disabled !== true ? Number(b.remaining ?? b.remainingFraction) : NaN;
+          if (b && isFin(r)) out.push([k, b]);
+        }
         return out;
       };
-      const actGrp = (typeof uCore?.chooseQuotaGroup === 'function' ? uCore.chooseQuotaGroup(gs, model) : null)
-        || gs.find((g) => /claude/i.test(model) ? /claude/i.test(g?.id || g?.name || '') : /gemini/i.test(g?.id || g?.name || ''))
-        || gs.find((g) => pickWin(g).length > 0);
-      let minRem = 2, minTag = '5h';
-      for (const [wk, bk] of pickWin(actGrp)) {
-        const r = Math.max(0, Math.min(1, Number(bk?.remaining)));
-        if (isFin(r) && r < minRem) { minRem = r; minTag = wk === 'weekly' ? '7d' : '5h'; }
+      const winRem = (bk) => Math.max(0, Math.min(1, Number(bk?.remaining ?? bk?.remainingFraction ?? 0)));
+      const grpLabel = (g) => (typeof uCore?.quotaGroupLabel === 'function' ? uCore.quotaGroupLabel(g, t.lang) : (g?.name || g?.id || 'Pool'));
+      const actGrp = matchQuotaPool(gs, liveModel, uCore, pickWin);
+      let minRem = 2, minBk = null;
+      for (const [, bk] of pickWin(actGrp)) {
+        const r = winRem(bk);
+        if (isFin(r) && r < minRem) { minRem = r; minBk = bk; }
       }
       if (qChipEl) {
-        if (minRem <= 0.35) {
+        if (minRem <= 1) {
+          const qPct = Math.round(minRem * 100);
+          const qLvl = quotaLevel(qPct);
+          const pLbl = grpLabel(actGrp);
+          const eta = fmtResetEta(minBk, t.lang, uCore);
+          const tip = `${pLbl} · ${t.remFmt(qPct)}${eta ? ` · ${t.resetFmt(eta)}` : ''}`;
           qChipEl.hidden = false;
-          qChipEl.setAttribute('data-level', minRem <= 0.15 ? 'low' : 'tight');
-          sT('quota-badge-txt', `${minTag} ${Math.round(minRem * 100)}%`);
+          qChipEl.setAttribute('data-level', qLvl);
+          qChipEl.setAttribute('data-pool', actGrp?.id || '');
+          qChipEl.setAttribute('title', tip);
+          qChipEl.setAttribute('aria-label', tip);
+          sT('quota-badge-txt', `${qPct}%`);
+          if (qFillEl) {
+            qFillEl.setAttribute('data-level', qLvl);
+            if (qFillEl.style) qFillEl.style.width = qPct <= 0 ? '0%' : `${Math.max(4, qPct)}%`;
+          }
         } else {
           qChipEl.hidden = true;
           qChipEl.setAttribute('aria-expanded', 'false');
           if (qCardEl) qCardEl.hidden = true;
         }
       }
+      sT('quota-head-model', liveModel);
       if (qListEl && gs.length > 0) {
         const doc = gD();
         if (doc && typeof doc.createElement === 'function') {
           qListEl.textContent = '';
-          for (const g of gs) {
+          const ordered = actGrp ? [actGrp, ...gs.filter((g) => g !== actGrp)] : gs.slice();
+          for (const g of ordered) {
             const ws = pickWin(g);
             if (!ws.length) continue;
+            const isAct = g === actGrp;
             let gm = 2;
-            const parts = ws.map(([wk, bk]) => {
-              const r = Math.max(0, Math.min(1, Number(bk.remaining)));
+            for (const [, bk] of ws) {
+              const r = winRem(bk);
               if (r < gm) gm = r;
-              return `${wk === 'weekly' ? '7d' : '5h'} ${Math.round(r * 100)}%`;
-            });
-            const rowBtn = mk(doc, 'button', { type: 'button', cls: 'q-row' }, [
-              mk(doc, 'span', { text: g.name || g.id || 'Pool' }),
-              mk(doc, 'span', { cls: 'q-val', ...(gm <= 0.15 ? { 'data-level': 'low' } : gm <= 0.35 ? { 'data-level': 'tight' } : {}), text: parts.join(' · ') }),
+            }
+            const gPct = Math.round(gm * 100);
+            const gLvl = quotaLevel(gPct);
+            const nameKids = [mk(doc, 'span', { cls: 'q-name', text: grpLabel(g) })];
+            if (isAct) nameKids.push(mk(doc, 'span', { cls: 'q-tag', text: t.curPool }));
+            const winEls = [];
+            for (const [wk, bk] of ws) {
+              const wPct = Math.round(winRem(bk) * 100);
+              const wLvl = quotaLevel(wPct);
+              const wTag = wk === 'weekly' ? '7d' : '5h';
+              const eta = fmtResetEta(bk, t.lang, uCore);
+              const barFill = mk(doc, 'i', { 'data-level': wLvl });
+              if (barFill.style) barFill.style.width = wPct <= 0 ? '0%' : `${Math.max(3, wPct)}%`;
+              winEls.push(
+                mk(doc, 'div', { cls: 'q-win' }, [
+                  mk(doc, 'div', { cls: 'q-win-meta' }, [
+                    mk(doc, 'span', { text: `${wTag} · ${wPct}%` }),
+                    mk(doc, 'span', { text: eta ? t.resetFmt(eta) : '' }),
+                  ]),
+                  mk(doc, 'div', { cls: isAct ? 'q-bar' : 'q-bar q-bar-sm' }, [barFill]),
+                ])
+              );
+            }
+            const rowBtn = mk(doc, 'button', {
+              type: 'button',
+              cls: isAct ? 'q-row q-active' : 'q-row',
+              'data-pool': g.id || '',
+              'data-level': gLvl,
+              ...(isAct ? { 'data-active': '1' } : {}),
+            }, [
+              mk(doc, 'div', { cls: 'q-top' }, [
+                mk(doc, 'span', { cls: 'q-name-wrap' }, nameKids),
+                mk(doc, 'span', { cls: 'q-val', 'data-level': gLvl, text: `${gPct}%` }),
+              ]),
+              mk(doc, 'div', { cls: 'q-wins' }, winEls),
             ]);
             rowBtn.addEventListener('click', (e) => {
               e?.stopPropagation?.();
@@ -612,6 +754,15 @@
             qListEl.appendChild(rowBtn);
           }
         }
+      }
+
+      const curRounds = isFin(sp.rounds) ? sp.rounds : 0;
+      const turnDone = (lastProc && !proc) || (lastRounds > 0 && curRounds > lastRounds);
+      lastProc = proc;
+      if (curRounds > 0) lastRounds = curRounds;
+      if (turnDone && !isBlur() && snap?.connection !== 'local-estimate' && Date.now() - lastQuotaSyncAt >= 15000) {
+        lastQuotaSyncAt = Date.now();
+        void reqSnap({ conversationId: detCid(fbEl), force: false, quotaRefresh: true }).then((ns) => { if (ns) applySnap(ns); });
       }
 
       sT('context-summary', t.summary(pct, rem));
@@ -729,10 +880,17 @@
           if (mode === 'off' || healTm !== null) return;
           if (Array.isArray(recs) && recs.length > 0) {
             let rel = false;
+            let hitFooter = false;
             for (let i = 0; i < recs.length; i++) {
-              if (!isIgnoredStreamNode(recs[i]?.target)) { rel = true; break; }
+              const tg = recs[i]?.target;
+              if (!isIgnoredStreamNode(tg)) {
+                rel = true;
+                const te = tg?.nodeType === 1 ? tg : tg?.parentElement;
+                if (!hitFooter && te?.closest?.('[data-testid="model-selector-trigger"],.agy-composer-footer,[data-testid="input-box-bottom-toolbar"]')) hitFooter = true;
+              }
             }
             if (!rel) return;
+            if (hitFooter && fbEl && lastSnap?.groups?.length > 0) schedModelSync(30);
           }
           const inC = isConv(doc, w);
           let bars = null;
@@ -767,7 +925,7 @@
       }
     };
 
-    async function refresh() {
+    async function refresh(quotaForce = false) {
       const w = gW(), doc = gD();
       if (!envOpts && w?.__agPrismTelemetry && w.__agPrismTelemetry !== api) { unmountFb(); return null; }
       if (!isConv(doc, w)) {
@@ -790,7 +948,9 @@
         if (!fbEl || !isConn(doc, fbEl)) return null;
       }
       ensTierObs();
-      const snap = await reqSnap({ conversationId: detCid(fbEl), force: false });
+      const doQuota = Boolean(quotaForce && Date.now() - lastQuotaSyncAt >= 15000);
+      if (doQuota) lastQuotaSyncAt = Date.now();
+      const snap = await reqSnap({ conversationId: detCid(fbEl), force: false, ...(doQuota ? { quotaRefresh: true } : {}) });
       applySnap(snap);
       return snap;
     }
@@ -847,8 +1007,10 @@
         E('span', { cls: 'context-label dim', 'data-i18n': 'contextShort', text: 'Ctx' }),
         E('strong', { id: 'context-percent', text: '0%' }),
       ]);
-      const qChip = E('button', { type: 'button', cls: 'chip quota-warn', 'data-card': 'quota', 'aria-expanded': 'false', hidden: true }, [
-        E('strong', { id: 'quota-badge-txt', text: '' }),
+      const qChip = E('button', { type: 'button', cls: 'chip quota-chip', 'data-card': 'quota', 'aria-expanded': 'false', hidden: true }, [
+        E('span', { cls: 'quota-label', 'data-fb-i18n': 'quotaShort', text: t0.quotaShort }),
+        E('span', { cls: 'quota-bar', 'aria-hidden': 'true' }, [E('i', { id: 'quota-bar-fill' })]),
+        E('strong', { cls: 'quota-pct', id: 'quota-badge-txt', text: '' }),
       ]);
       const sCard = E('section', { cls: 'card', id: 'speed-card', hidden: true }, [
         E('div', { cls: 'heading' }, [E('span', { 'data-fb-i18n': 'speedHeading', text: t0.speedHeading })]),
@@ -880,7 +1042,10 @@
       ]);
       const qSwitchBtnEl = E('button', { type: 'button', cls: 'act-btn', id: 'quota-switch-btn', 'data-fb-i18n': 'switchModel', text: t0.switchModel });
       const qCard = E('section', { cls: 'card', id: 'quota-card', hidden: true }, [
-        E('div', { cls: 'heading' }, [E('span', { 'data-fb-i18n': 'quotaHeading', text: t0.quotaHeading })]),
+        E('div', { cls: 'heading' }, [
+          E('span', { 'data-fb-i18n': 'quotaHeading', text: t0.quotaHeading }),
+          E('span', { cls: 'q-head-model', id: 'quota-head-model', text: '' }),
+        ]),
         E('div', { cls: 'q-list', id: 'quota-card-list' }),
         qSwitchBtnEl,
       ]);
@@ -917,7 +1082,7 @@
         closeAll();
         card.hidden = !nx;
         btn.setAttribute('aria-expanded', String(nx));
-        if (nx) void refresh();
+        if (nx) void refresh(card === qCard);
         try { w.__agPulseExternalBridge?.({ event: 'card' }); } catch {}
       };
       xChip.addEventListener('click', (e) => { e?.stopPropagation?.(); tog(xCard, xChip); });
@@ -939,6 +1104,7 @@
 
       if (typeof doc.addEventListener === 'function') {
         const onDoc = (ev) => {
+          if (lastSnap?.groups?.length > 0) schedModelSync(80);
           if (ev?.target === host || host.contains?.(ev?.target)) return;
           if (closeAll()) {
             try { w.__agPulseExternalBridge?.({ event: 'card' }); } catch {}

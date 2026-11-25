@@ -694,10 +694,14 @@
     if (!group || typeof group !== 'object') return 'other';
     const w5 = group.windows?.['5h']?.id || group.fiveHour?.id || '';
     const ww = group.windows?.weekly?.id || group.weekly?.id || '';
-    const hay = `${group.id || ''} ${group.name || ''} ${group.description || ''} ${w5} ${ww}`.toLowerCase();
-    if (/argon|wtu/.test(hay)) return 'gemini-argon';
-    if (/claude|anthropic|gpt|openai/.test(hay)) return 'claude';
-    if (/gemini|google/.test(hay)) return 'gemini';
+    const idName = `${group.id || ''} ${group.name || ''} ${w5} ${ww}`.toLowerCase();
+    if (/argon|wtu/.test(idName)) return 'gemini-argon';
+    if (/claude|anthropic|gpt|openai|(?:^|\s)3p(?:\s|$|-)/.test(idName)) return 'claude';
+    if (/gemini|google/.test(idName)) return 'gemini';
+    const desc = String(group.description || '').toLowerCase();
+    if (/claude|anthropic|gpt|openai/.test(desc)) return 'claude';
+    if (/gemini|google/.test(desc)) return 'gemini';
+    if (/argon|wtu/.test(desc)) return 'gemini-argon';
     return 'other';
   }
 
@@ -732,6 +736,30 @@
     return out;
   }
 
+  function normalizeModelMatchKey(raw) {
+    return String(raw || '')
+      .toLowerCase()
+      .replace(/^select model,\s*current:\s*/i, '')
+      .replace(/\b(?:extra\s+high|xhigh|high|medium|med|low|minimal|fast|thinking|off)\b/g, ' ')
+      .replace(/[()\[\]]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function groupMatchesModelDescription(group, normModel) {
+    if (!normModel || normModel.length < 3) return false;
+    const rawDesc = String(group?.description || '');
+    if (!rawDesc) return false;
+    const colonIdx = rawDesc.indexOf(':');
+    const body = colonIdx >= 0 ? rawDesc.slice(colonIdx + 1) : rawDesc;
+    const entries = body.split(/[,;\n]+/).map((s) => normalizeModelMatchKey(s)).filter((s) => s.length >= 3);
+    for (let i = 0; i < entries.length; i++) {
+      const e = entries[i];
+      if (normModel === e || normModel.startsWith(e + ' ') || e.startsWith(normModel + ' ')) return true;
+    }
+    return false;
+  }
+
   function chooseQuotaGroup(groups, models, selectedId) {
     const list = Array.isArray(groups) ? groups.filter((g) => g && typeof g === 'object') : [];
     if (!list.length) return null;
@@ -740,15 +768,22 @@
       if (hit) return hit;
     }
     const modelStr = (Array.isArray(models) ? models.join(' ') : String(models || '')).toLowerCase();
+    const normModel = normalizeModelMatchKey(modelStr);
     if (/argon/.test(modelStr)) {
       const argon = list.find((g) => quotaGroupKind(g) === 'gemini-argon');
       if (argon) return argon;
+    }
+    if (normModel) {
+      const descHit = list.find((g) => groupMatchesModelDescription(g, normModel));
+      if (descHit) return descHit;
+    }
+    if (/argon/.test(modelStr)) {
       const gem = list.find((g) => quotaGroupKind(g) === 'gemini');
       if (gem) return gem;
-    } else if (/claude|anthropic|sonnet|opus|haiku|gpt|openai|o1|o3|o4/.test(modelStr)) {
+    } else if (/claude|anthropic|sonnet|opus|haiku|gpt|openai|\bo[134]\b/.test(modelStr)) {
       const cld = list.find((g) => quotaGroupKind(g) === 'claude');
       if (cld) return cld;
-    } else if (/gemini|carbon|hydrogen|pro|flash/.test(modelStr)) {
+    } else if (/gemini|neon|carbon|hydrogen|orchestrator|\bpro\b|flash/.test(modelStr)) {
       const gem = list.find((g) => quotaGroupKind(g) === 'gemini');
       if (gem) return gem;
       const argon = list.find((g) => quotaGroupKind(g) === 'gemini-argon');
