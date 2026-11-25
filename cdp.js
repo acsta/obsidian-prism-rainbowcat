@@ -92,7 +92,7 @@ const VALIDATORS = {
   composer: ['on', 'off'],
   placeholderStyle: ['studio', 'host'],
   promptStyle: ['studio', 'host'],
-  mascot: ['crab', 'minis', 'dual', 'off'],
+  mascot: ['cat', 'crab', 'minis', 'dual', 'off'],
   logoInk: ['accent', 'foreground'],
   sidebarRestyle: 'boolean',
   sidebar: ['on', 'off'],
@@ -101,7 +101,7 @@ const VALIDATORS = {
   smoothCaret: 'boolean',
   scrollBottomMotion: ['smooth', 'instant'],
   contextMenu: 'boolean',
-  accentTone: ['follow', 'cobalt', 'iris', 'amber', 'mono'],
+  accentTone: ['follow', 'cobalt', 'iris', 'amber', 'mono', 'rainbow'],
   cornerStyle: ['sharp', 'balanced', 'soft'],
   codeFont: ['default', 'jetbrains', 'cascadia', 'sfmono'],
   codeLigatures: 'boolean',
@@ -637,6 +637,8 @@ function isMainAntigravityProcessSignature(imageName, commandLine = '') {
     normCmd.includes('/daemon/main.mjs') ||
     normCmd.includes('/watch.js') ||
     normCmd.includes('--run-guard') ||
+    normCmd.includes('/contents/frameworks/') ||
+    normCmd.includes('chrome_crashpad_handler') ||
     normCmd.includes('antigravity-tools') ||
     normCmd.includes('uninstall antigravity')
   ) {
@@ -1087,16 +1089,28 @@ function parsePosixPsHostCandidates(psStdout, nowMs = Date.now()) {
     const cmdLine = m[3].trim();
     if (!cmdLine.toLowerCase().includes('antigravity')) continue;
     let firstExe = cmdLine;
-    const macAppIdx = cmdLine.indexOf('.app/Contents/MacOS/');
+    const lowerCmd = cmdLine.toLowerCase();
+    const macAppIdx = lowerCmd.indexOf('.app/contents/macos/');
+    const macContentsIdx = lowerCmd.indexOf('.app/contents/');
     if (macAppIdx > 0) {
-      const slashAfter = cmdLine.indexOf(' ', macAppIdx + 20);
-      firstExe = slashAfter > 0 ? cmdLine.slice(0, slashAfter) : cmdLine;
+      const binStart = macAppIdx + 20;
+      const afterBin = cmdLine.slice(binStart);
+      if (/^antigravity(?:\s|$)/i.test(afterBin)) {
+        firstExe = cmdLine.slice(0, binStart + 'antigravity'.length);
+      } else {
+        const flagMatch = /\s--?/.exec(afterBin);
+        firstExe = flagMatch ? cmdLine.slice(0, binStart + flagMatch.index).trim() : cmdLine;
+      }
+    } else if (macContentsIdx > 0) {
+      const afterContents = cmdLine.slice(macContentsIdx + 14);
+      const flagMatch = /\s--?/.exec(afterContents);
+      firstExe = flagMatch ? cmdLine.slice(0, macContentsIdx + 14 + flagMatch.index).trim() : cmdLine;
     } else {
       const spIdx = cmdLine.indexOf(' ');
       firstExe = spIdx > 0 ? cmdLine.slice(0, spIdx) : cmdLine;
     }
     let appBundlePath = firstExe;
-    const appEnd = firstExe.indexOf('.app/');
+    const appEnd = firstExe.toLowerCase().indexOf('.app/');
     if (appEnd > 0) {
       appBundlePath = firstExe.slice(0, appEnd + 4);
     }
@@ -9028,6 +9042,7 @@ module.exports = {
   ensureAntigravityShortcutsCdpFlag,
   ensureAntigravityShortcutsCdpFlagAsync,
   restoreAntigravityShortcutsCdpFlag,
+  parsePosixPsHostCandidates,
   detectRunningAntigravityHostSync,
   detectRunningAntigravityHost,
   getRelaunchPromptStatePaths,

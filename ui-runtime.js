@@ -103,11 +103,11 @@
       out[sKey] = on ? 'on' : 'off';
     }
     out.placeholderStyle = out.promptStyle = (out.placeholderStyle ?? out.promptStyle) === 'host' ? 'host' : 'studio';
-    out.mascot = out.mascot === 'off' || out.mascot === false ? 'off' : out.mascot === 'minis' ? 'minis' : 'crab';
+    out.mascot = out.mascot === 'off' || out.mascot === false ? 'off' : out.mascot === 'minis' ? 'minis' : out.mascot === 'cat' ? 'cat' : 'crab';
     for (const k of ['sidebarCompact', 'codeLigatures']) out[k] = out[k] === true || out[k] === 'on';
     for (const k of ['sidebarNavFold', 'sidebarStudio', 'autoUpdate']) out[k] = out[k] === 'on' || out[k] === true ? 'on' : 'off';
     for (const k of ['smoothCaret', 'contextMenu']) out[k] = out[k] === undefined ? true : out[k] !== false && out[k] !== 'off';
-    out.accentTone = pickOf(out.accentTone, 'follow|cobalt|iris|amber|mono', 'follow');
+    out.accentTone = pickOf(out.accentTone, 'follow|cobalt|iris|amber|mono|rainbow', 'follow');
     out.cornerStyle = pickOf(out.cornerStyle, 'sharp|balanced|soft', 'balanced');
     out.scrollBottomMotion = out.scrollBottomMotion === 'instant' ? 'instant' : 'smooth';
     out.codeFont = pickOf(out.codeFont, 'default|jetbrains|cascadia|sfmono', 'default');
@@ -360,7 +360,7 @@
   const getHostLocalizationMode = () => pickOf(cfg.hostLocalization, 'on|off', 'auto');
   const getThoughtTranslateMode = () => pickOf(cfg.thoughtTranslate, 'machine|ai', 'off');
   const getThoughtTriggerTiming = () => (cfg.thoughtTrigger === 'expand' ? 'expand' : 'preload');
-  const getAccentTone = () => pickOf(cfg.accentTone, 'cobalt|iris|amber|mono', 'follow');
+  const getAccentTone = () => pickOf(cfg.accentTone, 'cobalt|iris|amber|mono|rainbow', 'follow');
   const getCornerStyle = () => pickOf(cfg.cornerStyle, 'sharp|soft', 'balanced');
   const getCodeFont = () => pickOf(cfg.codeFont, 'jetbrains|cascadia|sfmono', 'default');
   const isCodeLigaturesEnabled = () => cfg.codeLigatures === true || cfg.codeLigatures === 'on';
@@ -619,6 +619,7 @@
       leapOffsetY: 0,
       popoverRightWidth: 0,
       miniPileEnabled: cfg.mascot === 'minis',
+      catOnly: cfg.mascot === 'cat',
       orchestrator: isOrch,
       reducedMotion: motionReduced(),
     };

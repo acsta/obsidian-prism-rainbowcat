@@ -208,6 +208,7 @@ test('crystal-prism-core 2D fallback with reduceMotion draws once and skips 100%
 
 test('crystal-prism-core & model-glyph-crystal honor accentTone (mono/cobalt/iris/amber/warm), ambientIntensity=0 0fps sleep, and dynamic motionLevel', () => {
   const modelGlyphMod = require('../model-glyph-crystal.js');
+  assert.equal(crystalCore.resolveCrystalAccentCode('rainbow'), 6);
   assert.equal(crystalCore.resolveCrystalAccentCode('mono'), 5);
   assert.equal(crystalCore.resolveCrystalAccentCode('amber'), 4);
   assert.equal(crystalCore.resolveCrystalAccentCode('iris'), 3);

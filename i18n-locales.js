@@ -628,6 +628,7 @@
     optToneIris: ['鸢尾紫', '鳶尾紫', '鳶尾紫', 'Iris', 'アイリス'],
     optToneAmber: ['琥珀金', '琥珀金', '琥珀金', 'Amber', 'アンバー'],
     optToneMono: ['极简单色', '極簡單色', '極簡單色', 'Monochrome', 'モノクロ'],
+    optToneRainbow: ['彩虹渐变', '彩虹漸變', '彩虹漸變', 'Rainbow', 'レインボー'],
 
     setCornerStyleTitle: ['界面圆角风格', '介面圓角風格', '介面圓角風格', 'Corner Radius Style', '角丸スタイル'],
     setCornerStyleDesc: [

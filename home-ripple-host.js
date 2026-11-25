@@ -47,7 +47,7 @@
         (typeof getAccentTone === 'function' ? getAccentTone() : null) ||
         html?.getAttribute?.('data-ag-cs-accent') ||
         'follow';
-      if (rawTone === 'mono' || rawTone === 'cobalt' || rawTone === 'iris' || rawTone === 'amber') {
+      if (rawTone === 'mono' || rawTone === 'cobalt' || rawTone === 'iris' || rawTone === 'amber' || rawTone === 'rainbow') {
         return rawTone;
       }
       const pal = html?.getAttribute?.('data-ag-cs-palette') || 'obsidian';
@@ -61,7 +61,9 @@
       const dark = isDarkTheme();
       const spec = resolveSpectrumMode(dark);
       const defaultWaveLight =
-        spec === 'mono'
+        spec === 'rainbow'
+          ? [124, 58, 237]
+          : spec === 'mono'
           ? [51, 65, 85]
           : spec === 'iris'
           ? [124, 58, 237]

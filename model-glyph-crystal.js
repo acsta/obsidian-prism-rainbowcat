@@ -187,7 +187,7 @@
     const resolveCrystalAccentMode = (dark) => {
       const html = getRootHtml();
       const tone = ga(html, 'data-ag-cs-accent') || 'follow';
-      if (tone === 'mono' || tone === 'cobalt' || tone === 'iris' || tone === 'amber') return tone;
+      if (tone === 'mono' || tone === 'cobalt' || tone === 'iris' || tone === 'amber' || tone === 'rainbow') return tone;
       const pal = ga(html, 'data-ag-cs-palette') || 'obsidian';
       if (pal === 'warm' || pal === 'claude') return 'warm';
       if (!dark && pal === 'obsidian' && ga(html, 'data-ag-cs-light-preset') === 'alabaster') return 'warm';

@@ -794,6 +794,7 @@ test('style.css covers all 6 Wave-2 config hooks, eliminates double borders & en
     'data-ag-cs-accent="iris"',
     'data-ag-cs-accent="amber"',
     'data-ag-cs-accent="mono"',
+    'data-ag-cs-accent="rainbow"',
     'data-ag-cs-corners="sharp"',
     'data-ag-cs-corners="balanced"',
     'data-ag-cs-corners="soft"',

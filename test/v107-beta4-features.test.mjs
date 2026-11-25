@@ -618,6 +618,22 @@ test('v1.0.7-beta.4: Issue #38 macOS relaunch normalizes .app bundle, strips ELE
   assert.ok(sh.includes('Contents/MacOS/'));
   assert.ok(sh.includes('open -na "$app_path" --args --remote-debugging-port=0'));
   assert.ok(sh.includes('on run argv'), 'AppleScript quit must use argv instead of string interpolation');
+
+  const psSample = [
+    '  831 01-00:07:28 /Applications/Antigravity IDE.app/Contents/MacOS/Electron',
+    ' 1162 01-00:07:21 /Applications/Antigravity IDE.app/Contents/Frameworks/Electron Framework.framework/Helpers/chrome_crashpad_handler --no-rate-limit --database=/tmp/Crashpad',
+    '76595 00:10:00 /Applications/Antigravity.app/Contents/MacOS/Antigravity',
+    '76600 00:09:59 /Applications/Antigravity.app/Contents/Frameworks/Antigravity Helper.app/Contents/MacOS/Antigravity Helper --type=utility',
+  ].join('\n');
+  const candidates = cdp.parsePosixPsHostCandidates(psSample, 2000000000000);
+  assert.equal(candidates.some((c) => c.pid === 1162 && cdp.isMainAntigravityProcessSignature(c.imageName, c.commandLine)), false);
+  assert.equal(candidates.some((c) => c.pid === 76595 && cdp.isMainAntigravityProcessSignature(c.imageName, c.commandLine)), true);
+  const selected = cdp.detectRunningAntigravityHostSync({
+    probeProcesses: () => cdp.parsePosixPsHostCandidates(psSample, 2000000000000),
+    nowMs: 2000000000000,
+  });
+  assert.equal(selected?.pid, 76595);
+  assert.equal(selected?.exePath, '/Applications/Antigravity.app');
 });
 
 test('v1.0.7-beta.4: ui-runtime immediately destroys host-i18n on off/en, shows external zh hint, and toggles mascot peek on takeover/queued/model-menu', () => {

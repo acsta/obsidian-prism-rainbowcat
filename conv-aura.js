@@ -160,7 +160,7 @@
   function computeConvAuraOptics(phase, phaseAt, now, dark, wasRunning, out = {}) {
     const idleStr = dark ? 0.21 : 0.52;
     const runBase = dark ? 0.31 : 0.64;
-    const idlePrism = dark ? 0.14 : 0.26;
+    const idlePrism = dark ? 0.14 : 0.30;
     if (phase === 'start') {
       const p = Math.max(0, Math.min(1, (now - phaseAt) / CONV_AURA_START_MS));
       const s = Math.sin(p * Math.PI);
@@ -290,7 +290,7 @@
     return fillOptics(
       out,
       idleStr + (dark ? 0.024 : 0.038) * Math.sin(now * 0.0018),
-      scaleConvReach(0.16),
+      scaleConvReach(dark ? 0.16 : 0.22),
       idlePrism,
       0,
       0.72,

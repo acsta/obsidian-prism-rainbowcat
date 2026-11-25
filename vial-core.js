@@ -534,6 +534,13 @@
         vec3 crit = mix(CRIT_DEEP, CRIT_SYS, smoothstep(0.0, 0.36, h));
         crit = mix(crit, CRIT_CONV, smoothstep(0.30, 0.76, h));
         crit = mix(crit, CRIT_TOOL, smoothstep(0.68, 1.00, h));
+        if (u_accent > 3.5) {
+          vec3 rbSea = mix(vec3(0.984, 0.443, 0.522), vec3(0.984, 0.749, 0.141), smoothstep(0.0, 0.25, h));
+          rbSea = mix(rbSea, vec3(0.204, 0.827, 0.600), smoothstep(0.22, 0.54, h));
+          rbSea = mix(rbSea, vec3(0.220, 0.741, 0.973), smoothstep(0.50, 0.78, h));
+          rbSea = mix(rbSea, vec3(0.659, 0.333, 0.969), smoothstep(0.74, 1.00, h));
+          return mix(rbSea, crit, u_critical);
+        }
         if (u_accent > 2.5) {
           vec3 monoSea = mix(vec3(0.110, 0.115, 0.128), vec3(0.310, 0.320, 0.345), smoothstep(0.0, 0.40, h));
           monoSea = mix(monoSea, vec3(0.580, 0.595, 0.625), smoothstep(0.34, 0.78, h));
@@ -563,6 +570,13 @@
       vec3 dayCrit = mix(DAY_VIOLET * 0.86, DAY_VIOLET, smoothstep(0.0, 0.34, h));
       dayCrit = mix(dayCrit, DAY_AMBER_RED, smoothstep(0.28, 0.80, h));
       dayCrit = mix(dayCrit, vec3(0.960, 0.560, 0.065), smoothstep(0.76, 1.00, h));
+      if (u_accent > 3.5) {
+        vec3 dayRb = mix(vec3(0.882, 0.114, 0.282), vec3(0.851, 0.467, 0.024), smoothstep(0.0, 0.25, h));
+        dayRb = mix(dayRb, vec3(0.020, 0.588, 0.412), smoothstep(0.22, 0.54, h));
+        dayRb = mix(dayRb, vec3(0.008, 0.518, 0.780), smoothstep(0.50, 0.78, h));
+        dayRb = mix(dayRb, vec3(0.486, 0.227, 0.929), smoothstep(0.74, 1.00, h));
+        return mix(dayRb, dayCrit, u_critical);
+      }
       if (u_accent > 2.5) {
         vec3 dayMono = mix(vec3(0.153, 0.153, 0.165), vec3(0.322, 0.322, 0.357), smoothstep(0.0, 0.50, h));
         dayMono = mix(dayMono, vec3(0.455, 0.455, 0.490), smoothstep(0.45, 1.00, h));
@@ -872,10 +886,10 @@
       layerOver(col, alpha, rimCol, rimMask * mix(0.82, 0.84, u_dark));
 
       // 8. Mono 钛银单色纯化（消除蓝光/彩虹折射残留）+ 动态微米抖动防 8-bit 梯度色带
-      if (u_accent > 2.5 && u_critical < 0.5) {
+      if (u_accent > 2.5 && u_accent < 3.5 && u_critical < 0.5) {
         float monoLum = dot(col, vec3(0.299, 0.587, 0.114));
         col = mix(col, vec3(monoLum * 0.99, monoLum, monoLum * 1.01), 0.94);
-      } else if (u_accent > 0.5 && u_dark <= 0.5 && u_critical < 0.5) {
+      } else if (u_accent > 0.5 && u_accent < 3.5 && u_dark <= 0.5 && u_critical < 0.5) {
         // 白昼 iris / amber 模式下同步玻璃侧沿与液面刀锋色相
         float lum = dot(col, vec3(0.299, 0.587, 0.114));
         vec3 toneTint = u_accent > 1.5 ? vec3(lum * 1.24, lum * 0.88, lum * 0.52) : vec3(lum * 0.96, lum * 0.78, lum * 1.28);
@@ -1236,13 +1250,15 @@
 
       const tone = st.accentTone || 'cobalt';
       const activeCols =
-        tone === 'mono'
-          ? isDark ? ['#71717A', '#A1A1AA', '#E4E4E7'] : ['#3F3F46', '#52525B', '#71717A']
-          : tone === 'amber'
-            ? isDark ? ['#B45309', '#D97706', '#FBBF24'] : ['#92400E', '#B45309', '#D97706']
-            : tone === 'iris'
-              ? isDark ? ['#6D28D9', '#8B5CF6', '#C4B5FD'] : ['#5B21B6', '#7C3AED', '#9333EA']
-              : [isDark ? '#2A6EE8' : '#1D4ED8', isDark ? '#3186FF' : '#2563EB', isDark ? '#5CC6FC' : '#0284C7'];
+        tone === 'rainbow'
+          ? isDark ? ['#FB7185', '#34D399', '#A855F7'] : ['#E11D48', '#059669', '#7C3AED']
+          : tone === 'mono'
+            ? isDark ? ['#71717A', '#A1A1AA', '#E4E4E7'] : ['#3F3F46', '#52525B', '#71717A']
+            : tone === 'amber'
+              ? isDark ? ['#B45309', '#D97706', '#FBBF24'] : ['#92400E', '#B45309', '#D97706']
+              : tone === 'iris'
+                ? isDark ? ['#6D28D9', '#8B5CF6', '#C4B5FD'] : ['#5B21B6', '#7C3AED', '#9333EA']
+                : [isDark ? '#2A6EE8' : '#1D4ED8', isDark ? '#3186FF' : '#2563EB', isDark ? '#5CC6FC' : '#0284C7'];
       const majorSpecs = [
         { frac: 0.25, label: formatTickTokens(maxTok * 0.25), activeCol: activeCols[0] },
         { frac: 0.5, label: formatTickTokens(maxTok * 0.5), activeCol: activeCols[1] },
@@ -1262,8 +1278,10 @@
         if (reached) {
           ctx.fillStyle = st.critical
             ? 'rgba(234, 88, 12, 0.20)'
-            : tone === 'mono'
-              ? 'rgba(161, 161, 170, 0.20)'
+            : tone === 'rainbow'
+              ? 'rgba(192, 132, 252, 0.22)'
+              : tone === 'mono'
+                ? 'rgba(161, 161, 170, 0.20)'
               : tone === 'amber'
                 ? 'rgba(217, 119, 6, 0.18)'
                 : tone === 'iris'
@@ -1349,7 +1367,9 @@
         ? isDark
           ? 'rgba(255, 236, 168, 0.94)'
           : 'rgba(234, 88, 12, 0.96)'
-        : tone === 'mono'
+        : tone === 'rainbow'
+          ? isDark ? 'rgba(244, 114, 182, 0.94)' : 'rgba(124, 58, 237, 0.96)'
+          : tone === 'mono'
           ? isDark ? 'rgba(244, 244, 245, 0.94)' : 'rgba(39, 39, 42, 0.96)'
           : tone === 'amber'
             ? isDark ? 'rgba(253, 224, 71, 0.94)' : 'rgba(180, 83, 9, 0.96)'
@@ -1657,7 +1677,7 @@
         gl.uniform1f(u.tilt, snap.tiltAngle);
         gl.uniform3fv(u.tint, tintVec);
         gl.uniform1f(u.camp, st.camp === 'claude' ? 1.0 : 0.0);
-        const accentNum = st.accentTone === 'mono' ? 3.0 : st.accentTone === 'amber' ? 2.0 : st.accentTone === 'iris' ? 1.0 : 0.0;
+        const accentNum = st.accentTone === 'rainbow' ? 4.0 : st.accentTone === 'mono' ? 3.0 : st.accentTone === 'amber' ? 2.0 : st.accentTone === 'iris' ? 1.0 : 0.0;
         if (u.accent !== null && u.accent !== undefined) gl.uniform1f(u.accent, accentNum);
         gl.uniform1f(u.critical, st.critical ? 1.0 : 0.0);
         gl.uniform1f(u.pendant, snap.streaming ? snap.pendantSize : 0.0);

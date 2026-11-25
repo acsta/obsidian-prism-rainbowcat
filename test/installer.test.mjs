@@ -424,7 +424,7 @@ test('installer manifest validators match inject.js, cdp.js, and config.example.
   assert.equal(exampleCfg.effortSliderModule, 'auto');
 
   // Wave 2: 6 new settings + host-workbench-enhancer.js registration parity
-  assert.deepEqual(VALIDATORS.accentTone, ['follow', 'cobalt', 'iris', 'amber', 'mono']);
+  assert.deepEqual(VALIDATORS.accentTone, ['follow', 'cobalt', 'iris', 'amber', 'mono', 'rainbow']);
   assert.deepEqual(VALIDATORS.cornerStyle, ['sharp', 'balanced', 'soft']);
   assert.deepEqual(VALIDATORS.codeFont, ['default', 'jetbrains', 'cascadia', 'sfmono']);
   assert.equal(VALIDATORS.codeLigatures, 'boolean');

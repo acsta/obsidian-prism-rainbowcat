@@ -104,6 +104,25 @@
         [1, 'rgba(148,163,184,0)'],
       ],
     },
+    rainbow: {
+      dark: [
+        [0, 'rgba(255,255,255,0.96)'],
+        [0.20, '#FB7185'],
+        [0.40, '#FBBF24'],
+        [0.60, '#34D399'],
+        [0.80, '#38BDF8'],
+        [0.94, '#A855F7'],
+        [1, 'rgba(168,85,247,0)'],
+      ],
+      light: [
+        [0, 'rgba(244,114,182,0.72)'],
+        [0.25, 'rgba(251,146,60,0.68)'],
+        [0.50, 'rgba(45,212,191,0.70)'],
+        [0.75, 'rgba(56,189,248,0.74)'],
+        [0.92, 'rgba(167,139,250,0.74)'],
+        [1, 'rgba(167,139,250,0)'],
+      ],
+    },
   };
 
   const parseAmbientScale = (raw) =>
@@ -165,7 +184,7 @@
     function resolveRimToneKey(dark) {
       const html = getRootHtml();
       const rawTone = getAccentTone?.() || html?.getAttribute?.('data-ag-cs-accent') || 'follow';
-      if (rawTone === 'mono' || rawTone === 'cobalt' || rawTone === 'iris' || rawTone === 'amber') {
+      if (rawTone === 'mono' || rawTone === 'cobalt' || rawTone === 'iris' || rawTone === 'amber' || rawTone === 'rainbow') {
         return rawTone;
       }
       const pal = html?.getAttribute?.('data-ag-cs-palette') || 'obsidian';

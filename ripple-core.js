@@ -12,7 +12,7 @@
     cloudCoverage: 1,
     cloudSoftness: 0.1,
     cloudDrift: 8,
-    idleAlphaLight: 0.172,
+    idleAlphaLight: 0.068,
     idleAlphaDark: 0.13,
     speedNear: 1100,
     speedFar: 80,
@@ -152,6 +152,12 @@
       [203, 213, 225],
       [241, 245, 249],
     ],
+    6: [
+      [251, 113, 133],
+      [251, 191, 36],
+      [52, 211, 153],
+      [56, 189, 248],
+    ],
   };
   const GLYPH_SPECTRA_LIGHT = {
     0: SPECTRUM_LIGHT,
@@ -184,6 +190,12 @@
       [51, 65, 85],
       [71, 85, 105],
       [100, 116, 139],
+    ],
+    6: [
+      [244, 102, 152],
+      [250, 152, 104],
+      [68, 206, 194],
+      [146, 110, 248],
     ],
   };
   function spectrumRgb(t, out, dark = true, spectrumCode = 0) {
@@ -649,7 +661,10 @@ vec3 spectrum(float t, float light, float mode) {
 float f = fract(t) * 4.0;
 vec3 c0 = COBALT; vec3 c1 = IRIS; vec3 c2 = CORAL; vec3 c3 = AMBER;
 vec3 l0 = COBALT_L; vec3 l1 = IRIS_L; vec3 l2 = CORAL_L; vec3 l3 = AMBER_L;
-if (mode > 4.5) {
+if (mode > 5.5) {
+c0 = vec3(0.984, 0.443, 0.522); c1 = vec3(0.984, 0.749, 0.141); c2 = vec3(0.204, 0.827, 0.600); c3 = vec3(0.220, 0.741, 0.973);
+l0 = vec3(0.957, 0.400, 0.596); l1 = vec3(0.980, 0.596, 0.408); l2 = vec3(0.267, 0.808, 0.761); l3 = vec3(0.573, 0.431, 0.973);
+} else if (mode > 4.5) {
 c0 = vec3(0.392, 0.455, 0.545); c1 = vec3(0.580, 0.639, 0.722); c2 = vec3(0.796, 0.835, 0.882); c3 = vec3(0.945, 0.961, 0.976);
 l0 = vec3(0.118, 0.161, 0.231); l1 = vec3(0.200, 0.255, 0.333); l2 = vec3(0.278, 0.333, 0.412); l3 = vec3(0.392, 0.455, 0.545);
 } else if (mode > 3.5) {
@@ -1527,6 +1542,7 @@ color = vec4(rgb * a, a);
     amber: 4,
     mono: 5,
     graphite: 5,
+    rainbow: 6,
   });
 
   const HORIZON_SEMANTIC_MODES = Object.freeze({
@@ -1541,7 +1557,7 @@ color = vec4(rgb * a, a);
 
   function resolveHorizonSpectrumCode(mode) {
     if (typeof mode === 'number' && Number.isFinite(mode)) {
-      return Math.max(0, Math.min(5, Math.round(mode)));
+      return Math.max(0, Math.min(6, Math.round(mode)));
     }
     const key = String(mode || '').trim().toLowerCase();
     return Object.prototype.hasOwnProperty.call(HORIZON_SPECTRUM_MODES, key)
@@ -1633,127 +1649,19 @@ uniform float uSpectrum;
 uniform float uSemantic;
 out vec4 outColor;
 
-float hash(vec2 p) {
-p = fract(p * vec2(123.34, 456.21));
-p += dot(p, p + 45.32);
-return fract(p.x * p.y);
-}
-float ign(vec2 p) {
-return fract(52.9829189 * fract(dot(p, vec2(0.06711056, 0.00583715))));
-}
-float noise(vec2 p) {
-vec2 i = floor(p);
-vec2 f = fract(p);
-vec2 u = f * f * (3.0 - 2.0 * f);
-return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), u.x),
-mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), u.x), u.y);
-}
-float fbm(vec2 p) {
-float v = 0.0;
-float a = 0.5;
-for (int i = 0; i < 4; i++) {
-v += a * noise(p);
-p = p * 2.03 + 17.1;
-a *= 0.5;
-}
-return v;
-}
-float halftone(vec2 px, vec2 res, float y, float t, float cell, float msk) {
-float persp = 1.0 / (0.55 + y);
-vec2 g = vec2((px.x - res.x * 0.5) * persp, res.y * log(0.55 + y));
-g.y += 10.0 * sin(g.x * 0.007 + t * 0.42) + 3.2 * sin(g.x * 0.019 - t * 0.28) - t * 1.5;
-vec2 uvCell = g / cell;
-vec2 c = fract(uvCell) - 0.5;
-float dist = length(c);
-float aa = clamp(fwidth(dist) * 1.15, 0.035, 0.14);
-float r = 0.08 + 0.16 * msk;
-return (1.0 - smoothstep(r - aa, r + aa * 0.35, dist)) * msk;
-}
-const vec3 DEEP_SPACE_BLUE = vec3(0.059, 0.090, 0.227);
-const vec3 ZENITH_BLUE = vec3(0.192, 0.525, 1.000);
-const vec3 SKY_BLUE = vec3(0.361, 0.776, 0.988);
-const vec3 HAZE_BLUE = vec3(0.733, 0.886, 1.000);
-const vec3 PRISM_COBALT = vec3(0.259, 0.522, 0.957);
-const vec3 PRISM_IRIS = vec3(0.608, 0.447, 0.796);
-const vec3 PRISM_CORAL = vec3(0.918, 0.263, 0.208);
-const vec3 PRISM_AMBER = vec3(0.984, 0.737, 0.016);
-const vec3 ICE_MIST = vec3(0.839, 0.933, 1.000);
-const vec3 DAY_COBALT = vec3(0.145, 0.388, 0.922);
-const vec3 DAY_IRIS = vec3(0.486, 0.227, 0.929);
-const vec3 DAY_CORAL = vec3(0.918, 0.263, 0.208);
-const vec3 DAY_AMBER = vec3(0.851, 0.467, 0.024);
-const vec3 DAY_CERULEAN = vec3(0.008, 0.518, 0.780);
-const vec3 WARM_DARK_A = vec3(0.580, 0.290, 0.204);
-const vec3 WARM_DARK_B = vec3(0.851, 0.467, 0.341);
-const vec3 WARM_DARK_C = vec3(0.933, 0.682, 0.365);
-const vec3 DAY_TERRACOTTA = vec3(0.761, 0.349, 0.204);
-const vec3 DAY_SIENNA = vec3(0.635, 0.247, 0.141);
-const vec3 MONO_DARK_LO = vec3(0.620, 0.659, 0.725);
-const vec3 MONO_DARK_HI = vec3(0.847, 0.878, 0.929);
-const vec3 MONO_LIGHT_LO = vec3(0.267, 0.318, 0.400);
-const vec3 MONO_LIGHT_HI = vec3(0.416, 0.475, 0.569);
-const vec3 SEM_AMBER_D = vec3(0.949, 0.722, 0.294);
-const vec3 SEM_AMBER_L = vec3(0.851, 0.467, 0.024);
-const vec3 SEM_CORAL_D = vec3(0.851, 0.345, 0.365);
-const vec3 SEM_CORAL_L = vec3(0.863, 0.149, 0.149);
-const vec3 SEM_JADE_D = vec3(0.314, 0.745, 0.576);
-const vec3 SEM_JADE_L = vec3(0.020, 0.588, 0.412);
-vec3 blueLoop(float x) {
-float t = fract(x) * 4.0;
-float f = smoothstep(0.0, 1.0, fract(t));
-vec3 indigo = mix(DEEP_SPACE_BLUE, ZENITH_BLUE, 0.84);
-vec3 ice = mix(SKY_BLUE, HAZE_BLUE, 0.35);
-if (t < 1.0) return mix(ZENITH_BLUE, indigo, f);
-if (t < 2.0) return mix(indigo, SKY_BLUE, f);
-if (t < 3.0) return mix(SKY_BLUE, ice, f);
-return mix(ice, ZENITH_BLUE, f);
-}
-vec3 prismLoop(float x) {
-float t = fract(x) * 5.0;
-float f = smoothstep(0.0, 1.0, fract(t));
-if (t < 1.0) return mix(PRISM_COBALT, PRISM_IRIS, f);
-if (t < 2.0) return mix(PRISM_IRIS, PRISM_CORAL, f);
-if (t < 3.0) return mix(PRISM_CORAL, PRISM_AMBER, f);
-if (t < 4.0) return mix(PRISM_AMBER, SKY_BLUE, f);
-return mix(SKY_BLUE, PRISM_COBALT, f);
-}
-vec3 daylightInkLoop(float x) {
-float t = fract(x) * 5.0;
-float f = smoothstep(0.0, 1.0, fract(t));
-if (t < 1.0) return mix(DAY_COBALT, DAY_IRIS, f);
-if (t < 2.0) return mix(DAY_IRIS, DAY_CORAL, f);
-if (t < 3.0) return mix(DAY_CORAL, DAY_AMBER, f);
-if (t < 4.0) return mix(DAY_AMBER, DAY_CERULEAN, f);
-return mix(DAY_CERULEAN, DAY_COBALT, f);
-}
-vec3 spectrumBaseDark(float spec, float ph) {
-float w = 0.5 + 0.5 * sin(ph * 6.2831853);
-if (spec > 4.5) return mix(MONO_DARK_LO, MONO_DARK_HI, w);
-if (spec > 3.5) return mix(vec3(0.820, 0.545, 0.200), SEM_AMBER_D, w);
-if (spec > 2.5) return mix(vec3(0.440, 0.360, 0.820), PRISM_IRIS, w);
-if (spec > 1.5) return blueLoop(ph);
-if (spec > 0.5) return mix(WARM_DARK_A, WARM_DARK_B, 0.35 + 0.65 * w);
-return blueLoop(ph);
-}
-vec3 spectrumPrismDark(float spec, float ph) {
-float w = 0.5 + 0.5 * sin(ph * 6.2831853 + 1.1);
-if (spec > 4.5) return mix(MONO_DARK_LO, MONO_DARK_HI, w);
-if (spec > 3.5) return mix(SEM_AMBER_D, WARM_DARK_C, w);
-if (spec > 2.5) return mix(PRISM_IRIS, vec3(0.710, 0.560, 0.960), w);
-if (spec > 1.5) return mix(PRISM_COBALT, SKY_BLUE, w);
-if (spec > 0.5) return mix(WARM_DARK_B, WARM_DARK_C, w);
-return prismLoop(ph);
-}
-vec3 spectrumInkLight(float spec, float ph, float washPhase) {
-float w = 0.5 + 0.5 * sin(ph * 6.2831853);
-float sw = 0.5 + 0.5 * sin(washPhase);
-if (spec > 4.5) return mix(MONO_LIGHT_LO, MONO_LIGHT_HI, 0.5 * (w + sw));
-if (spec > 3.5) return mix(DAY_AMBER, vec3(0.706, 0.325, 0.035), w);
-if (spec > 2.5) return mix(DAY_IRIS, vec3(0.310, 0.275, 0.898), w);
-if (spec > 1.5) return mix(DAY_COBALT, DAY_CERULEAN, sw);
-if (spec > 0.5) return mix(DAY_TERRACOTTA, mix(DAY_AMBER, DAY_SIENNA, sw), 0.45 + 0.45 * w);
-return daylightInkLoop(ph);
-}
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(.06711056,.00583715))));}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);}
+float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p=p*2.03+17.1;a*=.5;}return v;}
+float halftone(vec2 px,vec2 res,float y,float t,float cell,float msk){float persp=1./(.55+y);vec2 g=vec2((px.x-res.x*.5)*persp,res.y*log(.55+y));g.y+=10.*sin(g.x*.007+t*.42)+3.2*sin(g.x*.019-t*.28)-t*1.5;float dist=length(fract(g/cell)-.5),aa=clamp(fwidth(dist)*1.15,.035,.14),r=.08+.16*msk;return(1.-smoothstep(r-aa,r+aa*.35,dist))*msk;}
+const vec3 DEEP_SPACE_BLUE=vec3(.059,.09,.227),ZENITH_BLUE=vec3(.192,.525,1.),SKY_BLUE=vec3(.361,.776,.988),HAZE_BLUE=vec3(.733,.886,1.),PRISM_COBALT=vec3(.259,.522,.957),PRISM_IRIS=vec3(.608,.447,.796),PRISM_CORAL=vec3(.918,.263,.208),PRISM_AMBER=vec3(.984,.737,.016),ICE_MIST=vec3(.839,.933,1.),DAY_COBALT=vec3(.145,.388,.922),DAY_IRIS=vec3(.486,.227,.929),DAY_CORAL=vec3(.918,.263,.208),DAY_AMBER=vec3(.851,.467,.024),DAY_CERULEAN=vec3(.008,.518,.78),WARM_DARK_A=vec3(.58,.29,.204),WARM_DARK_B=vec3(.851,.467,.341),WARM_DARK_C=vec3(.933,.682,.365),DAY_TERRACOTTA=vec3(.761,.349,.204),DAY_SIENNA=vec3(.635,.247,.141),MONO_DARK_LO=vec3(.62,.659,.725),MONO_DARK_HI=vec3(.847,.878,.929),MONO_LIGHT_LO=vec3(.267,.318,.4),MONO_LIGHT_HI=vec3(.416,.475,.569),SEM_AMBER_D=vec3(.949,.722,.294),SEM_AMBER_L=vec3(.851,.467,.024),SEM_CORAL_D=vec3(.851,.345,.365),SEM_CORAL_L=vec3(.863,.149,.149),SEM_JADE_D=vec3(.314,.745,.576),SEM_JADE_L=vec3(.02,.588,.412);
+vec3 blueLoop(float x){float t=fract(x)*4.,f=smoothstep(0.,1.,fract(t));vec3 indigo=mix(DEEP_SPACE_BLUE,ZENITH_BLUE,.84),ice=mix(SKY_BLUE,HAZE_BLUE,.35);return t<1.?mix(ZENITH_BLUE,indigo,f):t<2.?mix(indigo,SKY_BLUE,f):t<3.?mix(SKY_BLUE,ice,f):mix(ice,ZENITH_BLUE,f);}
+vec3 prismLoop(float x){float t=fract(x)*5.,f=smoothstep(0.,1.,fract(t));return t<1.?mix(PRISM_COBALT,PRISM_IRIS,f):t<2.?mix(PRISM_IRIS,PRISM_CORAL,f):t<3.?mix(PRISM_CORAL,PRISM_AMBER,f):t<4.?mix(PRISM_AMBER,SKY_BLUE,f):mix(SKY_BLUE,PRISM_COBALT,f);}
+vec3 daylightInkLoop(float x){float t=fract(x)*5.,f=smoothstep(0.,1.,fract(t));return t<1.?mix(DAY_COBALT,DAY_IRIS,f):t<2.?mix(DAY_IRIS,DAY_CORAL,f):t<3.?mix(DAY_CORAL,DAY_AMBER,f):t<4.?mix(DAY_AMBER,DAY_CERULEAN,f):mix(DAY_CERULEAN,DAY_COBALT,f);}
+vec3 rainbowLoop(float x,float l){float t=fract(x)*6.,f=smoothstep(0.,1.,fract(t));vec3 r0=l>.5?vec3(.965,.545,.695):vec3(.984,.443,.522),r1=l>.5?vec3(.985,.695,.545):vec3(.984,.749,.141),r2=l>.5?vec3(.30,.81,.78):vec3(.204,.827,.6),r3=l>.5?vec3(.32,.66,.98):vec3(.22,.741,.973),r4=l>.5?vec3(.59,.46,.97):vec3(.659,.333,.969),r5=l>.5?vec3(.89,.53,.90):vec3(.957,.447,.714);return t<1.?mix(r0,r1,f):t<2.?mix(r1,r2,f):t<3.?mix(r2,r3,f):t<4.?mix(r3,r4,f):t<5.?mix(r4,r5,f):mix(r5,r0,f);}
+vec3 spectrumBaseDark(float s,float ph){float w=.5+.5*sin(ph*6.2831853);return s>5.5?rainbowLoop(ph,0.):s>4.5?mix(MONO_DARK_LO,MONO_DARK_HI,w):s>3.5?mix(vec3(.82,.545,.2),SEM_AMBER_D,w):s>2.5?mix(vec3(.44,.36,.82),PRISM_IRIS,w):s>1.5?blueLoop(ph):s>.5?mix(WARM_DARK_A,WARM_DARK_B,.35+.65*w):blueLoop(ph);}
+vec3 spectrumPrismDark(float s,float ph){float w=.5+.5*sin(ph*6.2831853+1.1);return s>5.5?rainbowLoop(ph+.16,0.):s>4.5?mix(MONO_DARK_LO,MONO_DARK_HI,w):s>3.5?mix(SEM_AMBER_D,WARM_DARK_C,w):s>2.5?mix(PRISM_IRIS,vec3(.71,.56,.96),w):s>1.5?mix(PRISM_COBALT,SKY_BLUE,w):s>.5?mix(WARM_DARK_B,WARM_DARK_C,w):prismLoop(ph);}
+vec3 spectrumInkLight(float s,float ph,float wp){float w=.5+.5*sin(ph*6.2831853),sw=.5+.5*sin(wp);return s>5.5?rainbowLoop(ph,1.):s>4.5?mix(MONO_LIGHT_LO,MONO_LIGHT_HI,.5*(w+sw)):s>3.5?mix(DAY_AMBER,vec3(.706,.325,.035),w):s>2.5?mix(DAY_IRIS,vec3(.31,.275,.898),w):s>1.5?mix(DAY_COBALT,DAY_CERULEAN,sw):s>.5?mix(DAY_TERRACOTTA,mix(DAY_AMBER,DAY_SIENNA,sw),.45+.45*w):daylightInkLoop(ph);}
 vec3 semanticColor(float sem, float dark, float ph) {
 float w = 0.5 + 0.5 * sin(ph * 6.2831853);
 if (sem < 1.5) {
@@ -1793,7 +1701,7 @@ float waveB = sin(uv.x * 8.6 + t * 0.46 + 1.4);
 float curtain = 0.5 + 0.32 * waveA + 0.18 * waveB;
 float jut = (fbm(vec2(px.x / 220.0 + t * 0.18, t * 0.11)) - 0.5) * 0.68 + (waveA * 0.65 + waveB * 0.35) * 0.24;
 float h = y + stretch * (0.36 * jut + 0.11 * (fbm(vec2(px.x / 90.0 - t * 0.21, t * 0.14 + 3.0)) - 0.5));
-float glow = exp(-max(h, 0.0) * max(h, 0.0) * 4.0) * (0.76 + 0.42 * curtain) * mix(0.35, 1.0, smoothstep(0.0, 0.3, uv.x) * (1.0 - smoothstep(0.7, 1.0, uv.x)));
+float glow = exp(-max(h, 0.0) * max(h, 0.0) * 4.0) * (0.76 + 0.42 * curtain) * smoothstep(0.0, 0.14, uv.x) * (1.0 - smoothstep(0.86, 1.0, uv.x));
 float basePhase = px.x / max(res.x, 1.0) * 0.9 + t * 0.15 + 0.22 * fbm(q * 1.5);
 float semId = floor(uSemantic + 0.001);
 float semW = semId > 0.5 ? clamp(1.0 - (uSemantic - semId) / 0.98, 0.0, 1.0) : 0.0;
@@ -1808,7 +1716,7 @@ float surgeArc = 0.0;
 float surgeDy = 0.0;
 float chimeWave = 0.0;
 float chimePhase = 0.0;
-float effPrism = uSpectrum > 4.5 ? uPrism * 0.28 : uPrism;
+float effPrism = uSpectrum > 4.5 && uSpectrum < 5.5 ? uPrism * 0.28 : uPrism;
 if (effPrism > 0.0001 || abs(uSurge) > 0.0001) {
 vec3 pCol = sm(spectrumPrismDark(uSpectrum, pPhase), 1.0, pPhase, semId, semW);
 if (effPrism > 0.0001) {
@@ -1828,7 +1736,7 @@ float dy = y - frontY;
 float arc = (dy >= 0.0 ? exp(-dy * dy * 24.0) : exp(-dy * dy * 5.2)) * sEnv * xSpan;
 surgeArc = arc;
 surgeDy = dy - sp * 0.35;
-vec3 surgeLead = sm(uSpectrum > 4.5 ? MONO_DARK_HI : (uSpectrum > 0.5 && uSpectrum < 1.5 ? WARM_DARK_C : SKY_BLUE), 1.0, pPhase + 0.2, semId, semW);
+vec3 surgeLead = sm(uSpectrum > 5.5 ? rainbowLoop(pPhase + 0.25, 0.0) : uSpectrum > 4.5 && uSpectrum < 5.5 ? MONO_DARK_HI : (uSpectrum > 0.5 && uSpectrum < 1.5 ? WARM_DARK_C : SKY_BLUE), 1.0, pPhase + 0.2, semId, semW);
 vec3 surgeTrail = sm(spectrumPrismDark(uSpectrum, pPhase + surgeDy * 1.3), 1.0, pPhase + surgeDy * 1.3, semId, semW);
 vec3 surgeCol = mix(surgeLead, surgeTrail, 0.62);
 field = clamp(field + arc * 0.52, 0.0, 1.0);
@@ -1849,7 +1757,7 @@ float vSet = exp(-dsy * dsy * 13.5) * (1.0 - smoothstep(1.05, 1.35, y));
 float chime = hRip * vSet * cEnv;
 chimeWave = chime;
 chimePhase = uv.x * 1.5 + rx * 2.0 - cp * 0.35;
-vec3 chimeLead = sm(uSpectrum > 4.5 ? MONO_DARK_HI : (uSpectrum > 0.5 && uSpectrum < 1.5 ? WARM_DARK_C : ICE_MIST), 1.0, chimePhase, semId, semW);
+vec3 chimeLead = sm(uSpectrum > 5.5 ? rainbowLoop(chimePhase, 0.0) : uSpectrum > 4.5 && uSpectrum < 5.5 ? MONO_DARK_HI : (uSpectrum > 0.5 && uSpectrum < 1.5 ? WARM_DARK_C : ICE_MIST), 1.0, chimePhase, semId, semW);
 vec3 chimeCol = mix(mix(chimeLead, spectrumPrismDark(uSpectrum, chimePhase), 0.22), chimeLead, semW);
 field = clamp(field + chime * 0.46, 0.0, 1.0);
 base = mix(base, chimeCol, clamp(chime * 0.82, 0.0, 0.88));
@@ -1880,7 +1788,6 @@ float breathMod = mix(0.68, 1.24, clamp(uIntensity, 0.0, 1.0));
 a = clamp(field * 0.56 * breathMod * uPresence, 0.0, 1.0);
 da = clamp(dA * sqrt(a) * 0.78, 0.0, 1.0);
 } else {
-// Daylight Dichroic Ink Wash (pure high-chroma jewel pigments without white fog dilution)
 float washPh = uv.x * 3.1 + t * 0.48 + 1.3 * n;
 vec3 prismInk = sm(spectrumInkLight(uSpectrum, pPhase, washPh), 0.0, pPhase, semId, semW);
 vec3 washBase = sm(uSpectrum > 0.5 ? spectrumInkLight(uSpectrum, basePhase, washPh) : mix(DAY_COBALT, DAY_CERULEAN, 0.5 + 0.5 * sin(washPh)), 0.0, basePhase, semId, semW);
@@ -1894,14 +1801,14 @@ inkRgb = mix(inkRgb, surgeInk, clamp(surgeArc * 0.85, 0.0, 0.90));
 vec3 chimeInk = sm(mix(washBase, spectrumInkLight(uSpectrum, chimePhase, washPh), 0.45), 0.0, chimePhase, semId, semW);
 inkRgb = mix(inkRgb, chimeInk, clamp(chimeWave * 0.86, 0.0, 0.90));
 }
-vec3 hotAnchor = mix(uSpectrum > 4.5 ? MONO_LIGHT_LO : (uSpectrum > 0.5 && uSpectrum < 1.5 ? DAY_SIENNA : DAY_COBALT * 0.84 + DAY_IRIS * 0.16), washBase * 0.88, semW);
+vec3 hotAnchor = mix(uSpectrum > 5.5 ? rainbowLoop(pPhase, 1.0) : uSpectrum > 4.5 && uSpectrum < 5.5 ? MONO_LIGHT_LO : (uSpectrum > 0.5 && uSpectrum < 1.5 ? DAY_SIENNA : DAY_COBALT * 0.84 + DAY_IRIS * 0.16), washBase * 0.88, semW);
 inkRgb = mix(inkRgb, hotAnchor, hot * 0.24);
 c = clamp(inkRgb + grain * 0.022, 0.0, 1.0);
 dc = clamp(mix(washBase * 0.86, prismInk * 0.92, clamp(0.26 + dotPrismMix * 0.68, 0.0, 0.90)), 0.0, 1.0);
 float effPres = pow(clamp(uPresence, 0.0, 1.0), 0.68);
-float washGain = mix(1.02, 1.62, clamp(uIntensity, 0.0, 1.0));
-a = clamp(field * 0.66 * washGain * effPres, 0.0, 0.84);
-da = clamp(dA * (0.52 + 0.44 * sqrt(a)) * effPres, 0.0, 0.88);
+float washGain = mix(1.08, 1.40, clamp(uIntensity, 0.0, 1.0));
+a = clamp(field * 0.66 * washGain * effPres, 0.0, 0.68);
+da = clamp(dA * (0.44 + 0.36 * sqrt(a)) * effPres, 0.0, 0.58);
 }
 float outAlpha = clamp(a + da * (1.0 - a), 0.0, 1.0);
 vec3 premulRgb = clamp(c, 0.0, 1.0) * a * (1.0 - da) + clamp(dc, 0.0, 1.0) * da;
@@ -2009,6 +1916,9 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
       out[2] = dark ? 147 + 105 * w : 105 + 94 * w;
       return out;
     }
+    if (spectrumCode === 6) {
+      return spectrumRgb(phase, out, dark, 6);
+    }
     if (spectrumCode === 5) {
       out[0] = dark ? 158 + 58 * w : 68 + 38 * w;
       out[1] = dark ? 168 + 56 * w : 81 + 40 * w;
@@ -2082,7 +1992,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         const cssH = h / Math.max(0.5, dpr);
         const step = Math.max(1, Math.round(dpr));
         const effPresL = dark ? presence : Math.pow(Math.max(0, Math.min(1, presence)), 0.68);
-        const washGainL = dark ? 1 : (1.02 + 0.60 * Math.max(0, Math.min(1, intensity)));
+        const washGainL = dark ? 1 : (1.08 + 0.32 * Math.max(0, Math.min(1, intensity)));
         const darkBreathMod = dark ? (0.68 + 0.56 * Math.max(0, Math.min(1, intensity))) : 1;
         for (let py = 0; py < h; py += step) {
           const uvY = 1 - py / h;
@@ -2098,7 +2008,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
             const curtain = 0.5 + 0.32 * waveA + 0.18 * waveB;
             const jut = (valueNoise(cssX / 220 + timeSec * 0.18, timeSec * 0.11) - 0.5) * 0.68 + (waveA * 0.65 + waveB * 0.35) * 0.24;
             const hJut = Math.max(0, yNorm + 0.25 * stretchScale * jut);
-            const edgeFade = (uvX < 0.3 ? 0.35 + 0.65 * smooth(uvX / 0.3) : uvX > 0.7 ? 0.35 + 0.65 * smooth((1 - uvX) / 0.3) : 1);
+            const edgeFade = (uvX < 0.14 ? smooth(uvX / 0.14) : uvX > 0.86 ? smooth((1 - uvX) / 0.14) : 1);
             const gVal = Math.exp(-hJut * hJut * 4.0) * (0.76 + 0.42 * curtain) * edgeFade;
             let field = dark
               ? Math.min(1, gVal * 1.12 * darkBreathMod * presence)
@@ -2226,8 +2136,8 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
               G = Math.round(Math.min(255, Math.max(0, baseG + dotA * dLift))) & 255;
               B = Math.round(Math.min(255, Math.max(0, baseB + dotA * (spectrumCode === 5 ? 38 : 24)))) & 255;
             } else {
-              fillA = Math.min(0.84, field * 0.66 * washGainL * effPresL);
-              dotA = dist < 0.24 ? Math.min(0.88, (1 - smooth((dist - 0.14) / 0.1)) * band * (0.52 + 0.44 * Math.sqrt(fillA)) * effPresL) : 0;
+              fillA = Math.min(0.68, field * 0.66 * washGainL * effPresL);
+              dotA = dist < 0.24 ? Math.min(0.58, (1 - smooth((dist - 0.14) / 0.1)) * band * (0.44 + 0.36 * Math.sqrt(fillA)) * effPresL) : 0;
               const hotL = 0.24 * smooth((field - 0.65) / 0.35);
               const ancR = customMode ? baseR * 0.85 : 46;
               const ancG = customMode ? baseG * 0.85 : 92;

@@ -47,7 +47,7 @@
   const PRISM_SETTINGS_SCHEMA = O.freeze({
     palette: mkSp(['obsidian', 'host', 'warm'], null, { claude: 'warm' }),
     lightPreset: mkSp(['crystal', 'alabaster']),
-    accentTone: mkSp(['follow', 'cobalt', 'iris', 'amber', 'mono']),
+    accentTone: mkSp(['follow', 'cobalt', 'iris', 'amber', 'mono', 'rainbow']),
     cornerStyle: mkSp(['sharp', 'balanced', 'soft'], 'balanced'),
     ambientIntensity: mkSp(['0', '35', '70', '100'], '100'),
     motionLevel: mkSp(['off', 'subtle', 'standard', 'ultra'], 'ultra'),
@@ -64,7 +64,7 @@
     contextMenu: S_T,
     codeFont: mkSp(['default', 'jetbrains', 'cascadia', 'sfmono']),
     codeLigatures: S_F,
-    mascot: mkSp(['crab', 'minis', 'off'], null, { dual: 'crab' }),
+    mascot: mkSp(['cat', 'crab', 'minis', 'off'], null, { dual: 'crab' }),
     sidebarRestyle: S_T,
     sidebarCompact: S_F,
     sidebarNavFold: mkSp(['off', 'on']),
@@ -257,10 +257,10 @@
   };
 
   const mascotLabels = (lang, ui) => {
-    if (lang === 'zh-TW' || lang === 'yue') return ['雙寵', '雙寵+三蟹', ui.offLabel || '關閉'];
-    if (lang === 'ja') return ['ペア', 'ペア+ミニ蟹', ui.offLabel || 'オフ'];
-    if (lang === 'en') return ['Dual', 'Dual+Crabs', ui.offLabel || 'Off'];
-    return ['双宠', '双宠+三蟹', ui.offLabel || '关闭'];
+    if (lang === 'zh-TW' || lang === 'yue') return ['像素貓咪', '雙寵', '雙寵+三蟹', ui.offLabel || '關閉'];
+    if (lang === 'ja') return ['ドット猫', 'ペア', 'ペア+ミニ蟹', ui.offLabel || 'オフ'];
+    if (lang === 'en') return ['Pixel Cat', 'Dual', 'Dual+Crabs', ui.offLabel || 'Off'];
+    return ['像素猫咪', '双宠', '双宠+三蟹', ui.offLabel || '关闭'];
   };
 
   const mountOrSyncSettingsSection = (ctx) => {
@@ -671,7 +671,7 @@
             ]
           ).map((o) => [o.id, o.label]);
 
-          const [mDual, mMinis, mOff] = mascotLabels(lang, ui);
+          const [mCat, mDual, mMinis, mOff] = mascotLabels(lang, ui);
           const U = (k, d = '') => ui[k] || d;
           const onOff = [[true, U('onLabel', 'On')], [false, U('offLabel', 'Off')]];
           const autoOnOff = [['auto', U('optAutoCoexist', 'Auto')], ['on', U('onLabel', 'On')], ['off', U('offLabel', 'Off')]];
@@ -684,7 +684,7 @@
           for (const r of [
             RS('palette', [['host', U('optHost')], ['warm', warmLbl], ['obsidian', U('optObsidian')]]),
             RS('lightPreset', [['crystal', U('optLightCrystal')], ['alabaster', U('optLightAlabaster')]]),
-            RS('accentTone', [['follow', U('optToneFollow')], ['cobalt', U('optToneCobalt')], ['iris', U('optToneIris')], ['amber', U('optToneAmber')], ['mono', U('optToneMono')]]),
+            RS('accentTone', [['follow', U('optToneFollow')], ['cobalt', U('optToneCobalt')], ['iris', U('optToneIris')], ['amber', U('optToneAmber')], ['mono', U('optToneMono')], ['rainbow', U('optToneRainbow')]]),
             RS('cornerStyle', [['sharp', U('optCornerSharp')], ['balanced', U('optCornerBalanced')], ['soft', U('optCornerSoft')]]),
             RS('ambientIntensity', [['0', U('optAmb0', '0%')], ['35', U('optAmb35', '35%')], ['70', U('optAmb70', '70%')], ['100', U('optAmb100', '100%')]]),
             RS('motionLevel', [['off', U('optMotionOff')], ['subtle', U('optMotionSubtle')], ['standard', U('optMotionStandard')], ['ultra', U('optMotionUltra')]]),
@@ -701,7 +701,7 @@
             R('contextMenu', 'rowContextMenuTitle', 'rowContextMenuDesc', onOff),
             RS('codeFont', [['default', U('optFontDefault')], ['jetbrains', 'JetBrains Mono'], ['cascadia', 'Cascadia Code'], ['sfmono', U('optFontSfmono', 'SF Mono')]]),
             RS('codeLigatures', onOff),
-            RS('mascot', [['crab', mDual], ['minis', mMinis], ['off', mOff]]),
+            RS('mascot', [['cat', mCat], ['crab', mDual], ['minis', mMinis], ['off', mOff]]),
             RS('sidebarRestyle', onOff, 'Sidebar'),
             RS('sidebarCompact', onOff),
             R('sidebarNavFold', 'setSidebarNavFoldLabel', 'setSidebarNavFoldDesc', [['off', U('optSidebarNavFoldOff', 'Show All')], ['on', U('optSidebarNavFoldOn', 'Fold Extra')]]),

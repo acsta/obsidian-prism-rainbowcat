@@ -21,6 +21,7 @@
 
   function resolveCrystalAccentCode(raw) {
     const k = String(raw || 'default').trim().toLowerCase();
+    if (k === 'rainbow') return 6;
     if (k === 'mono' || k === 'monochrome') return 5;
     if (k === 'amber') return 4;
     if (k === 'iris') return 3;
@@ -36,6 +37,7 @@
     3: ['#6d28d9', '#8b5cf6', '#a58af8', '#ddd6fe'],
     4: ['#b45309', '#d97706', '#f2b84b', '#fde68a'],
     5: ['#94a3b8', '#cbd5e1', '#e2e8f0', '#f8fafc'],
+    6: ['#fb7185', '#fbbf24', '#34d399', '#38bdf8'],
   };
 
   /**
@@ -213,9 +215,21 @@ float etchedLockMask(vec2 q, float halfStroke, float aa) {
   return 1.0 - smoothstep(-aa, aa, min(min(dBody, dShackle), dKey));
 }
 
-// 柯西四色光谱与强调色模式映射（0:四色 1:暖岩 2:钴蓝 3:鸢尾紫 4:琥珀金 5:纯银钛单色）
+// 柯西四色光谱与强调色模式映射（0:四色 1:暖岩 2:钴蓝 3:鸢尾紫 4:琥珀金 5:纯银钛单色 6:彩虹渐变）
 vec3 cauchySpectrum(float t, float accent) {
   float u = clamp(t, 0.0, 1.0);
+  if (accent > 5.5) {
+    float q = u * 4.0;
+    vec3 r0 = vec3(0.984, 0.443, 0.522);
+    vec3 r1 = vec3(0.984, 0.749, 0.141);
+    vec3 r2 = vec3(0.204, 0.827, 0.600);
+    vec3 r3 = vec3(0.220, 0.741, 0.973);
+    vec3 r4 = vec3(0.659, 0.333, 0.969);
+    if (q < 1.0) return mix(r0, r1, q);
+    if (q < 2.0) return mix(r1, r2, q - 1.0);
+    if (q < 3.0) return mix(r2, r3, q - 2.0);
+    return mix(r3, r4, q - 3.0);
+  }
   if (accent > 4.5) {
     return mix(vec3(0.760, 0.800, 0.865), vec3(0.975, 0.985, 1.010), u);
   }
