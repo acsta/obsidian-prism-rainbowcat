@@ -1330,14 +1330,50 @@
   const COMPOSER_OVERLAY_SEL =
     '.agy-overlay:not([data-hover-card-popup]), [role="listbox"], [role="menu"]:not(.ag-cs-ctx-menu)';
 
+  const PULSE_CARD_IDS = ['context-card', 'quota-card', 'cache-card', 'speed-card'];
+  const PULSE_CARD_QSEL = '.card.open, [id$="-card"].open, .card:not([hidden])';
+  const isPulseHostVisible = (h) =>
+    !!(h && h[K_IC] !== false && !h.hidden && ga(h, 'data-ag-prism-hidden') !== '1' && ga(h, 'data-layout') !== 'blocked');
+  const isPulseCardElVisible = (el) => {
+    if (!el || el[K_IC] === false) return false;
+    if (el.hidden || ha(el, 'hidden') || ga(el, 'aria-hidden') === 'true' || clHas(el, 'hidden')) return false;
+    const sd = gp(el, 'display'), sv = gp(el, 'visibility');
+    if (sd === 'none' || sv === 'hidden') return false;
+    if (clHas(el, 'open') || ga(el, 'data-open') === 'true' || ga(el, 'data-open') === '1') return true;
+    if (!sd || !sv) {
+      const cs = csOf(el, null);
+      if (cs?.display === 'none' || cs?.visibility === 'hidden') return false;
+    }
+    return true;
+  };
+  const isPulseCardByIdVisibleNow = (id) => {
+    for (const h of [byId('ag-prism-pulse-bar'), byId('ag-pulse-status-bar')]) {
+      if (!isPulseHostVisible(h)) continue;
+      if (isPulseCardElVisible(h.shadowRoot?.getElementById?.(id))) return true;
+    }
+    return isPulseCardElVisible(byId(id));
+  };
   const isContextCardVisibleNow = () => {
-    const pulseHost = byId('ag-prism-pulse-bar') || byId('ag-pulse-status-bar');
-    const cardEl = byId('context-card') || pulseHost?.shadowRoot?.getElementById?.('context-card') || null;
-    return !!(cardEl && cardEl[K_IC] !== false && !cardEl.hidden && ga(cardEl, 'aria-hidden') !== 'true' && cardEl.style?.display !== 'none');
+    for (const h of [byId('ag-prism-pulse-bar'), byId('ag-pulse-status-bar')]) {
+      if (!isPulseHostVisible(h)) continue;
+      const sr = h.shadowRoot;
+      if (!sr) continue;
+      for (const id of PULSE_CARD_IDS) {
+        if (isPulseCardElVisible(sr.getElementById?.(id))) return true;
+      }
+      if (isFn(sr.querySelector)) {
+        const openEl = sr.querySelector(PULSE_CARD_QSEL);
+        if (openEl && isPulseCardElVisible(openEl)) return true;
+      }
+    }
+    for (const id of PULSE_CARD_IDS) {
+      if (isPulseCardElVisible(byId(id))) return true;
+    }
+    return false;
   };
 
   const hasOpenComposerPopup = (primaryCard) => {
-    if (wasContextCardOpen || isContextCardVisibleNow()) return true;
+    if (pulseEventOpen || isContextCardVisibleNow()) return true;
     for (const el of qa(D, COMPOSER_POPUP_SEL)) {
       if (!isHidEl(el, false)) return true;
     }
@@ -1754,8 +1790,67 @@
   let pulseBridgeInst = null;
   let motionBinding = null;
   let wasContextCardOpen = false;
+  let wasVialCardOpen = false;
+  let pulseEventOpen = false;
+  let pulseCardObs = null;
+  let observedPulseRoots = new WeakSet();
+  let observedPulseCards = new WeakSet();
   const calibratedPulseFooters = new WeakSet();
   const pulseHealTimers = new Set();
+
+  const bindPulseShadowCards = (sr) => {
+    if (!sr || !pulseCardObs) return;
+    if (!observedPulseRoots.has(sr)) {
+      observedPulseRoots.add(sr);
+      try { pulseCardObs.observe(sr, { childList: true }); } catch {}
+    }
+    const cardEls = [];
+    for (const id of PULSE_CARD_IDS) {
+      const c = sr.getElementById?.(id);
+      if (c) cardEls.push(c);
+    }
+    if (isFn(sr.querySelectorAll)) {
+      for (const c of sr.querySelectorAll('.card, [id$="-card"]')) cardEls.push(c);
+    }
+    for (const c of cardEls) {
+      if (observedPulseCards.has(c)) continue;
+      observedPulseCards.add(c);
+      try {
+        pulseCardObs.observe(c, { attributes: true, attributeFilter: ['hidden', 'class', 'aria-hidden', 'data-open', 'style'] });
+      } catch {}
+    }
+  };
+
+  const ensurePulseCardObserver = () => {
+    if (destroyed || typeof MutationObserver !== 'function') return;
+    if (!pulseCardObs) {
+      pulseCardObs = new MutationObserver((muts) => {
+        if (destroyed) return;
+        let sawChild = false;
+        for (const m of muts) {
+          if (m.type === 'childList') { sawChild = true; break; }
+        }
+        if (sawChild) {
+          for (const h of [byId('ag-prism-pulse-bar'), byId('ag-pulse-status-bar')]) {
+            if (h?.shadowRoot) bindPulseShadowCards(h.shadowRoot);
+          }
+        }
+        pulseEventOpen = false;
+        syncContextCardOpenNotify();
+      });
+    }
+    for (const h of [byId('ag-prism-pulse-bar'), byId('ag-pulse-status-bar')]) {
+      if (h?.shadowRoot) bindPulseShadowCards(h.shadowRoot);
+    }
+  };
+
+  const onPulseCardEvent = (ev) => {
+    if (destroyed) return;
+    ensurePulseCardObserver();
+    const det = ev?.detail;
+    pulseEventOpen = !!(det && typeof det.open === 'boolean' && det.open);
+    syncContextCardOpenNotify();
+  };
 
   const healBlockedExternalPulseBar = () => {
     if (destroyed) return;
@@ -1779,15 +1874,19 @@
   };
 
   const syncContextCardOpenNotify = () => {
-    const openNow = isContextCardVisibleNow();
+    const domOpen = isContextCardVisibleNow();
+    const openNow = domOpen || pulseEventOpen;
+    const vialNow = isPulseCardByIdVisibleNow('context-card');
     const changed = openNow !== wasContextCardOpen;
-    if (openNow && !wasContextCardOpen) notifyMascot('vial-opened');
+    if (vialNow && !wasVialCardOpen) notifyMascot('vial-opened');
+    wasVialCardOpen = vialNow;
     wasContextCardOpen = openNow;
     if (changed) runGuardedMut(() => syncMascotPeekOnly());
   };
 
   function ensurePulseBridge(forceSync = false) {
     healBlockedExternalPulseBar();
+    ensurePulseCardObserver();
     syncContextCardOpenNotify();
     if (destroyed || !isFn(pulseVialBridgeMod?.mountPulseVialBridge)) return;
     if (getTelemetryMode() === 'off') {
@@ -1822,7 +1921,7 @@
   };
 
   const OWN_PLUGIN_SELECTOR =
-    '.ag-cs-home-panel-seat, .ag-cs-ripple-host, .ag-cs-conv-aura-host, .ag-cs-crab, .ag-cs-prism-rim-cv, .ag-cs-model-glyph, [data-testid="orchestrator-effort-bar"], .ag-cs-thinking-spark, .ag-cs-smooth-caret, .ag-cs-liftoff-veil, .ag-cs-sidebar-glide-pill, .ag-cs-pill-glide, .ag-cs-stream-chunk, .ag-cs-thought-chunk, .ag-anim-icon, .ag-prism-omni-menu, .ag-prism-omni-pane, .ag-cs-ctx-menu, .ag-cs-ctx-toast, [data-ag-prism-omni-owned="1"], [data-ag-prism-sidebar-owned="1"], .ces-ag-section, .ces-set, #ag-codex-effort-slider-styles, #ag-pulse-status-bar, #context-card, #' +
+    '.ag-cs-home-panel-seat, .ag-cs-ripple-host, .ag-cs-conv-aura-host, .ag-cs-crab, .ag-cs-prism-rim-cv, .ag-cs-model-glyph, [data-testid="orchestrator-effort-bar"], .ag-cs-thinking-spark, .ag-cs-smooth-caret, .ag-cs-liftoff-veil, .ag-cs-sidebar-glide-pill, .ag-cs-pill-glide, .ag-cs-stream-chunk, .ag-cs-thought-chunk, .ag-anim-icon, .ag-prism-omni-menu, .ag-prism-omni-pane, .ag-cs-ctx-menu, .ag-cs-ctx-toast, [data-ag-prism-omni-owned="1"], [data-ag-prism-sidebar-owned="1"], .ces-ag-section, .ces-set, #ag-codex-effort-slider-styles, #ag-pulse-status-bar, #context-card, #quota-card, #cache-card, #speed-card, #' +
     SETTINGS_SEC_ID +
     ', #ag-prism-css, #ag-prism-omni-css, #ag-prism-sidebar-studio-css, #ag-claude-style-css, #ag-prism-motion-off-css, #ag-prism-host-alert-css, ' +
     EXT_ZH_UI_SEL;
@@ -2088,8 +2187,11 @@
         el.id === 'ag-pulse-status-bar' ||
         el.id === 'ag-prism-pulse-bar' ||
         el.id === 'context-card' ||
+        el.id === 'quota-card' ||
+        el.id === 'cache-card' ||
+        el.id === 'speed-card' ||
         ancMdl ||
-        q(MODEL_PANEL_SEL + ', #context-card');
+        q(MODEL_PANEL_SEL + ', #context-card, #quota-card, #cache-card, #speed-card');
 
       const isDialogRoot = role === 'dialog' || q('[role="dialog"]');
 
@@ -2649,11 +2751,18 @@
       const t = ev.target;
       const isPulseNode = (n) => n?.id === 'ag-prism-pulse-bar' || n?.id === 'ag-pulse-status-bar';
       if (
+        wasContextCardOpen ||
         isPulseNode(t) ||
         cl(t, '#ag-prism-pulse-bar,#ag-pulse-status-bar') ||
         (typeof ev.composedPath === 'function' && ev.composedPath().some(isPulseNode))
       ) {
-        ST(() => { if (!destroyed) syncContextCardOpenNotify(); }, 28);
+        ST(() => {
+          if (!destroyed) {
+            pulseEventOpen = false;
+            ensurePulseCardObserver();
+            syncContextCardOpenNotify();
+          }
+        }, 28);
       }
 
       if (cl(t, '[data-testid="thinking-collapsible-trigger"]') && getThoughtTranslateMode() !== 'off') {
@@ -2927,6 +3036,8 @@
     ['pointerdown', onDocPointerDown, CAP_PASSIVE],
     ['transitionend', onDocTransitionEnd, CAP_PASSIVE],
     ['visibilitychange', onDocVisibilityChange, true],
+    ['ag-prism-pulse-card-change', onPulseCardEvent, false],
+    ['ag-prism-pulse-card-toggle', onPulseCardEvent, false],
   ];
   let caretListenersBound = false;
   const syncCaretListeners = (enabled) => {
@@ -2948,6 +3059,8 @@
     ['storage', onWinStorage, false],
     ['blur', onWinBlur, false],
     ['focus', clearWinBlur, false],
+    ['ag-prism-pulse-card-change', onPulseCardEvent, false],
+    ['ag-prism-pulse-card-toggle', onPulseCardEvent, false],
   ];
 
   let pollTimer = null;
@@ -2976,6 +3089,13 @@
     prismRimCtl.cancelPendingRaf();
     safe(storeUnsub); storeUnsub = null;
     safe(() => observer.disconnect());
+    safe(() => pulseCardObs?.disconnect?.());
+    pulseCardObs = null;
+    observedPulseRoots = new WeakSet();
+    observedPulseCards = new WeakSet();
+    pulseEventOpen = false;
+    wasContextCardOpen = false;
+    wasVialCardOpen = false;
     safe(() => { axO?.disconnect?.(); axE?.removeAttribute?.(AX_A); });
     axO = axE = null;
     syncCaretListeners(false);
@@ -3004,6 +3124,7 @@
       if (destroyed || D.hidden) return;
       const expectedThemeKey = `${getEffectivePalette()}|${getLightPreset()}|${isDarkTheme() ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
       if (expectedThemeKey !== lastThemeKey || !ha(de(), 'data-ag-prism')) applyRootAttrs();
+      ensurePulseCardObserver();
       if (homeStudioCtl.wasHero() && cfg.homeLayout === 'studio') homeStudioCtl.scheduleUsageRollupRefresh(1800);
     }, nextMs);
   };

@@ -581,7 +581,7 @@ test('8. usage-core.js accurately matches live Antigravity model labels to quota
   assert.equal(usageCore.chooseQuotaGroup(withArgon, 'Gemini 4 Neon Extra High').id, 'gemini');
 });
 
-test('9. inline-fallback.js renders always-visible current-model quota pill (>50% ok, 21-50% tight, <=20% low), syncs on model switch, and highlights active pool in #quota-card', async () => {
+test('9. inline-fallback.js dual Weekly+5h rainbow quota pill, hover-to-open (#quota-card & #context-card), Weekly-first #quota-card, and quota-free beautified #context-card', async () => {
   const html = makeMiniEl('html', { 'data-ag-cs-lang': 'zh-CN', 'data-ag-cs-theme': 'light' });
   const body = makeMiniEl('body');
   html.appendChild(body);
@@ -601,6 +601,7 @@ test('9. inline-fallback.js renders always-visible current-model quota pill (>50
   body.appendChild(conv);
 
   const docListeners = new Map();
+  const cardEvents = [];
   const makeHostEl = (t) => {
     const el = makeMiniEl(t);
     el.attachShadow = () => {
@@ -626,17 +627,26 @@ test('9. inline-fallback.js renders always-visible current-model quota pill (>50
       const arr = docListeners.get(type);
       if (arr) { const i = arr.indexOf(fn); if (i >= 0) arr.splice(i, 1); }
     },
+    dispatchEvent(ev) {
+      if (ev?.type === 'ag-prism-pulse-card-change') cardEvents.push(ev.detail);
+      for (const fn of (docListeners.get(ev?.type) || []).slice()) fn(ev);
+      return true;
+    },
   };
 
-  let curRemGemini = 0.62;
-  let curRem3p = 0.98;
+  let curRemGemini5h = 0.59;
+  let curRemGeminiWk = 0.78;
+  let curRem3p5h = 0.98;
+  let curRem3pWk = 0.99;
   const now = Date.now();
   const win = {
     document: doc,
     location: { pathname: '/c/11111111-1111-1111-1111-111111111111' },
     __agCsUsageCore: usageCore,
+    CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
     addEventListener() {},
     removeEventListener() {},
+    dispatchEvent() { return true; },
     requestAnimationFrame: (fn) => { fn(0); return 0; },
     cancelAnimationFrame() {},
     ResizeObserver: class { observe() {} disconnect() {} },
@@ -655,8 +665,8 @@ test('9. inline-fallback.js renders always-visible current-model quota pill (>50
             name: 'Gemini Models',
             description: 'Models within this group: Gemini 4 Neon, Gemini 4 Carbon, Gemini 4 Argon, Gemini 4 Hydrogen, Orchestrator (Neon)',
             windows: {
-              '5h': { available: true, id: 'gemini-5h', remaining: curRemGemini, resetAt: new Date(now + 95 * 60 * 1000).toISOString() },
-              weekly: { available: true, id: 'gemini-weekly', remaining: 0.80, resetAt: new Date(now + 5 * 86400 * 1000).toISOString() },
+              '5h': { available: true, id: 'gemini-5h', remaining: curRemGemini5h, resetAt: new Date(now + 95 * 60 * 1000).toISOString() },
+              weekly: { available: true, id: 'gemini-weekly', remaining: curRemGeminiWk, resetAt: new Date(now + 5 * 86400 * 1000).toISOString() },
             },
           },
           {
@@ -664,14 +674,16 @@ test('9. inline-fallback.js renders always-visible current-model quota pill (>50
             name: 'Claude and GPT models',
             description: 'Models within this group: Claude Opus 5.5, Claude Sonnet 5.5, GPT-OSS 120B',
             windows: {
-              '5h': { available: true, id: '3p-5h', remaining: curRem3p, resetAt: new Date(now + 160 * 60 * 1000).toISOString() },
-              weekly: { available: true, id: '3p-weekly', remaining: 0.99, resetAt: new Date(now + 6 * 86400 * 1000).toISOString() },
+              '5h': { available: true, id: '3p-5h', remaining: curRem3p5h, resetAt: new Date(now + 160 * 60 * 1000).toISOString() },
+              weekly: { available: true, id: '3p-weekly', remaining: curRem3pWk, resetAt: new Date(now + 6 * 86400 * 1000).toISOString() },
             },
           },
         ],
         speed: {
           model: 'Gemini 4 Neon (XHigh)',
           tps: 64.2,
+          latestTps: 71.5,
+          ttftSeconds: 1.42,
           rounds: 2,
           cacheHitRate: 0.91,
           context: { model: 'Gemini 4 Neon (XHigh)', usedTokens: 180000, maxTokens: 512000, usedFraction: 0.35 },
@@ -680,67 +692,135 @@ test('9. inline-fallback.js renders always-visible current-model quota pill (>50
     },
   };
 
-  const ctl = inlineFallback.createTelemetryController({ window: win, document: doc });
+    let roCb = null;
+    win.ResizeObserver = class {
+      constructor(cb) { roCb = cb; }
+      observe() {}
+      disconnect() {}
+    };
+    const ctl = inlineFallback.createTelemetryController({ window: win, document: doc });
+  const bridge = bridgeMod.mountPulseVialBridge({ win, doc, autoPoll: false, allowMultiple: true });
   try {
     ctl.sync({ telemetryModule: 'on', language: 'zh-CN' });
     await ctl.refresh();
+    await bridge.sync();
     const host = doc.getElementById('ag-prism-pulse-bar');
     assert.ok(host && host.shadowRoot, '#ag-prism-pulse-bar must mount');
     const sr = host.shadowRoot;
     const qChip = sr.querySelector('[data-card="quota"]');
-    const qFill = sr.getElementById('quota-bar-fill');
-    const qTxt = sr.getElementById('quota-badge-txt');
+    const xChip = sr.querySelector('[data-card="context"]');
+    const qBarW = sr.getElementById('quota-bar-w');
+    const qBar5 = sr.getElementById('quota-bar-5');
+    const qWLbl = sr.getElementById('quota-w-lbl');
+    const qWNum = sr.getElementById('quota-w-num');
+    const q5Txt = sr.getElementById('quota-5-txt');
+    const qSep = sr.getElementById('quota-sep');
     const qCard = sr.getElementById('quota-card');
+    const xCard = sr.getElementById('context-card');
     const qList = sr.getElementById('quota-card-list');
 
-    // 1) Always visible even above 35% (62% -> emerald 'ok')
-    assert.equal(qChip.hidden, false, 'Quota pill must be visible when remaining > 35% (62%)');
+    // 1) Dual Weekly + 5h rainbow gauge always visible (>25% -> 'ok')
+    assert.equal(qChip.hidden, false, 'Quota pill must be visible when remaining > 35%');
     assert.equal(qChip.getAttribute('data-level'), 'ok');
     assert.equal(qChip.getAttribute('data-pool'), 'gemini');
-    assert.equal(qTxt.textContent, '62%');
-    assert.equal(qFill.style.width, '62%');
-    assert.match(qChip.getAttribute('title') || '', /Gemini.*62%.*后重置/);
+    assert.equal(qWLbl.textContent, '周');
+    assert.equal(qWNum.textContent, '78%');
+    assert.equal(qSep.hidden, false);
+    assert.equal(q5Txt.textContent, '5h 59%');
+    assert.equal(q5Txt.getAttribute('data-level'), 'ok');
+    assert.equal(qBarW.style.width, '78%');
+    assert.equal(qBar5.style.width, '59%');
+    assert.match(qChip.getAttribute('title') || '', /Gemini.*周 78%.*5h 59%/);
 
-    // 2) #quota-card highlights active Gemini pool first with data-active="1"
+    // 1b) Adaptive anti-squeeze Weekly-only compact mode + opaque pearl active card CSS
+    assert.equal(host.hasAttribute('data-q-compact'), false, 'Wide 750px footer keeps full dual 周78% · 5h 59%');
+    roCb?.([{ contentRect: { width: 660 } }]);
+    assert.equal(host.getAttribute('data-q-compact'), '1', 'Narrower 660px footer auto-prioritizes Weekly-only via data-q-compact="1"');
+    roCb?.([{ contentRect: { width: 760 } }]);
+    assert.equal(host.hasAttribute('data-q-compact'), false, 'Widening back to 760px restores dual display');
+    const cssText = sr.querySelector('style')?.textContent || '';
+    assert.ok(cssText.includes('var(--_qa) padding-box,var(--_pb) border-box'), 'Active pool card must use high-opacity frosted pearl --_qa layer to avoid border-box bleed');
+
+    // 2) #quota-card highlights active Gemini pool first, with Weekly BEFORE 5h
     const rows1 = qList.querySelectorAll('.q-row');
     assert.equal(rows1.length, 2);
     assert.equal(rows1[0].getAttribute('data-pool'), 'gemini');
     assert.equal(rows1[0].getAttribute('data-active'), '1');
-    assert.equal(rows1[1].getAttribute('data-pool'), '3p');
-    assert.equal(rows1[1].hasAttribute('data-active'), false);
+    const actWins = rows1[0].querySelectorAll('.q-win');
+    assert.equal(actWins.length, 2);
+    assert.equal(actWins[0].getAttribute('data-window'), 'weekly', 'Weekly window must appear FIRST inside #quota-card');
+    assert.equal(actWins[1].getAttribute('data-window'), '5h', '5h window must appear second beneath Weekly');
 
-    // Clicking quota pill opens #quota-card; clicking switch button clicks model-selector-trigger
+    // 3) #context-card removes duplicated .pv-qt quota section & populates beautified hero + TTFT/TPS cards
+    const pvQt = sr.querySelector('[data-ag-pulse-quotas="1"]');
+    assert.equal(pvQt?.hidden, true, 'pulse-vial-bridge must suppress duplicated .pv-qt inside #context-card when [data-card="quota"] exists');
+    assert.equal(sr.getElementById('context-summary').textContent, '35% 已用');
+    assert.equal(sr.getElementById('context-rem').textContent, '· 65% 剩余');
+    assert.equal(sr.getElementById('context-tokens').textContent, '180K / 512K');
+    assert.equal(sr.getElementById('ctx-ttft').textContent, '1.42s');
+    assert.equal(sr.getElementById('ctx-tps').textContent, '71.5 tok/s');
+
+    // 4) Smooth hover-to-open (~120ms), hover bridge grace (~220ms), seamless swap between #quota-card & #context-card, and CustomEvent notify
+    qChip.dispatchEvent({ type: 'mouseenter' });
+    await new Promise((r) => setTimeout(r, 150));
+    assert.equal(qCard.hidden, false, 'Hovering [data-card="quota"] must open #quota-card after ~120ms');
+    assert.ok(cardEvents.some((d) => d.open === true && d.cards.includes('quota-card')), 'Opening #quota-card must dispatch ag-prism-pulse-card-change');
+
+    // Moving cursor from chip into #quota-card keeps card open past 220ms
+    qChip.dispatchEvent({ type: 'mouseleave' });
+    await new Promise((r) => setTimeout(r, 60));
+    qCard.dispatchEvent({ type: 'mouseenter' });
+    await new Promise((r) => setTimeout(r, 220));
+    assert.equal(qCard.hidden, false, 'Hovering inside #quota-card must cancel close-grace timer');
+
+    // Gliding directly to [data-card="context"] swaps seamlessly to #context-card
+    qCard.dispatchEvent({ type: 'mouseleave' });
+    xChip.dispatchEvent({ type: 'mouseenter' });
+    await new Promise((r) => setTimeout(r, 60));
+    assert.equal(xCard.hidden, false, 'Gliding to [data-card="context"] must open #context-card seamlessly');
+    assert.equal(qCard.hidden, true, '#quota-card must close with zero overlap on swap');
+
+    // Leaving #context-card closes after ~220ms grace and notifies cats to rise
+    xChip.dispatchEvent({ type: 'mouseleave' });
+    await new Promise((r) => setTimeout(r, 260));
+    assert.equal(xCard.hidden, true, 'Leaving hovered #context-card must close after ~220ms grace');
+    assert.equal(cardEvents[cardEvents.length - 1]?.open, false);
+
+    // Click toggle + switch button + Escape dismiss
     qChip.dispatchEvent({ type: 'click' });
     assert.equal(qCard.hidden, false);
+    doc.dispatchEvent({ type: 'keydown', key: 'Escape' });
+    assert.equal(qCard.hidden, true, 'Escape must dismiss open card');
+
+    qChip.dispatchEvent({ type: 'click' });
     sr.getElementById('quota-switch-btn').dispatchEvent({ type: 'click' });
     assert.equal(triggerClicks, 1);
     assert.equal(qCard.hidden, true);
 
-    // 3) Instant model-switch sync: change composer model trigger to Claude Opus 5.5 (even though snap.speed.model is still Gemini!)
+    // 5) Instant model-switch sync: change composer trigger to Claude Opus 5.5
     modelTrigger.textContent = 'Claude Opus 5.5';
     modelTrigger.setAttribute('aria-label', 'Select model, current: Claude Opus 5.5');
     for (const fn of docListeners.get('click') || []) fn({ target: body });
     await new Promise((r) => setTimeout(r, 110));
-    assert.equal(qChip.getAttribute('data-pool'), '3p', 'Switching model trigger must immediately switch quota pill to Claude/GPT pool');
-    assert.equal(qTxt.textContent, '98%');
-    assert.equal(qChip.getAttribute('data-level'), 'ok');
-    assert.equal(qList.querySelectorAll('.q-row')[0].getAttribute('data-pool'), '3p');
-    assert.equal(qList.querySelectorAll('.q-row')[0].getAttribute('data-active'), '1');
+    assert.equal(qChip.getAttribute('data-pool'), '3p');
+    assert.equal(qWNum.textContent, '99%');
+    assert.equal(q5Txt.textContent, '5h 98%');
 
-    // 4) Color tiers: 21-50% -> 'tight' (amber), <=20% -> 'low' (coral)
+    // 6) Urgent 5h warning color shift (<=25% tight, <=20% low) while weekly stays healthy
     modelTrigger.textContent = 'Gemini 4 Neon Extra High';
-    curRemGemini = 0.42;
+    curRemGemini5h = 0.24;
     await ctl.refresh();
-    assert.equal(qChip.hidden, false);
-    assert.equal(qTxt.textContent, '42%');
-    assert.equal(qChip.getAttribute('data-level'), 'tight');
+    assert.equal(q5Txt.getAttribute('data-level'), 'tight');
+    assert.equal(qBar5.getAttribute('data-level'), 'tight');
+    assert.equal(qBarW.getAttribute('data-level'), 'ok');
 
-    curRemGemini = 0.18;
+    curRemGemini5h = 0.16;
     await ctl.refresh();
-    assert.equal(qChip.hidden, false);
-    assert.equal(qTxt.textContent, '18%');
+    assert.equal(q5Txt.getAttribute('data-level'), 'low');
+    assert.equal(qBar5.getAttribute('data-level'), 'low');
     assert.equal(qChip.getAttribute('data-level'), 'low');
   } finally {
+    bridge.destroy();
     ctl.destroy();
   }
 });
