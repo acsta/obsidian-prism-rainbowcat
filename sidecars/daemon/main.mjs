@@ -2002,7 +2002,9 @@ export class PrismDaemon {
     usageCachePath = undefined,
     overridePort = null,
     portFile = null,
-    pollIntervalMs = 3000,
+    pollIntervalMs = undefined,
+    takeoverDebounceMs = undefined,
+    startupJitterMs = undefined,
     enabledCheck = () => isPluginEnabledInHostConfig(),
     metricsProvider = null,
     thoughtService = null,
@@ -2026,10 +2028,19 @@ export class PrismDaemon {
     this._bundleCachePathOpt = bundleCachePath;
     this.overridePort = overridePort;
     this.portFile = portFile;
-    this.pollIntervalMs = Math.max(200, Number(pollIntervalMs) || 3000);
+    this._hasExplicitPollInterval = pollIntervalMs !== undefined && pollIntervalMs !== null;
     this.enabledCheck = enabledCheck;
     this.silent = Boolean(silent);
     this.cdp = require(path.join(this.rootDir, 'cdp.js'));
+    this.pollIntervalMs = this._hasExplicitPollInterval
+      ? Math.max(200, Number(pollIntervalMs) || 3000)
+      : this._resolveConfiguredPollIntervalMs();
+    const takeoverNum = Number(takeoverDebounceMs);
+    this._takeoverDebounceMs = Number.isFinite(takeoverNum) && takeoverNum >= 0 ? Math.round(takeoverNum) : 220;
+    const jitterNum = Number(startupJitterMs);
+    this._startupJitterMs = Number.isFinite(jitterNum) && jitterNum >= 0 ? Math.round(jitterNum) : 80;
+    this._startupTickTimer = null;
+    this._tookOverExistingDaemon = false;
     this._loadedCdpVerifier = typeof this.cdp?.isExpectedDaemonProcess === 'function' ? this.cdp.isExpectedDaemonProcess : null;
     this._daemonPidVerifier = typeof daemonPidVerifier === 'function' ? daemonPidVerifier : null;
     this._cdpFileSig = this._readCdpFileSig();
@@ -2069,6 +2080,12 @@ export class PrismDaemon {
     this.wallpaperExpr = '';
     this.wallpaperCodeHash = '';
     this._wallpaperHashSource = '';
+    this.catSanctuaryExpr = '';
+    this.catSanctuaryCodeHash = '';
+    this._catSanctuaryHashSource = '';
+    this.effortSliderExpr = '';
+    this.effortSliderCodeHash = '';
+    this._effortSliderHashSource = '';
     this.codeHash = '';
     this.ownerToken = `${process.pid}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
     this.pidFile = path.join(this.rootDir, '.daemon.pid');
@@ -2111,6 +2128,7 @@ export class PrismDaemon {
     );
     this._shortcutAllClean = false;
     this._hasActiveCdpPort = false;
+    this._portState = 'unknown';
     this._noPortSinceMs = 0;
     this._promptInFlight = false;
     this._lastShortcutCheckAt = 0;
@@ -2142,9 +2160,37 @@ export class PrismDaemon {
     }
   }
 
+  _resolveConfiguredPollIntervalMs(cfgOverride = null) {
+    try {
+      const cfg = cfgOverride || (typeof this.cdp?.readConfig === 'function' ? this.cdp.readConfig() : null);
+      const raw = cfg && cfg.pollIntervalMs !== undefined ? Number(cfg.pollIntervalMs) : NaN;
+      if (Number.isFinite(raw) && raw > 0) {
+        return Math.max(1500, Math.min(15000, Math.round(raw)));
+      }
+    } catch {}
+    return 3000;
+  }
+
+  _syncPollIntervalFromConfig(cfgOverride = null) {
+    if (this._hasExplicitPollInterval) return this.pollIntervalMs;
+    const nextMs = this._resolveConfiguredPollIntervalMs(cfgOverride);
+    if (nextMs !== this.pollIntervalMs) {
+      this.pollIntervalMs = nextMs;
+      if (this.running && this.timer) {
+        clearInterval(this.timer);
+        this.timer = setInterval(() => {
+          void this.tick();
+        }, this.pollIntervalMs);
+      }
+    }
+    return this.pollIntervalMs;
+  }
+
   log(msg) {
     if (!this.silent) {
       try {
+        const MAX_LOG_BYTES = 512 * 1024;
+        const MAX_LINE_CHARS = 16384;
         if (this._logBytes < 0) {
           try {
             this._logBytes = fs.statSync(this.logFile).size;
@@ -2152,13 +2198,16 @@ export class PrismDaemon {
             this._logBytes = 0;
           }
         }
-        if (this._logBytes > 512 * 1024) {
+        const rawText = String(msg ?? '');
+        const safeText = rawText.length > MAX_LINE_CHARS ? `${rawText.slice(0, MAX_LINE_CHARS)}...[truncated]` : rawText;
+        const line = `[${new Date().toISOString()}] ${safeText}\n`;
+        const lineBytes = Buffer.byteLength(line, 'utf8');
+        if (this._logBytes > MAX_LOG_BYTES || this._logBytes + lineBytes > MAX_LOG_BYTES) {
           fs.writeFileSync(this.logFile, '', 'utf8');
           this._logBytes = 0;
         }
-        const line = `[${new Date().toISOString()}] ${msg}\n`;
         fs.appendFileSync(this.logFile, line, 'utf8');
-        this._logBytes += Buffer.byteLength(line, 'utf8');
+        this._logBytes += lineBytes;
       } catch {}
     }
   }
@@ -3119,6 +3168,8 @@ export class PrismDaemon {
     this._buildThoughtExprForConfig(cfg, cacheOpts);
     this._buildInlineDiffExprForConfig(cfg, cacheOpts);
     this._buildWallpaperExprForConfig(cfg, cacheOpts);
+    this._buildCatSanctuaryExprForConfig(cfg, cacheOpts);
+    this._buildEffortSliderExprForConfig(cfg, cacheOpts);
 
     if (bundleCachePath) {
       if (deferDiskCacheWrite) {
@@ -3416,6 +3467,197 @@ export class PrismDaemon {
       this.cdp?.WALLPAPER_REMOVE_EXPRESSION ||
       "(() => { try { window.__agPrismWallpaper?.destroy?.(); } catch {} try { const root = document.getElementById('ag-prism-wallpaper-root'); if (root) { root.querySelectorAll('video').forEach((v) => { try { v.pause(); v.removeAttribute('src'); v.load(); } catch {} }); root.remove(); } } catch {} try { document.getElementById('ag-prism-wallpaper-css')?.remove(); } catch {} try { document.documentElement?.removeAttribute?.('data-ag-prism-wallpaper'); } catch {} try { delete window.__agPrismWallpaper; } catch {} try { delete globalThis.__agPrismWallpaper; } catch {} try { delete window.__prismMountWallpaperUi; } catch {} try { delete globalThis.__prismMountWallpaperUi; } catch {} try { delete window.__agPrismWallpaperResolve; } catch {} return { ok: true, status: 'off' }; })()"
     );
+  }
+
+  _hasCatSanctuaryClientFile() {
+    try {
+      return fs.existsSync(path.join(this.rootDir, 'vendor', 'cat-sanctuary', 'cat-sanctuary-client.js'));
+    } catch {
+      return false;
+    }
+  }
+
+  _isCatSanctuaryEnabled(cfgOverride = null) {
+    try {
+      const cfg = cfgOverride || this.cdp?.readConfig?.();
+      if (typeof this.cdp?.shouldEnableCatSanctuary === 'function') {
+        return Boolean(this.cdp.shouldEnableCatSanctuary(cfg));
+      }
+      return cfg?.mascot === 'cat';
+    } catch {
+      return false;
+    }
+  }
+
+  _extractCatSanctuaryCodeHash(expr) {
+    const str = typeof expr === 'string' ? expr : '';
+    if (!str) return '';
+    const m = /const targetHash = "([^"]+)"/.exec(str);
+    if (m && m[1]) return m[1];
+    return crypto.createHash('sha256').update(str).digest('hex').slice(0, 16);
+  }
+
+  _setCatSanctuaryExpr(expr) {
+    const next = typeof expr === 'string' ? expr : '';
+    this.catSanctuaryExpr = next;
+    this._catSanctuaryHashSource = next;
+    this.catSanctuaryCodeHash = this._extractCatSanctuaryCodeHash(next);
+    return next;
+  }
+
+  _buildCatSanctuaryExprForConfig(cfgOverride = null, cacheOpts = undefined) {
+    const cfg = cfgOverride || (typeof this.cdp?.readConfig === 'function' ? this.cdp.readConfig() : null);
+    if (!this._isCatSanctuaryEnabled(cfg) || typeof this.cdp?.buildCatSanctuaryExpression !== 'function') {
+      return this._setCatSanctuaryExpr('');
+    }
+    const opts = cacheOpts !== undefined ? cacheOpts : this._getChannelCacheOpts(true);
+    const expr = opts
+      ? this.cdp.buildCatSanctuaryExpression(cfg, opts)
+      : this.cdp.buildCatSanctuaryExpression(cfg);
+    if (cacheOpts === undefined && opts && this.running) {
+      this._scheduleBundleCacheFlush();
+    }
+    return this._setCatSanctuaryExpr(expr);
+  }
+
+  _getCatSanctuaryExprHash(expr = this.catSanctuaryExpr) {
+    const str = typeof expr === 'string' ? expr : '';
+    if (!str) return '';
+    if (str === this._catSanctuaryHashSource && this.catSanctuaryCodeHash) {
+      return this.catSanctuaryCodeHash;
+    }
+    const hash = this._extractCatSanctuaryCodeHash(str);
+    if (str === this.catSanctuaryExpr) {
+      this._catSanctuaryHashSource = str;
+      this.catSanctuaryCodeHash = hash;
+    }
+    return hash;
+  }
+
+  _getCatSanctuaryCleanupExpression() {
+    return (
+      (typeof this.cdp?.buildCatSanctuaryCleanupExpression === 'function'
+        ? this.cdp.buildCatSanctuaryCleanupExpression()
+        : '') ||
+      this.cdp?.CAT_SANCTUARY_REMOVE_EXPRESSION ||
+      "(() => { try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch {} try { document.querySelectorAll?.('.ag-v2-cat-sanctuary')?.forEach?.((el) => el.remove()); } catch {} try { document.querySelectorAll?.('[data-cat-sanctuary=\"1\"]')?.forEach?.((el) => el.removeAttribute('data-cat-sanctuary')); } catch {} try { document.documentElement?.removeAttribute?.('data-ag-cat-peek'); } catch {} try { delete window.__agCatSanctuaryFactory; } catch {} try { delete globalThis.__agCatSanctuaryFactory; } catch {} try { delete window.__agPrismCatRimState; } catch {} try { delete globalThis.__agPrismCatRimState; } catch {} return { ok: true, status: 'off' }; })()"
+    );
+  }
+
+  _recordCatSanctuaryEvalOutcome(entry, evalRes, catSanctuaryHash) {
+    const isSkipped = Boolean(
+      evalRes && typeof evalRes.status === 'string' && evalRes.status.startsWith('skipped-')
+    );
+    if (evalRes && evalRes.ok) {
+      entry.catSanctuaryMounted = true;
+      entry.catSanctuarySkipped = false;
+      entry.lastCatSanctuaryHash = catSanctuaryHash;
+    } else if (isSkipped) {
+      entry.catSanctuaryMounted = false;
+      entry.catSanctuarySkipped = true;
+      entry.lastCatSanctuaryHash = catSanctuaryHash;
+    } else {
+      entry.catSanctuaryMounted = false;
+      entry.catSanctuarySkipped = false;
+      entry.lastCatSanctuaryHash = '';
+    }
+  }
+
+  _hasEffortSliderClientFiles() {
+    try {
+      return (
+        fs.existsSync(path.join(this.rootDir, 'vendor', 'effort-slider', 'upstream-client.js')) &&
+        fs.existsSync(path.join(this.rootDir, 'vendor', 'effort-slider', 'slider-coexist.js'))
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  _isEffortSliderEnabled(cfgOverride = null) {
+    try {
+      const cfg = cfgOverride || this.cdp?.readConfig?.();
+      if (typeof this.cdp?.shouldEnableEffortSlider === 'function') {
+        return Boolean(this.cdp.shouldEnableEffortSlider(cfg));
+      }
+      return cfg?.effortSliderModule !== 'off' && cfg?.effortSliderModule !== false;
+    } catch {
+      return true;
+    }
+  }
+
+  _extractEffortSliderCodeHash(expr) {
+    const str = typeof expr === 'string' ? expr : '';
+    if (!str) return '';
+    const m = /const targetHash = "([^"]+)"/.exec(str);
+    if (m && m[1]) return m[1];
+    return crypto.createHash('sha256').update(str).digest('hex').slice(0, 16);
+  }
+
+  _setEffortSliderExpr(expr) {
+    const next = typeof expr === 'string' ? expr : '';
+    this.effortSliderExpr = next;
+    this._effortSliderHashSource = next;
+    this.effortSliderCodeHash = this._extractEffortSliderCodeHash(next);
+    return next;
+  }
+
+  _buildEffortSliderExprForConfig(cfgOverride = null, cacheOpts = undefined) {
+    const cfg = cfgOverride || (typeof this.cdp?.readConfig === 'function' ? this.cdp.readConfig() : null);
+    if (!this._isEffortSliderEnabled(cfg) || typeof this.cdp?.buildEffortSliderExpression !== 'function') {
+      return this._setEffortSliderExpr('');
+    }
+    const opts = cacheOpts !== undefined ? cacheOpts : this._getChannelCacheOpts(true);
+    const expr = opts
+      ? this.cdp.buildEffortSliderExpression(cfg, opts)
+      : this.cdp.buildEffortSliderExpression(cfg);
+    if (cacheOpts === undefined && opts && this.running) {
+      this._scheduleBundleCacheFlush();
+    }
+    return this._setEffortSliderExpr(expr);
+  }
+
+  _getEffortSliderExprHash(expr = this.effortSliderExpr) {
+    const str = typeof expr === 'string' ? expr : '';
+    if (!str) return '';
+    if (str === this._effortSliderHashSource && this.effortSliderCodeHash) {
+      return this.effortSliderCodeHash;
+    }
+    const hash = this._extractEffortSliderCodeHash(str);
+    if (str === this.effortSliderExpr) {
+      this._effortSliderHashSource = str;
+      this.effortSliderCodeHash = hash;
+    }
+    return hash;
+  }
+
+  _getEffortSliderCleanupExpression() {
+    return (
+      (typeof this.cdp?.buildEffortSliderCleanupExpression === 'function'
+        ? this.cdp.buildEffortSliderCleanupExpression()
+        : '') ||
+      this.cdp?.EFFORT_SLIDER_REMOVE_EXPRESSION ||
+      "(() => { try { (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider)?.destroy?.(); } catch {} try { document.querySelector?.('#ag-codex-effort-slider-styles[data-ag-prism-slider=\"1\"]')?.remove?.(); } catch {} try { document.getElementById?.('ag-prism-effort-slider-hide')?.remove?.(); } catch {} try { delete window.__agPrismEffortSlider; } catch {} try { delete globalThis.__agPrismEffortSlider; } catch {} try { delete window.AntigravityCodexEffortSlider; } catch {} try { delete globalThis.AntigravityCodexEffortSlider; } catch {} return { ok: true, status: 'off' }; })()"
+    );
+  }
+
+  _recordEffortSliderEvalOutcome(entry, evalRes, effortSliderHash) {
+    const isSkipped = Boolean(
+      evalRes && typeof evalRes.status === 'string' && evalRes.status.startsWith('skipped-')
+    );
+    if (evalRes && evalRes.ok) {
+      entry.effortSliderMounted = true;
+      entry.effortSliderSkipped = false;
+      entry.lastEffortSliderHash = effortSliderHash;
+    } else if (isSkipped) {
+      entry.effortSliderMounted = false;
+      entry.effortSliderSkipped = true;
+      entry.lastEffortSliderHash = effortSliderHash;
+    } else {
+      entry.effortSliderMounted = false;
+      entry.effortSliderSkipped = false;
+      entry.lastEffortSliderHash = '';
+    }
   }
 
   _isTelemetryDisabled(cfgOverride = null) {
@@ -4968,7 +5210,10 @@ export class PrismDaemon {
         let thoughtSnap = this.thoughtExpr;
         let inlineDiffSnap = this.inlineDiffExpr;
         let wallpaperSnap = this.wallpaperExpr;
+        let catSanctuarySnap = this.catSanctuaryExpr;
+        let effortSliderSnap = this.effortSliderExpr;
         const currentCfg = typeof this.cdp.readConfig === 'function' ? this.cdp.readConfig() : {};
+        this._syncPollIntervalFromConfig(currentCfg);
         if (currentCfg?.telemetryModule === 'off') {
           this._releaseIdleTelemetry(true);
         }
@@ -4993,6 +5238,16 @@ export class PrismDaemon {
           wallpaperSnap = this._buildWallpaperExprForConfig(currentCfg);
         }
         const wallpaperHash = wallpaperSnap ? this._getWallpaperExprHash(wallpaperSnap) : '';
+        const catSanctuaryEnabled = this._isCatSanctuaryEnabled(currentCfg);
+        if (catSanctuaryEnabled && !catSanctuarySnap && typeof this.cdp.buildCatSanctuaryExpression === 'function') {
+          catSanctuarySnap = this._buildCatSanctuaryExprForConfig(currentCfg);
+        }
+        const catSanctuaryHash = catSanctuaryEnabled && catSanctuarySnap ? this._getCatSanctuaryExprHash(catSanctuarySnap) : '';
+        const effortSliderEnabled = this._isEffortSliderEnabled(currentCfg);
+        if (effortSliderEnabled && !effortSliderSnap && typeof this.cdp.buildEffortSliderExpression === 'function') {
+          effortSliderSnap = this._buildEffortSliderExprForConfig(currentCfg);
+        }
+        const effortSliderHash = effortSliderEnabled && effortSliderSnap ? this._getEffortSliderExprHash(effortSliderSnap) : '';
         const canFastRefresh = typeof this.cdp.buildConfigRefreshExpression === 'function';
         const baseRefreshExpr = canFastRefresh ? this.cdp.buildConfigRefreshExpression() : null;
         if (activeItems.length === 0) continue;
@@ -5143,6 +5398,44 @@ export class PrismDaemon {
                 entry.wallpaperSkipped = false;
                 entry.lastWallpaperHash = '';
               }
+              if (abortIfStale()) return;
+              const hadCatSanctuary = Boolean(entry.catSanctuaryScriptId || entry.catSanctuaryMounted);
+              const catSanctuaryChanged = Boolean(
+                catSanctuaryEnabled &&
+                  catSanctuarySnap &&
+                  !entry.catSanctuarySkipped &&
+                  (entry.lastCatSanctuaryHash !== catSanctuaryHash || !entry.catSanctuaryScriptId || !entry.catSanctuaryMounted)
+              );
+              if (catSanctuaryEnabled && catSanctuarySnap) {
+                if (!skippedStale && !entry.session.closed && !entry.catSanctuarySkipped && (!refreshedFast || catSanctuaryChanged)) {
+                  const evalRes = await entry.session.evaluate(catSanctuarySnap).catch(() => null);
+                  this._recordCatSanctuaryEvalOutcome(entry, evalRes, catSanctuaryHash);
+                }
+              } else if (hadCatSanctuary && !skippedStale && !entry.session.closed) {
+                await entry.session.evaluate(this._getCatSanctuaryCleanupExpression()).catch(() => {});
+                entry.catSanctuaryMounted = false;
+                entry.catSanctuarySkipped = false;
+                entry.lastCatSanctuaryHash = '';
+              }
+              if (abortIfStale()) return;
+              const hadEffortSlider = Boolean(entry.effortSliderScriptId || entry.effortSliderMounted);
+              const effortSliderChanged = Boolean(
+                effortSliderEnabled &&
+                  effortSliderSnap &&
+                  !entry.effortSliderSkipped &&
+                  (entry.lastEffortSliderHash !== effortSliderHash || !entry.effortSliderScriptId || !entry.effortSliderMounted)
+              );
+              if (effortSliderEnabled && effortSliderSnap) {
+                if (!skippedStale && !entry.session.closed && !entry.effortSliderSkipped && (!refreshedFast || effortSliderChanged)) {
+                  const evalRes = await entry.session.evaluate(effortSliderSnap).catch(() => null);
+                  this._recordEffortSliderEvalOutcome(entry, evalRes, effortSliderHash);
+                }
+              } else if (hadEffortSlider && !skippedStale && !entry.session.closed) {
+                await entry.session.evaluate(this._getEffortSliderCleanupExpression()).catch(() => {});
+                entry.effortSliderMounted = false;
+                entry.effortSliderSkipped = false;
+                entry.lastEffortSliderHash = '';
+              }
 
               // Coalesce persistent NewDocument script replacement if a newer mutation is already queued!
               if (this._broadcastPending || this._configSeq !== snapSeq || entry.session.closed) {
@@ -5289,6 +5582,52 @@ export class PrismDaemon {
                   entry.lastWallpaperScriptHash = wallpaperHash;
                 }
               }
+              if (!catSanctuaryEnabled || !catSanctuarySnap) {
+                if (entry.catSanctuaryScriptId) {
+                  await entry.session
+                    .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId })
+                    .catch(() => {});
+                  entry.catSanctuaryScriptId = null;
+                }
+                entry.lastCatSanctuaryScriptHash = '';
+              } else if ((entry.lastCatSanctuaryScriptHash !== catSanctuaryHash || !entry.catSanctuaryScriptId) && !entry.session.closed) {
+                if (entry.catSanctuaryScriptId) {
+                  await entry.session
+                    .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId })
+                    .catch(() => {});
+                  entry.catSanctuaryScriptId = null;
+                }
+                const catSanctuaryAdd = await entry.session
+                  .send('Page.addScriptToEvaluateOnNewDocument', { source: catSanctuarySnap })
+                  .catch(() => null);
+                if (catSanctuaryAdd && catSanctuaryAdd.identifier) {
+                  entry.catSanctuaryScriptId = catSanctuaryAdd.identifier;
+                  entry.lastCatSanctuaryScriptHash = catSanctuaryHash;
+                }
+              }
+              if (!effortSliderEnabled || !effortSliderSnap) {
+                if (entry.effortSliderScriptId) {
+                  await entry.session
+                    .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId })
+                    .catch(() => {});
+                  entry.effortSliderScriptId = null;
+                }
+                entry.lastEffortSliderScriptHash = '';
+              } else if ((entry.lastEffortSliderScriptHash !== effortSliderHash || !entry.effortSliderScriptId) && !entry.session.closed) {
+                if (entry.effortSliderScriptId) {
+                  await entry.session
+                    .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId })
+                    .catch(() => {});
+                  entry.effortSliderScriptId = null;
+                }
+                const effortSliderAdd = await entry.session
+                  .send('Page.addScriptToEvaluateOnNewDocument', { source: effortSliderSnap })
+                  .catch(() => null);
+                if (effortSliderAdd && effortSliderAdd.identifier) {
+                  entry.effortSliderScriptId = effortSliderAdd.identifier;
+                  entry.lastEffortSliderScriptHash = effortSliderHash;
+                }
+              }
             })
           )
         );
@@ -5407,6 +5746,14 @@ export class PrismDaemon {
           this._buildWallpaperExprForConfig(curCfg, chOpts);
           if (chOpts && this.wallpaperExpr) usedChCache = true;
         }
+        if (!this.catSanctuaryExpr && this._isCatSanctuaryEnabled(curCfg) && typeof this.cdp.buildCatSanctuaryExpression === 'function') {
+          this._buildCatSanctuaryExprForConfig(curCfg, chOpts);
+          if (chOpts && this.catSanctuaryExpr) usedChCache = true;
+        }
+        if (!this.effortSliderExpr && this._isEffortSliderEnabled(curCfg) && typeof this.cdp.buildEffortSliderExpression === 'function') {
+          this._buildEffortSliderExprForConfig(curCfg, chOpts);
+          if (chOpts && this.effortSliderExpr) usedChCache = true;
+        }
         if (usedChCache && this.running) {
           this._scheduleBundleCacheFlush();
         }
@@ -5470,6 +5817,18 @@ export class PrismDaemon {
             .catch(() => {});
           entry.wallpaperScriptId = null;
         }
+        if (entry.catSanctuaryScriptId) {
+          await entry.session
+            .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId })
+            .catch(() => {});
+          entry.catSanctuaryScriptId = null;
+        }
+        if (entry.effortSliderScriptId) {
+          await entry.session
+            .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId })
+            .catch(() => {});
+          entry.effortSliderScriptId = null;
+        }
         await this._removeSidebarBinding(entry);
         await this._removeInlineDiffBinding(entry);
         await this._removeWallpaperBinding(entry);
@@ -5488,6 +5847,14 @@ export class PrismDaemon {
         entry.wallpaperSkipped = true;
         entry.lastWallpaperHash = '';
         entry.lastWallpaperScriptHash = '';
+        entry.catSanctuaryMounted = false;
+        entry.catSanctuarySkipped = true;
+        entry.lastCatSanctuaryHash = '';
+        entry.lastCatSanctuaryScriptHash = '';
+        entry.effortSliderMounted = false;
+        entry.effortSliderSkipped = true;
+        entry.lastEffortSliderHash = '';
+        entry.lastEffortSliderScriptHash = '';
         return mainRes;
       }
 
@@ -5705,6 +6072,82 @@ export class PrismDaemon {
         entry.wallpaperSkipped = false;
         entry.lastWallpaperHash = '';
         entry.lastWallpaperScriptHash = '';
+      }
+      const hadCatSanctuaryBefore = Boolean(entry.catSanctuaryScriptId || entry.catSanctuaryMounted);
+      if (entry.catSanctuaryScriptId) {
+        await entry.session
+          .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId })
+          .catch(() => {});
+        entry.catSanctuaryScriptId = null;
+      }
+      const catSanctuaryCfgNow = getCurrentCfg();
+      const catSanctuaryEnabledNow = this._isCatSanctuaryEnabled(catSanctuaryCfgNow);
+      if (catSanctuaryEnabledNow) {
+        if (!this.catSanctuaryExpr && typeof this.cdp.buildCatSanctuaryExpression === 'function') {
+          this._buildCatSanctuaryExprForConfig(catSanctuaryCfgNow);
+        }
+        if (this.catSanctuaryExpr) {
+          const catSanctuaryAdd = await entry.session
+            .send('Page.addScriptToEvaluateOnNewDocument', { source: this.catSanctuaryExpr })
+            .catch(() => null);
+          if (catSanctuaryAdd && catSanctuaryAdd.identifier) {
+            entry.catSanctuaryScriptId = catSanctuaryAdd.identifier;
+          }
+          const evalRes = await entry.session.evaluate(this.catSanctuaryExpr).catch(() => null);
+          const catSanctuaryHash = this._getCatSanctuaryExprHash(this.catSanctuaryExpr);
+          this._recordCatSanctuaryEvalOutcome(entry, evalRes, catSanctuaryHash);
+          if (catSanctuaryAdd && catSanctuaryAdd.identifier) {
+            entry.lastCatSanctuaryScriptHash = catSanctuaryHash;
+          } else {
+            entry.lastCatSanctuaryScriptHash = '';
+          }
+        }
+      } else {
+        if (hadCatSanctuaryBefore) {
+          await entry.session.evaluate(this._getCatSanctuaryCleanupExpression()).catch(() => null);
+        }
+        entry.catSanctuaryMounted = false;
+        entry.catSanctuarySkipped = false;
+        entry.lastCatSanctuaryHash = '';
+        entry.lastCatSanctuaryScriptHash = '';
+      }
+      const hadEffortSliderBefore = Boolean(entry.effortSliderScriptId || entry.effortSliderMounted);
+      if (entry.effortSliderScriptId) {
+        await entry.session
+          .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId })
+          .catch(() => {});
+        entry.effortSliderScriptId = null;
+      }
+      const effortSliderCfgNow = getCurrentCfg();
+      const effortSliderEnabledNow = this._isEffortSliderEnabled(effortSliderCfgNow);
+      if (effortSliderEnabledNow) {
+        if (!this.effortSliderExpr && typeof this.cdp.buildEffortSliderExpression === 'function') {
+          this._buildEffortSliderExprForConfig(effortSliderCfgNow);
+        }
+        if (this.effortSliderExpr) {
+          const effortSliderAdd = await entry.session
+            .send('Page.addScriptToEvaluateOnNewDocument', { source: this.effortSliderExpr })
+            .catch(() => null);
+          if (effortSliderAdd && effortSliderAdd.identifier) {
+            entry.effortSliderScriptId = effortSliderAdd.identifier;
+          }
+          const evalRes = await entry.session.evaluate(this.effortSliderExpr).catch(() => null);
+          const effortSliderHash = this._getEffortSliderExprHash(this.effortSliderExpr);
+          this._recordEffortSliderEvalOutcome(entry, evalRes, effortSliderHash);
+          if (effortSliderAdd && effortSliderAdd.identifier) {
+            entry.lastEffortSliderScriptHash = effortSliderHash;
+          } else {
+            entry.lastEffortSliderScriptHash = '';
+          }
+        }
+      } else {
+        if (hadEffortSliderBefore) {
+          await entry.session.evaluate(this._getEffortSliderCleanupExpression()).catch(() => null);
+        }
+        entry.effortSliderMounted = false;
+        entry.effortSliderSkipped = false;
+        entry.lastEffortSliderHash = '';
+        entry.lastEffortSliderScriptHash = '';
       }
       entry.lastVerifyAt = Date.now();
       entry.healthyStreak = 1;
@@ -6361,6 +6804,16 @@ export class PrismDaemon {
       wallpaperSkipped: false,
       lastWallpaperHash: '',
       lastWallpaperScriptHash: '',
+      catSanctuaryScriptId: null,
+      catSanctuaryMounted: false,
+      catSanctuarySkipped: false,
+      lastCatSanctuaryHash: '',
+      lastCatSanctuaryScriptHash: '',
+      effortSliderScriptId: null,
+      effortSliderMounted: false,
+      effortSliderSkipped: false,
+      lastEffortSliderHash: '',
+      lastEffortSliderScriptHash: '',
       sidebarHostVerified: false,
       sidebarVerifiedDocument: -1,
       sidebarHostContextId: null,
@@ -6401,6 +6854,8 @@ export class PrismDaemon {
         entry.sidebarDocument += 1;
         entry.inlineDiffSkipped = false;
         entry.wallpaperSkipped = false;
+        entry.catSanctuarySkipped = false;
+        entry.effortSliderSkipped = false;
       };
       session.on('Runtime.executionContextCreated', (params) => {
         const ctx = params?.context;
@@ -6555,6 +7010,20 @@ export class PrismDaemon {
         entry.wallpaperMounted = false;
         entry.lastWallpaperHash = '';
         entry.lastWallpaperScriptHash = '';
+        if (entry.catSanctuaryScriptId) {
+          await session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId });
+          entry.catSanctuaryScriptId = null;
+        }
+        entry.catSanctuaryMounted = false;
+        entry.lastCatSanctuaryHash = '';
+        entry.lastCatSanctuaryScriptHash = '';
+        if (entry.effortSliderScriptId) {
+          await session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId });
+          entry.effortSliderScriptId = null;
+        }
+        entry.effortSliderMounted = false;
+        entry.lastEffortSliderHash = '';
+        entry.lastEffortSliderScriptHash = '';
       } catch {}
       session.close();
       this.sessions.delete(wsUrl);
@@ -6584,6 +7053,16 @@ export class PrismDaemon {
     const wallpaperNeedsSync = wallpaperAvailable
       ? !entry.wallpaperSkipped && (!entry.wallpaperScriptId || !entry.wallpaperMounted)
       : Boolean(entry.wallpaperScriptId || entry.wallpaperMounted);
+    const catSanctuaryEnabled =
+      this._isCatSanctuaryEnabled(cfg) && Boolean(this.catSanctuaryExpr || this._hasCatSanctuaryClientFile());
+    const catSanctuaryNeedsSync = catSanctuaryEnabled
+      ? !entry.catSanctuarySkipped && (!entry.catSanctuaryScriptId || !entry.catSanctuaryMounted)
+      : Boolean(entry.catSanctuaryScriptId || entry.catSanctuaryMounted);
+    const effortSliderEnabled =
+      this._isEffortSliderEnabled(cfg) && Boolean(this.effortSliderExpr || this._hasEffortSliderClientFiles());
+    const effortSliderNeedsSync = effortSliderEnabled
+      ? !entry.effortSliderSkipped && (!entry.effortSliderScriptId || !entry.effortSliderMounted)
+      : Boolean(entry.effortSliderScriptId || entry.effortSliderMounted);
     const now = Date.now();
     const hashMatches = !this.codeHash || entry.lastVerifiedCodeHash === this.codeHash;
     if (
@@ -6592,6 +7071,8 @@ export class PrismDaemon {
       !thoughtNeedsSync &&
       !inlineDiffNeedsSync &&
       !wallpaperNeedsSync &&
+      !catSanctuaryNeedsSync &&
+      !effortSliderNeedsSync &&
       !entry.verifyDirty &&
       hashMatches &&
       entry.lastVerifyAt > 0 &&
@@ -6670,6 +7151,8 @@ export class PrismDaemon {
           hasInlineDiff: Boolean(window.__agPrismInlineDiff && !window.__agPrismInlineDiff.getDebugState?.()?.destroyed),
           hasWallpaper: Boolean(window.__agPrismWallpaper && !window.__agPrismWallpaper.getDebugState?.()?.destroyed),
           hasWallpaperUi: Boolean(typeof window.__prismMountWallpaperUi === 'function'),
+          hasCatSanctuaryFactory: Boolean(typeof (window.__agCatSanctuaryFactory || globalThis.__agCatSanctuaryFactory) === 'function'),
+          hasEffortSlider: Boolean((window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider) && typeof (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider).sync === 'function'),
           codeHash: (api && api.codeHash) || '',
           hasLegacyCss: Boolean(document.getElementById('ag-claude-style-css')),
           needsDashboardSync: Boolean(api && telMode !== 'off' && !isHome && hasModelBtn && !hasPulseBar),
@@ -6722,6 +7205,18 @@ export class PrismDaemon {
         (!probe.hasWallpaper || !probe.hasWallpaperUi || !entry.wallpaperScriptId || !entry.wallpaperMounted);
       const needsWallpaperCleanup =
         !wallpaperAvailable && Boolean(probe.hasWallpaper || probe.hasWallpaperUi || entry.wallpaperScriptId || entry.wallpaperMounted);
+      const needsCatSanctuaryHeal =
+        catSanctuaryEnabled &&
+        !entry.catSanctuarySkipped &&
+        (!probe.hasCatSanctuaryFactory || !entry.catSanctuaryScriptId || !entry.catSanctuaryMounted);
+      const needsCatSanctuaryCleanup =
+        !catSanctuaryEnabled && Boolean(probe.hasCatSanctuaryFactory || entry.catSanctuaryScriptId || entry.catSanctuaryMounted);
+      const needsEffortSliderHeal =
+        effortSliderEnabled &&
+        !entry.effortSliderSkipped &&
+        (!probe.hasEffortSlider || !entry.effortSliderScriptId || !entry.effortSliderMounted);
+      const needsEffortSliderCleanup =
+        !effortSliderEnabled && Boolean(probe.hasEffortSlider || entry.effortSliderScriptId || entry.effortSliderMounted);
       let healed = false;
       if (
         (entry.sidebarHostVerified === false && probe.isHostDom) ||
@@ -6784,6 +7279,14 @@ export class PrismDaemon {
             await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.wallpaperScriptId }).catch(() => {});
             entry.wallpaperScriptId = null;
           }
+          if (entry.catSanctuaryScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId }).catch(() => {});
+            entry.catSanctuaryScriptId = null;
+          }
+          if (entry.effortSliderScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
+            entry.effortSliderScriptId = null;
+          }
           await this._removeSidebarBinding(entry);
           await this._removeInlineDiffBinding(entry);
           await this._removeWallpaperBinding(entry);
@@ -6802,6 +7305,14 @@ export class PrismDaemon {
           entry.wallpaperSkipped = true;
           entry.lastWallpaperHash = '';
           entry.lastWallpaperScriptHash = '';
+          entry.catSanctuaryMounted = false;
+          entry.catSanctuarySkipped = true;
+          entry.lastCatSanctuaryHash = '';
+          entry.lastCatSanctuaryScriptHash = '';
+          entry.effortSliderMounted = false;
+          entry.effortSliderSkipped = true;
+          entry.lastEffortSliderHash = '';
+          entry.lastEffortSliderScriptHash = '';
           this._markTargetIgnored({ id: entry.pageId, webSocketDebuggerUrl: entry.wsUrl }, probe.href || entry.url);
           entry.session.close();
           this.sessions.delete(entry.wsUrl);
@@ -6985,6 +7496,64 @@ export class PrismDaemon {
           entry.wallpaperSkipped = false;
           entry.lastWallpaperHash = '';
           entry.lastWallpaperScriptHash = '';
+        }
+        if (catSanctuaryEnabled) {
+          if (!this.catSanctuaryExpr && typeof this.cdp.buildCatSanctuaryExpression === 'function') {
+            this._buildCatSanctuaryExprForConfig(cfg);
+          }
+          if (this.catSanctuaryExpr) {
+            const catSanctuaryHash = this._getCatSanctuaryExprHash(this.catSanctuaryExpr);
+            if (!entry.catSanctuaryScriptId) {
+              const catSanctuaryAdd = await entry.session
+                .send('Page.addScriptToEvaluateOnNewDocument', { source: this.catSanctuaryExpr })
+                .catch(() => null);
+              if (catSanctuaryAdd && catSanctuaryAdd.identifier) {
+                entry.catSanctuaryScriptId = catSanctuaryAdd.identifier;
+                entry.lastCatSanctuaryScriptHash = catSanctuaryHash;
+              }
+            }
+            const evalRes = await entry.session.evaluate(this.catSanctuaryExpr, false, 4500).catch(() => null);
+            this._recordCatSanctuaryEvalOutcome(entry, evalRes, catSanctuaryHash);
+          }
+        } else if (needsCatSanctuaryCleanup) {
+          if (entry.catSanctuaryScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId }).catch(() => {});
+            entry.catSanctuaryScriptId = null;
+          }
+          await entry.session.evaluate(this._getCatSanctuaryCleanupExpression(), false, 3500).catch(() => {});
+          entry.catSanctuaryMounted = false;
+          entry.catSanctuarySkipped = false;
+          entry.lastCatSanctuaryHash = '';
+          entry.lastCatSanctuaryScriptHash = '';
+        }
+        if (effortSliderEnabled) {
+          if (!this.effortSliderExpr && typeof this.cdp.buildEffortSliderExpression === 'function') {
+            this._buildEffortSliderExprForConfig(cfg);
+          }
+          if (this.effortSliderExpr) {
+            const effortSliderHash = this._getEffortSliderExprHash(this.effortSliderExpr);
+            if (!entry.effortSliderScriptId) {
+              const effortSliderAdd = await entry.session
+                .send('Page.addScriptToEvaluateOnNewDocument', { source: this.effortSliderExpr })
+                .catch(() => null);
+              if (effortSliderAdd && effortSliderAdd.identifier) {
+                entry.effortSliderScriptId = effortSliderAdd.identifier;
+                entry.lastEffortSliderScriptHash = effortSliderHash;
+              }
+            }
+            const evalRes = await entry.session.evaluate(this.effortSliderExpr, false, 4500).catch(() => null);
+            this._recordEffortSliderEvalOutcome(entry, evalRes, effortSliderHash);
+          }
+        } else if (needsEffortSliderCleanup) {
+          if (entry.effortSliderScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
+            entry.effortSliderScriptId = null;
+          }
+          await entry.session.evaluate(this._getEffortSliderCleanupExpression(), false, 3500).catch(() => {});
+          entry.effortSliderMounted = false;
+          entry.effortSliderSkipped = false;
+          entry.lastEffortSliderHash = '';
+          entry.lastEffortSliderScriptHash = '';
         }
         this.log(`[↻] Hot-healed window to Obsidian Prism v${this.cdp.PLUGIN_VERSION}: ${entry.title}`);
       } else {
@@ -7185,6 +7754,72 @@ export class PrismDaemon {
           entry.lastWallpaperHash = '';
           entry.lastWallpaperScriptHash = '';
         }
+        if (needsCatSanctuaryHeal) {
+          healed = true;
+          if (!this.catSanctuaryExpr && typeof this.cdp.buildCatSanctuaryExpression === 'function') {
+            this._buildCatSanctuaryExprForConfig(cfg);
+          }
+          if (this.catSanctuaryExpr) {
+            const catSanctuaryHash = this._getCatSanctuaryExprHash(this.catSanctuaryExpr);
+            if (!entry.catSanctuaryScriptId) {
+              const catSanctuaryAdd = await entry.session
+                .send('Page.addScriptToEvaluateOnNewDocument', { source: this.catSanctuaryExpr })
+                .catch(() => null);
+              if (catSanctuaryAdd && catSanctuaryAdd.identifier) {
+                entry.catSanctuaryScriptId = catSanctuaryAdd.identifier;
+                entry.lastCatSanctuaryScriptHash = catSanctuaryHash;
+              }
+            }
+            if (!probe.hasCatSanctuaryFactory || !entry.catSanctuaryMounted) {
+              const evalRes = await entry.session.evaluate(this.catSanctuaryExpr, false, 4500).catch(() => null);
+              this._recordCatSanctuaryEvalOutcome(entry, evalRes, catSanctuaryHash);
+            }
+          }
+        } else if (needsCatSanctuaryCleanup) {
+          healed = true;
+          if (entry.catSanctuaryScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId }).catch(() => {});
+            entry.catSanctuaryScriptId = null;
+          }
+          await entry.session.evaluate(this._getCatSanctuaryCleanupExpression(), false, 3500).catch(() => {});
+          entry.catSanctuaryMounted = false;
+          entry.catSanctuarySkipped = false;
+          entry.lastCatSanctuaryHash = '';
+          entry.lastCatSanctuaryScriptHash = '';
+        }
+        if (needsEffortSliderHeal) {
+          healed = true;
+          if (!this.effortSliderExpr && typeof this.cdp.buildEffortSliderExpression === 'function') {
+            this._buildEffortSliderExprForConfig(cfg);
+          }
+          if (this.effortSliderExpr) {
+            const effortSliderHash = this._getEffortSliderExprHash(this.effortSliderExpr);
+            if (!entry.effortSliderScriptId) {
+              const effortSliderAdd = await entry.session
+                .send('Page.addScriptToEvaluateOnNewDocument', { source: this.effortSliderExpr })
+                .catch(() => null);
+              if (effortSliderAdd && effortSliderAdd.identifier) {
+                entry.effortSliderScriptId = effortSliderAdd.identifier;
+                entry.lastEffortSliderScriptHash = effortSliderHash;
+              }
+            }
+            if (!probe.hasEffortSlider || !entry.effortSliderMounted) {
+              const evalRes = await entry.session.evaluate(this.effortSliderExpr, false, 4500).catch(() => null);
+              this._recordEffortSliderEvalOutcome(entry, evalRes, effortSliderHash);
+            }
+          }
+        } else if (needsEffortSliderCleanup) {
+          healed = true;
+          if (entry.effortSliderScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
+            entry.effortSliderScriptId = null;
+          }
+          await entry.session.evaluate(this._getEffortSliderCleanupExpression(), false, 3500).catch(() => {});
+          entry.effortSliderMounted = false;
+          entry.effortSliderSkipped = false;
+          entry.lastEffortSliderHash = '';
+          entry.lastEffortSliderScriptHash = '';
+        }
         if (probe.needsDashboardSync) {
           healed = true;
           await entry.session
@@ -7352,6 +7987,20 @@ export class PrismDaemon {
           entry.wallpaperMounted = false;
           entry.lastWallpaperHash = '';
           entry.lastWallpaperScriptHash = '';
+          if (entry.catSanctuaryScriptId && !entry.session.closed) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId }).catch(() => {});
+          }
+          entry.catSanctuaryScriptId = null;
+          entry.catSanctuaryMounted = false;
+          entry.lastCatSanctuaryHash = '';
+          entry.lastCatSanctuaryScriptHash = '';
+          if (entry.effortSliderScriptId && !entry.session.closed) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
+          }
+          entry.effortSliderScriptId = null;
+          entry.effortSliderMounted = false;
+          entry.lastEffortSliderHash = '';
+          entry.lastEffortSliderScriptHash = '';
           if (cleanPageDom && !entry.session.closed) {
             await entry.session.evaluate(this.cdp.REMOVE_EXPRESSION).catch(() => {});
           }
@@ -7413,9 +8062,9 @@ export class PrismDaemon {
         const skippedLen = Array.isArray(res.skipped) ? res.skipped.length : 0;
         const alreadyLen = Array.isArray(res.alreadySet) ? res.alreadySet.length : 0;
         const matched = Number(res.matched || 0);
-        // 全部快捷方式已确认 alreadySet 且无跳过/新修补时，开启智能退避（30~60 分钟）
+        // 全部快捷方式已确认 alreadySet 且无跳过/新修补且当前存在活跃 CDP 端口时，开启智能退避（30~60 分钟）
         this._shortcutAllClean =
-          patchedLen === 0 && skippedLen === 0 && (alreadyLen > 0 || matched === 0);
+          Boolean(hasActivePort) && patchedLen === 0 && skippedLen === 0 && (alreadyLen > 0 || matched === 0);
       } else {
         this._shortcutAllClean = false;
       }
@@ -7585,6 +8234,7 @@ export class PrismDaemon {
       if (!this.enabledCheck()) {
         this._noPortSinceMs = 0;
         this._hasActiveCdpPort = false;
+        this._portState = 'unknown';
         if (this.sessions.size > 0 || this.browserSession) {
           await this.detachAll(true);
         }
@@ -7593,8 +8243,12 @@ export class PrismDaemon {
 
       const port = discoverActivePort(this.overridePort, this.portFile);
       if (!port) {
+        const transitionedFromActive = this._hasActiveCdpPort || this._portState === 'active';
         this._hasActiveCdpPort = false;
-        this._resetShortcutBackoff('no-port');
+        this._portState = 'missing';
+        if (transitionedFromActive) {
+          this._resetShortcutBackoff('no-port');
+        }
         if (this.sessions.size === 0 && this._prevAttachedCount > 0) {
           this._disconnectedAllSessions = true;
           this._prevAttachedCount = 0;
@@ -7616,6 +8270,7 @@ export class PrismDaemon {
       if (canSkipListPoll) {
         this._noPortSinceMs = 0;
         this._hasActiveCdpPort = true;
+        this._portState = 'active';
         this._maybeSyncShortcuts(false, { hasActivePort: true });
 
         const liveEntries = [];
@@ -7657,8 +8312,12 @@ export class PrismDaemon {
         this._lastListPagesAt = Date.now();
         this._forceListPagesNextTick = false;
       } catch {
+        const transitionedFromActive = this._hasActiveCdpPort || this._portState === 'active';
         this._hasActiveCdpPort = false;
-        this._resetShortcutBackoff('port-unreachable');
+        this._portState = 'unreachable';
+        if (transitionedFromActive) {
+          this._resetShortcutBackoff('port-unreachable');
+        }
         this.closeBrowserDiscovery();
         if (this.sessions.size === 0) {
           if (this._prevAttachedCount > 0) {
@@ -7672,6 +8331,7 @@ export class PrismDaemon {
 
       this._noPortSinceMs = 0;
       this._hasActiveCdpPort = true;
+      this._portState = 'active';
       const prevActivePort = this._lastActiveCdpPort;
       const portChanged = prevActivePort !== null && prevActivePort !== port;
       this._lastActiveCdpPort = port;
@@ -7744,6 +8404,20 @@ export class PrismDaemon {
             entry.wallpaperMounted = false;
             entry.lastWallpaperHash = '';
             entry.lastWallpaperScriptHash = '';
+            if (entry.catSanctuaryScriptId) {
+              await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId }).catch(() => {});
+              entry.catSanctuaryScriptId = null;
+            }
+            entry.catSanctuaryMounted = false;
+            entry.lastCatSanctuaryHash = '';
+            entry.lastCatSanctuaryScriptHash = '';
+            if (entry.effortSliderScriptId) {
+              await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
+              entry.effortSliderScriptId = null;
+            }
+            entry.effortSliderMounted = false;
+            entry.lastEffortSliderHash = '';
+            entry.lastEffortSliderScriptHash = '';
             await entry.session.evaluate(this.cdp.REMOVE_EXPRESSION).catch(() => {});
           }
           entry.session.close();
@@ -7886,14 +8560,15 @@ export class PrismDaemon {
   }
 
   claimOwnership() {
-    this.stopExistingDaemon();
+    const tookOver = Boolean(this.stopExistingDaemon());
+    this._tookOverExistingDaemon = tookOver;
     this._ownerFileCache = null;
     try {
       try {
         const st = fs.lstatSync(this.pidFile);
-        if (st.isSymbolicLink()) return;
+        if (st.isSymbolicLink()) return tookOver;
       } catch (err) {
-        if (err && err.code !== 'ENOENT') return;
+        if (err && err.code !== 'ENOENT') return tookOver;
       }
       writeFileAtomicSync(
         this.pidFile,
@@ -7902,6 +8577,7 @@ export class PrismDaemon {
       );
       this._ownerFileCache = null;
     } catch {}
+    return tookOver;
   }
 
   isCurrentOwner() {
@@ -7952,10 +8628,15 @@ export class PrismDaemon {
     if (this.running) return;
     this._sidebarStopped = false;
     this._wallpaperStopped = false;
+    this._logBytes = -1;
+    this._tookOverExistingDaemon = false;
     this.running = true;
-    if (claimPid) this.claimOwnership();
+    if (!this._hasExplicitPollInterval) {
+      this.pollIntervalMs = this._resolveConfiguredPollIntervalMs();
+    }
+    const tookOver = claimPid ? Boolean(this.claimOwnership()) : false;
     const initialPort = discoverActivePort(this.overridePort, this.portFile);
-    this.log(`[boot] PrismDaemon started (pid=${process.pid}, activePort=${initialPort || 'none'}, root=${this.rootDir})`);
+    this.log(`[boot] PrismDaemon started (pid=${process.pid}, activePort=${initialPort || 'none'}, pollMs=${this.pollIntervalMs}, takeover=${tookOver}, root=${this.rootDir})`);
     this.rebuildBundle();
 
     if (watchFiles) {
@@ -8030,7 +8711,29 @@ export class PrismDaemon {
     this.timer = setInterval(() => {
       void this.tick();
     }, this.pollIntervalMs);
-    void this.tick();
+    let startupDelayMs = 0;
+    if (claimPid) {
+      if (tookOver) {
+        const jitter = this._startupJitterMs > 0 ? Math.floor(Math.random() * this._startupJitterMs) : 0;
+        startupDelayMs = this._takeoverDebounceMs + jitter;
+      } else if (!isAutomatedTestRuntime() && this._startupJitterMs > 0) {
+        startupDelayMs = 25 + Math.floor(Math.random() * Math.min(60, this._startupJitterMs));
+      }
+    }
+    if (startupDelayMs > 0) {
+      this._startupTickTimer = setTimeout(() => {
+        this._startupTickTimer = null;
+        if (!this.running) return;
+        if (!this.isCurrentOwner()) {
+          void this.stop(false);
+          return;
+        }
+        void this.tick();
+      }, startupDelayMs);
+      this._startupTickTimer?.unref?.();
+    } else {
+      void this.tick();
+    }
 
     if (this._enableAutoUpdateTimer) {
       this._updateInitialTimer = setTimeout(() => {
@@ -8066,6 +8769,10 @@ export class PrismDaemon {
     if (this.timer) {
       clearInterval(this.timer);
       this.timer = null;
+    }
+    if (this._startupTickTimer) {
+      clearTimeout(this._startupTickTimer);
+      this._startupTickTimer = null;
     }
     if (this._reloadTimer) {
       clearTimeout(this._reloadTimer);

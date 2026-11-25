@@ -12,7 +12,7 @@
     cloudCoverage: 1,
     cloudSoftness: 0.1,
     cloudDrift: 8,
-    idleAlphaLight: 0.068,
+    idleAlphaLight: 0.030,
     idleAlphaDark: 0.13,
     speedNear: 1100,
     speedFar: 80,
@@ -1593,11 +1593,29 @@ color = vec4(rgb * a, a);
       }
       const pal = String(html.getAttribute('data-ag-cs-palette') || '').trim().toLowerCase();
       if (pal === 'warm' || pal === 'claude') return 1;
-      if (!dark && String(html.getAttribute('data-ag-cs-light-preset') || '').trim().toLowerCase() === 'alabaster') {
+      if (!dark && pal === 'obsidian' && String(html.getAttribute('data-ag-cs-light-preset') || '').trim().toLowerCase() === 'alabaster') {
         return 1;
       }
     } catch {}
     return 0;
+  }
+
+  function resolveRainbowPixelSize(canvas, spectrumCode, extra) {
+    if (spectrumCode !== 6) return 0;
+    let rawStyle = extra && extra.rainbowStyle !== undefined ? extra.rainbowStyle : null;
+    let rawPx = extra && extra.rainbowPixelSize !== undefined ? extra.rainbowPixelSize : null;
+    try {
+      const doc = (canvas && canvas.ownerDocument) || (typeof document !== 'undefined' ? document : null);
+      const html = doc && doc.documentElement;
+      if (html && typeof html.getAttribute === 'function') {
+        if (rawStyle === null || rawStyle === undefined) rawStyle = html.getAttribute('data-ag-rainbow-style');
+        if (rawPx === null || rawPx === undefined) rawPx = html.getAttribute('data-ag-rainbow-px');
+      }
+    } catch {}
+    if (String(rawStyle || 'pixel').trim().toLowerCase() === 'aurora') return 0;
+    const n = Number(rawPx);
+    if (n === 4 || n === 6 || n === 8) return n;
+    return Number.isFinite(n) && n >= 2 && n <= 12 ? Math.round(n) : 6;
   }
 
   const HORIZON_PRISM_STOPS = [
@@ -1647,10 +1665,12 @@ uniform float uSurge;
 uniform float uSpeed;
 uniform float uSpectrum;
 uniform float uSemantic;
+uniform float uPixelSize;
 out vec4 outColor;
 
 float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 float ign(vec2 p){return fract(52.9829189*fract(dot(p,vec2(.06711056,.00583715))));}
+float bayer4(vec2 c){vec2 a=mod(floor(c),2.),b=mod(floor(floor(c)*.5),2.);return (4.*(2.*abs(a.x-a.y)+a.y)+(2.*abs(b.x-b.y)+b.y)+.5)/16.;}
 float noise(vec2 p){vec2 i=floor(p),f=fract(p),u=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);}
 float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<4;i++){v+=a*noise(p);p=p*2.03+17.1;a*=.5;}return v;}
 float halftone(vec2 px,vec2 res,float y,float t,float cell,float msk){float persp=1./(.55+y);vec2 g=vec2((px.x-res.x*.5)*persp,res.y*log(.55+y));g.y+=10.*sin(g.x*.007+t*.42)+3.2*sin(g.x*.019-t*.28)-t*1.5;float dist=length(fract(g/cell)-.5),aa=clamp(fwidth(dist)*1.15,.035,.14),r=.08+.16*msk;return(1.-smoothstep(r-aa,r+aa*.35,dist))*msk;}
@@ -1680,7 +1700,14 @@ return dark > 0.5
 }
 vec3 sm(vec3 a,float d,float p,float i,float w){return w>.001?mix(a,semanticColor(i,d,p),w):a;}
 void main() {
-vec2 uv = gl_FragCoord.xy / max(uRes, vec2(1.0));
+vec2 res = uRes / max(uDpr, 0.5);
+vec2 pxRaw = gl_FragCoord.xy / max(uDpr, 0.5);
+float isPxR = step(5.5, uSpectrum) * step(0.5, uPixelSize);
+float ps = max(uPixelSize, 1.0);
+vec2 pCell = floor(pxRaw / ps);
+float b4 = bayer4(pCell);
+vec2 px = mix(pxRaw, (pCell + 0.5) * ps, isPxR);
+vec2 uv = mix(gl_FragCoord.xy / max(uRes, vec2(1.0)), px / max(res, vec2(1.0)), isPxR);
 float reach = max(uReach, 0.01);
 float stretch = uStretch * (1.0 + 0.08 * (uSpeed - 1.0));
 float surgeUp = max(uSurge, 0.0);
@@ -1689,26 +1716,29 @@ if (yCut > 1.6 + 0.22 * surgeUp) {
 outColor = vec4(0.0);
 return;
 }
-float topFeather = 1.0 - smoothstep(1.15 + 0.14 * surgeUp, 1.58 + 0.22 * surgeUp, yCut);
-vec2 px = gl_FragCoord.xy / max(uDpr, 0.5);
-vec2 res = uRes / max(uDpr, 0.5);
+float topFeather = (1.0 - smoothstep(1.15 + 0.14 * surgeUp, 1.58 + 0.22 * surgeUp, yCut)) * (1.0 - smoothstep(0.86, 1.0, uv.y));
 float t = uTime;
 vec2 p = (px - res * 0.5) / max(res.y, 1.0);
 vec2 q = p + 0.09 * vec2(fbm(p * 2.0 + vec2(t * 0.16, 0.0)), fbm(p * 2.0 + vec2(3.1, -t * 0.13))) - 0.045;
-float y = uv.y / reach;
+float y = uv.y / reach - isPxR * 0.10 * sin(uv.x * 3.14159265);
 float waveA = sin(uv.x * 5.2 - t * 0.68);
 float waveB = sin(uv.x * 8.6 + t * 0.46 + 1.4);
 float curtain = 0.5 + 0.32 * waveA + 0.18 * waveB;
 float jut = (fbm(vec2(px.x / 220.0 + t * 0.18, t * 0.11)) - 0.5) * 0.68 + (waveA * 0.65 + waveB * 0.35) * 0.24;
 float h = y + stretch * (0.36 * jut + 0.11 * (fbm(vec2(px.x / 90.0 - t * 0.21, t * 0.14 + 3.0)) - 0.5));
-float glow = exp(-max(h, 0.0) * max(h, 0.0) * 4.0) * (0.76 + 0.42 * curtain) * smoothstep(0.0, 0.14, uv.x) * (1.0 - smoothstep(0.86, 1.0, uv.x));
-float basePhase = px.x / max(res.x, 1.0) * 0.9 + t * 0.15 + 0.22 * fbm(q * 1.5);
+float lPad = min(0.22, max(64.0 / max(res.x, 1.0), 0.14));
+float lStart = min(0.03, 18.0 / max(res.x, 1.0));
+float lFade = isPxR > 0.5 ? smoothstep(lStart, lPad, uv.x) : smoothstep(0.0, 0.14, uv.x);
+float rFade = 1.0 - smoothstep(isPxR > 0.5 ? max(0.84, 1.0 - 52.0 / max(res.x, 1.0)) : 0.86, 1.0, uv.x);
+float glow = exp(-max(h, 0.0) * max(h, 0.0) * 4.0) * (0.76 + 0.42 * curtain) * lFade * rFade;
+float basePhase = px.x / max(res.x, 1.0) * 0.9 + t * (isPxR > 0.5 ? 0.12 : 0.15) + (isPxR > 0.5 ? 0.18 * fbm(q * 1.4) : 0.22 * fbm(q * 1.5));
+if (isPxR > 0.5) basePhase = floor(fract(basePhase) * 6.0 + (b4 - 0.5) * 0.72) / 6.0;
 float semId = floor(uSemantic + 0.001);
 float semW = semId > 0.5 ? clamp(1.0 - (uSemantic - semId) / 0.98, 0.0, 1.0) : 0.0;
 vec3 base = sm(spectrumBaseDark(uSpectrum, basePhase), 1.0, basePhase, semId, semW);
 float n = fbm(q * 3.0 + t * 0.16);
 float field = (1.0 - exp(-1.8 * glow * (0.75 + 0.45 * n))) / (1.0 - exp(-1.8 * 1.2));
-float pPhase = uv.x * 1.18 - t * 0.18 + 0.28 * fbm(q * 2.1 + vec2(0.0, t * 0.12)) + 0.14 * y;
+float pPhase = isPxR > 0.5 ? fract(basePhase + 0.08) : (uv.x * 1.18 - t * 0.18 + 0.28 * fbm(q * 2.1 + vec2(0.0, t * 0.12)) + 0.14 * y);
 vec3 dotPrismTint = vec3(0.0);
 float dotPrismMix = 0.0;
 float dotBoost = 0.0;
@@ -1772,7 +1802,7 @@ dotBoost *= topFeather;
 float band = smoothstep(0.3, 0.55, field) * (1.0 - smoothstep(0.7, 0.98, field));
 float dotMsk = clamp(band * 0.8 * smoothstep(0.12, 0.32, -jut) + dotBoost, 0.0, 1.0);
 float dA = halftone(px, res, uv.y, t, 7.0, dotMsk);
-float grain = hash(px + fract(t * 7.0) * 91.0) - 0.5;
+float grain = isPxR > 0.5 ? 0.0 : hash(px + fract(t * 7.0) * 91.0) - 0.5;
 vec3 c;
 vec3 dc;
 float a;
@@ -1810,9 +1840,19 @@ float washGain = mix(1.08, 1.40, clamp(uIntensity, 0.0, 1.0));
 a = clamp(field * 0.66 * washGain * effPres, 0.0, 0.68);
 da = clamp(dA * (0.44 + 0.36 * sqrt(a)) * effPres, 0.0, 0.58);
 }
+if (isPxR > 0.5) {
+if (uDark <= 0.5) c = clamp(pow(max(c, vec3(0.001)), vec3(1.16)), 0.0, 1.0);
+float dens = clamp(a * (uDark > 0.5 ? 1.25 : 1.32), 0.0, 1.0);
+float q = floor(dens * 3.0 + b4) / 3.0;
+a = q < 0.01 ? 0.0 : q * (uDark > 0.5 ? 0.74 : 0.76);
+float sh = hash(pCell * 1.37);
+float tw = step(0.962, sh) * (0.5 + 0.5 * sin(t * 2.2 + sh * 31.0));
+da = tw * smoothstep(0.18, 0.58, field) * (uDark > 0.5 ? 0.50 : 0.34) * uPresence;
+dc = uDark > 0.5 ? min(c * 1.35 + 0.15, 1.0) : clamp(c * 0.78, 0.0, 1.0);
+}
 float outAlpha = clamp(a + da * (1.0 - a), 0.0, 1.0);
 vec3 premulRgb = clamp(c, 0.0, 1.0) * a * (1.0 - da) + clamp(dc, 0.0, 1.0) * da;
-if (outAlpha > 0.0015) {
+if (outAlpha > 0.0015 && isPxR < 0.5) {
 vec2 dp = gl_FragCoord.xy + fract(t * 3.0) * vec2(37.0, 19.0);
 float tpdf = ign(dp) - ign(dp.yx + vec2(11.3, 27.1));
 premulRgb += (tpdf / 255.0) * min(1.0, outAlpha * 2.5);
@@ -1852,7 +1892,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         throw new Error(gl.getProgramInfoLog(program) || 'glow program link error');
       }
       gl.useProgram(program);
-      for (const name of ['uRes', 'uDpr', 'uTime', 'uDark', 'uReach', 'uIntensity', 'uStretch', 'uPresence', 'uPrism', 'uSurge', 'uSpeed', 'uSpectrum', 'uSemantic']) {
+      for (const name of ['uRes', 'uDpr', 'uTime', 'uDark', 'uReach', 'uIntensity', 'uStretch', 'uPresence', 'uPrism', 'uSurge', 'uSpeed', 'uSpectrum', 'uSemantic', 'uPixelSize']) {
         u[name] = gl.getUniformLocation(program, name);
       }
     }
@@ -1870,7 +1910,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
       },
-      draw(w, h, dpr, timeSec, dark, intensity, presence, reach = DEFAULT_HORIZON_AURA.reach, prism = 0, surge = 0, speed = 1, spectrumCode = 0, semanticCode = 0) {
+      draw(w, h, dpr, timeSec, dark, intensity, presence, reach = DEFAULT_HORIZON_AURA.reach, prism = 0, surge = 0, speed = 1, spectrumCode = 0, semanticCode = 0, pixelSize = 0) {
         gl.viewport(0, 0, w, h);
         gl.useProgram(program);
         gl.uniform2f(u.uRes, w, h);
@@ -1886,6 +1926,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         gl.uniform1f(u.uSpeed, speed);
         if (u.uSpectrum) gl.uniform1f(u.uSpectrum, spectrumCode);
         if (u.uSemantic) gl.uniform1f(u.uSemantic, semanticCode);
+        if (u.uPixelSize) gl.uniform1f(u.uPixelSize, pixelSize);
         gl.clearColor(0, 0, 0, 0);
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -1951,6 +1992,13 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
     }
     return horizonPrismRgb(phase, out, dark);
   }
+  function bayer4D(cx, cy) {
+    const ax = cx & 1;
+    const ay = cy & 1;
+    const bx = (cx >> 1) & 1;
+    const by = (cy >> 1) & 1;
+    return (4 * (2 * Math.abs(ax - ay) + ay) + (2 * Math.abs(bx - by) + by) + 0.5) / 16;
+  }
   function createBrandHorizon2DRenderer(canvas) {
     const ctx = canvas && canvas.getContext ? canvas.getContext('2d') : null;
     if (!ctx) return null;
@@ -1977,7 +2025,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
           ctx.putImageData(image, 0, 0);
         }
       },
-      draw(w, h, dpr, timeSec, dark, intensity, presence, reach = DEFAULT_HORIZON_AURA.reach, prism = 0, surge = 0, speed = 1, spectrumCode = 0, semanticCode = 0) {
+      draw(w, h, dpr, timeSec, dark, intensity, presence, reach = DEFAULT_HORIZON_AURA.reach, prism = 0, surge = 0, speed = 1, spectrumCode = 0, semanticCode = 0, pixelSize = 0) {
         if (!w || !h) return;
         ensureImage(w, h);
         pixels.fill(0);
@@ -1990,12 +2038,81 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         const customMode = spectrumCode > 0 || semanticCode > 0;
         const cssW = w / Math.max(0.5, dpr);
         const cssH = h / Math.max(0.5, dpr);
-        const step = Math.max(1, Math.round(dpr));
         const effPresL = dark ? presence : Math.pow(Math.max(0, Math.min(1, presence)), 0.68);
         const washGainL = dark ? 1 : (1.08 + 0.32 * Math.max(0, Math.min(1, intensity)));
         const darkBreathMod = dark ? (0.68 + 0.56 * Math.max(0, Math.min(1, intensity))) : 1;
+        if (spectrumCode === 6 && pixelSize > 0) {
+          const block = Math.max(1, Math.round(pixelSize * Math.max(0.5, dpr)));
+          const lStart = Math.min(0.03, 18 / Math.max(cssW, 1));
+          const lPad = Math.min(0.22, Math.max(64 / Math.max(cssW, 1), 0.14));
+          const rStart = Math.max(0.84, 1 - 52 / Math.max(cssW, 1));
+          for (let py = 0, cy = 0; py < h; py += block, cy++) {
+            const uvY = 1 - Math.min(h - 0.5, py + block * 0.5) / h;
+            const topSafe = uvY > 0.86 ? 1 - smooth((uvY - 0.86) / 0.14) : 1;
+            if (topSafe <= 0.002) continue;
+            for (let px = 0, cx = 0; px < w; px += block, cx++) {
+              const uvX = Math.min(w - 0.5, px + block * 0.5) / w;
+              const yNorm = uvY / rEff - 0.10 * Math.sin(uvX * Math.PI);
+              if (yNorm > 1.55 + 0.25 * surgeUp) continue;
+              const lFade = smooth((uvX - lStart) / Math.max(0.01, lPad - lStart));
+              const rFade = 1 - smooth((uvX - rStart) / Math.max(0.01, 1 - rStart));
+              if (lFade * rFade <= 0.002) continue;
+              const cssX = uvX * cssW;
+              const waveA = Math.sin(uvX * 5.2 - timeSec * 0.68);
+              const waveB = Math.sin(uvX * 8.6 + timeSec * 0.46 + 1.4);
+              const curtain = 0.5 + 0.32 * waveA + 0.18 * waveB;
+              const jut = (valueNoise(cssX / 220 + timeSec * 0.18, timeSec * 0.11) - 0.5) * 0.68 + (waveA * 0.65 + waveB * 0.35) * 0.24;
+              const hJut = Math.max(0, yNorm + 0.25 * stretchScale * jut);
+              const gVal = Math.exp(-hJut * hJut * 4.0) * (0.76 + 0.42 * curtain) * lFade * rFade * topSafe;
+              const field = Math.min(1, gVal * 1.12);
+              const rawA = dark
+                ? Math.min(1, field * 0.56 * darkBreathMod * presence)
+                : Math.min(0.68, field * 0.66 * washGainL * effPresL);
+              const b4 = bayer4D(cx, cy);
+              const dens = Math.min(1, rawA * (dark ? 1.25 : 1.32));
+              const q = Math.floor(dens * 3 + b4) / 3;
+              let outA = q < 0.01 ? 0 : q * (dark ? 0.74 : 0.76);
+              const sh = hash(cx * 37 + 11, cy * 53 + 7);
+              const tw = sh > 0.962 ? (0.5 + 0.5 * Math.sin(timeSec * 2.2 + sh * 31)) * smooth((field - 0.18) / 0.4) * (dark ? 0.5 : 0.34) * presence : 0;
+              outA = Math.min(1, outA + tw * (1 - outA));
+              const A = Math.round(outA * 255) & 255;
+              if (A === 0) continue;
+              const bPh = uvX * 0.9 + timeSec * 0.12 + 0.18 * valueNoise(uvX * 3 + timeSec * 0.16, yNorm * 1.4);
+              const qPh = Math.floor((((bPh % 1) + 1) % 1) * 6 + (b4 - 0.5) * 0.72) / 6;
+              sampleHorizonTone2D(6, semanticCode, dark, qPh, toneRgb);
+              let r = toneRgb[0], g = toneRgb[1], b = toneRgb[2];
+              if (!dark) {
+                r = Math.pow(Math.max(0.001, r / 255), 1.16) * 255;
+                g = Math.pow(Math.max(0.001, g / 255), 1.16) * 255;
+                b = Math.pow(Math.max(0.001, b / 255), 1.16) * 255;
+              }
+              if (tw > 0.01) {
+                const tr = dark ? Math.min(255, r * 1.35 + 38) : r * 0.78;
+                const tg = dark ? Math.min(255, g * 1.35 + 38) : g * 0.78;
+                const tb = dark ? Math.min(255, b * 1.35 + 38) : b * 0.78;
+                const wf = tw / Math.max(0.001, outA);
+                r = r * (1 - wf) + tr * wf;
+                g = g * (1 - wf) + tg * wf;
+                b = b * (1 - wf) + tb * wf;
+              }
+              const R = Math.round(Math.min(255, Math.max(0, r))) & 255;
+              const G = Math.round(Math.min(255, Math.max(0, g))) & 255;
+              const B = Math.round(Math.min(255, Math.max(0, b))) & 255;
+              const packed = LITTLE_ENDIAN ? ((A << 24) | (B << 16) | (G << 8) | R) >>> 0 : ((R << 24) | (G << 16) | (B << 8) | A) >>> 0;
+              for (let sy = 0; sy < block && py + sy < h; sy++) {
+                const rowOff = (py + sy) * w + px;
+                for (let sx = 0; sx < block && px + sx < w; sx++) pixels[rowOff + sx] = packed;
+              }
+            }
+          }
+          ctx.putImageData(image, 0, 0);
+          return;
+        }
+        const step = Math.max(1, Math.round(dpr));
         for (let py = 0; py < h; py += step) {
           const uvY = 1 - py / h;
+          const topSafe = uvY > 0.86 ? 1 - smooth((uvY - 0.86) / 0.14) : 1;
+          if (topSafe <= 0.002) continue;
           const yNorm = uvY / rEff;
           if (yNorm > 1.48 + 0.25 * surgeUp) continue;
           const persp = 1 / (0.55 + uvY);
@@ -2009,7 +2126,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
             const jut = (valueNoise(cssX / 220 + timeSec * 0.18, timeSec * 0.11) - 0.5) * 0.68 + (waveA * 0.65 + waveB * 0.35) * 0.24;
             const hJut = Math.max(0, yNorm + 0.25 * stretchScale * jut);
             const edgeFade = (uvX < 0.14 ? smooth(uvX / 0.14) : uvX > 0.86 ? smooth((1 - uvX) / 0.14) : 1);
-            const gVal = Math.exp(-hJut * hJut * 4.0) * (0.76 + 0.42 * curtain) * edgeFade;
+            const gVal = Math.exp(-hJut * hJut * 4.0) * (0.76 + 0.42 * curtain) * edgeFade * topSafe;
             let field = dark
               ? Math.min(1, gVal * 1.12 * darkBreathMod * presence)
               : Math.min(1, gVal * 1.12);
@@ -2231,6 +2348,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
     let lastSpeed = -1;
     let lastSpectrum = -1;
     let lastSemantic = -1;
+    let lastPixelSize = -1;
     let semMix = 0;
     let holdSem = 0;
     let clearedZero = false;
@@ -2371,6 +2489,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         : detectHostSpectrumCode(canvas, dark);
       const rawSem = extra && extra.semantic !== undefined ? extra.semantic : baseSemantic;
       const semanticCode = resolveHorizonSemanticCode(rawSem);
+      const pixelSize = resolveRainbowPixelSize(canvas, spectrumCode, extra);
       activeAura.reach = reach;
       activeAura.prism = prism;
       activeAura.surge = surge;
@@ -2391,6 +2510,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
         || dark !== lastDark
         || spectrumCode !== lastSpectrum
         || semanticCode !== lastSemantic
+        || pixelSize !== lastPixelSize
         || Math.abs((semanticCode > 0 ? 1 : 0) - semMix) > 0.005
         || Math.abs(strength - lastStrength) >= 0.005
         || Math.abs(reach - lastReach) >= 0.002
@@ -2439,7 +2559,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
       const intensity = isDefaultHome ? breath * (0.2 + 0.8 * strength) : breath * (0.55 + 0.45 * strength);
       const strengthGain = strength <= 0 ? 0 : (strength >= 0.999 ? 1 : Math.pow(strength, 0.78));
       const presence = basePresence * strengthGain;
-      renderer.draw(canvas.width, canvas.height, dpr, 12 + flowSec, dark, intensity, presence, reach, prism, surge, speed, spectrumCode, effSem);
+      renderer.draw(canvas.width, canvas.height, dpr, 12 + flowSec, dark, intensity, presence, reach, prism, surge, speed, spectrumCode, effSem, pixelSize);
       clearedZero = false;
       lastDrawMs = nowMs;
       lastDark = dark;
@@ -2450,6 +2570,7 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
       lastSpeed = speed;
       lastSpectrum = spectrumCode;
       lastSemantic = semanticCode;
+      lastPixelSize = pixelSize;
       stale = false;
       return true;
     }

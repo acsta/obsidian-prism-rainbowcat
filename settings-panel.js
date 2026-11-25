@@ -48,6 +48,8 @@
     palette: mkSp(['obsidian', 'host', 'warm'], null, { claude: 'warm' }),
     lightPreset: mkSp(['crystal', 'alabaster']),
     accentTone: mkSp(['follow', 'cobalt', 'iris', 'amber', 'mono', 'rainbow']),
+    rainbowStyle: mkSp(['pixel', 'aurora'], 'pixel'),
+    rainbowPixelSize: mkSp(['4', '6', '8'], '6'),
     cornerStyle: mkSp(['sharp', 'balanced', 'soft'], 'balanced'),
     ambientIntensity: mkSp(['0', '35', '70', '100'], '100'),
     motionLevel: mkSp(['off', 'subtle', 'standard', 'ultra'], 'ultra'),
@@ -65,6 +67,9 @@
     codeFont: mkSp(['default', 'jetbrains', 'cascadia', 'sfmono']),
     codeLigatures: S_F,
     mascot: mkSp(['cat', 'crab', 'minis', 'off'], null, { dual: 'crab' }),
+    catCount: mkSp(['1', '2', '4'], '4'),
+    catProps: S_ON,
+    catQuietMode: mkSp(['auto', 'nap'], 'auto'),
     sidebarRestyle: S_T,
     sidebarCompact: S_F,
     sidebarNavFold: mkSp(['off', 'on']),
@@ -82,7 +87,8 @@
   });
 
   const SCENE_PRESETS = O.freeze({
-    ultra: O.freeze({ motionLevel: 'ultra', targetFps: '180', homeRipple: true, mascot: 'crab', sidebarCompact: false, smoothCaret: true, ambientIntensity: '100' }),
+    ultra: O.freeze({ motionLevel: 'ultra', targetFps: '180', homeRipple: true, sidebarCompact: false, smoothCaret: true, ambientIntensity: '100' }),
+    cozyEco: O.freeze({ motionLevel: 'standard', targetFps: '60', homeRipple: false, mascot: 'cat', sidebarCompact: false, smoothCaret: true, ambientIntensity: '35', catQuietMode: 'auto' }),
     focus: O.freeze({ motionLevel: 'subtle', targetFps: '120', homeRipple: false, mascot: 'off', sidebarCompact: true, smoothCaret: true, ambientIntensity: '35' }),
     eco: O.freeze({ motionLevel: 'off', targetFps: '60', homeRipple: false, mascot: 'off', sidebarCompact: false, smoothCaret: false, ambientIntensity: '0' }),
   });
@@ -109,7 +115,7 @@
       const normFn = G.__agCsI18n?.normalizeLanguage;
       val = typeof normFn === 'function' && nav ? normFn(nav) : /^ja\b/i.test(nav) ? 'ja' : /^en\b/i.test(nav) ? 'en' : /^zh[-_](?:HK|MO)/i.test(nav) ? 'yue' : /^zh[-_](?:TW|Hant)/i.test(nav) ? 'zh-TW' : 'zh-CN';
     }
-    if ((key === 'omniModule' || key === 'sidebarStudio' || key === 'autoUpdate' || key === 'sidebarNavFold') && typeof val === 'boolean') val = val ? 'on' : 'off';
+    if ((key === 'omniModule' || key === 'sidebarStudio' || key === 'autoUpdate' || key === 'sidebarNavFold' || key === 'catProps') && typeof val === 'boolean') val = val ? 'on' : 'off';
     if (typeof spec.default === 'string' && typeof val === 'number' && Number.isFinite(val)) val = String(val);
     return spec.allowed.includes(val) ? { valid: true, value: val } : { valid: false };
   };
@@ -419,6 +425,22 @@
         if (dr.style) dr.style.opacity = dim ? '0.55' : '';
         if (dim) sa(dr, 'data-ag-cs-dimmed', '1'); else ra(dr, 'data-ag-cs-dimmed');
       }
+      const isRainbow = effVal('accentTone', l) === 'rainbow';
+      const isPixelRainbow = isRainbow && effVal('rainbowStyle', l) !== 'aurora';
+      const isCatMascot = effVal('mascot', l) === 'cat';
+      for (const [ck, vis] of [
+        ['rainbowStyle', isRainbow],
+        ['rainbowPixelSize', isPixelRainbow],
+        ['catCount', isCatMascot],
+        ['catProps', isCatMascot],
+        ['catQuietMode', isCatMascot],
+      ]) {
+        const cr = qs(rootEl, `[data-ag-cs-row="${ck}"]`);
+        if (cr) {
+          cr.hidden = !vis;
+          if (cr.style) cr.style.display = vis ? '' : 'none';
+        }
+      }
       const lpDescEl = qs(rootEl, '[data-ag-cs-row="lightPreset"] [data-k="d"]');
       if (lpDescEl) {
         const curPal = effVal('palette', l);
@@ -685,6 +707,8 @@
             RS('palette', [['host', U('optHost')], ['warm', warmLbl], ['obsidian', U('optObsidian')]]),
             RS('lightPreset', [['crystal', U('optLightCrystal')], ['alabaster', U('optLightAlabaster')]]),
             RS('accentTone', [['follow', U('optToneFollow')], ['cobalt', U('optToneCobalt')], ['iris', U('optToneIris')], ['amber', U('optToneAmber')], ['mono', U('optToneMono')], ['rainbow', U('optToneRainbow')]]),
+            RS('rainbowStyle', [['pixel', U('optRainbowPixel', 'Pixel Bayer')], ['aurora', U('optRainbowAurora', 'Soft Aurora')]]),
+            RS('rainbowPixelSize', [['4', '4px'], ['6', '6px'], ['8', '8px']]),
             RS('cornerStyle', [['sharp', U('optCornerSharp')], ['balanced', U('optCornerBalanced')], ['soft', U('optCornerSoft')]]),
             RS('ambientIntensity', [['0', U('optAmb0', '0%')], ['35', U('optAmb35', '35%')], ['70', U('optAmb70', '70%')], ['100', U('optAmb100', '100%')]]),
             RS('motionLevel', [['off', U('optMotionOff')], ['subtle', U('optMotionSubtle')], ['standard', U('optMotionStandard')], ['ultra', U('optMotionUltra')]]),
@@ -702,6 +726,9 @@
             RS('codeFont', [['default', U('optFontDefault')], ['jetbrains', 'JetBrains Mono'], ['cascadia', 'Cascadia Code'], ['sfmono', U('optFontSfmono', 'SF Mono')]]),
             RS('codeLigatures', onOff),
             RS('mascot', [['cat', mCat], ['crab', mDual], ['minis', mMinis], ['off', mOff]]),
+            RS('catCount', [['1', U('optCatCount1', '1')], ['2', U('optCatCount2', '2')], ['4', U('optCatCount4', '4')]]),
+            RS('catProps', onOffStr),
+            RS('catQuietMode', [['auto', U('optCatQuietAuto', 'Auto Nap')], ['nap', U('optCatQuietNap', 'Focus Nap')]]),
             RS('sidebarRestyle', onOff, 'Sidebar'),
             RS('sidebarCompact', onOff),
             R('sidebarNavFold', 'setSidebarNavFoldLabel', 'setSidebarNavFoldDesc', [['off', U('optSidebarNavFoldOff', 'Show All')], ['on', U('optSidebarNavFoldOn', 'Fold Extra')]]),
@@ -719,8 +746,8 @@
           ]) rowDefs[r.key] = r;
 
           const groups = [
-            { id: 'appearance', title: U('grpAppearance'), keys: ['palette', 'lightPreset', 'accentTone', 'cornerStyle', 'ambientIntensity', 'motionLevel', 'targetFps', 'homeLayout', 'homeRipple', 'logoInk', 'language', 'hostLocalization'] },
-            { id: 'interaction', title: U('grpInteraction'), keys: ['composerRestyle', 'placeholderStyle', 'smoothCaret', 'scrollBottomMotion', 'contextMenu', 'codeFont', 'codeLigatures', 'mascot', 'sidebarRestyle', 'sidebarCompact', 'sidebarNavFold'] },
+            { id: 'appearance', title: U('grpAppearance'), keys: ['palette', 'lightPreset', 'accentTone', 'rainbowStyle', 'rainbowPixelSize', 'cornerStyle', 'ambientIntensity', 'motionLevel', 'targetFps', 'homeLayout', 'homeRipple', 'logoInk', 'language', 'hostLocalization'] },
+            { id: 'interaction', title: U('grpInteraction'), keys: ['composerRestyle', 'placeholderStyle', 'smoothCaret', 'scrollBottomMotion', 'contextMenu', 'codeFont', 'codeLigatures', 'mascot', 'catCount', 'catProps', 'catQuietMode', 'sidebarRestyle', 'sidebarCompact', 'sidebarNavFold'] },
             { id: 'thought', title: U('grpThought'), keys: ['thoughtTranslate', 'thoughtTrigger', 'thoughtView'] },
             { id: 'modules', title: U('groupModules'), keys: ['telemetryModule', 'effortSliderModule', 'effortMemory', 'omniModule', 'linkTarget'] },
             { id: 'beta', title: U('grpBeta'), keys: ['sidebarStudio'] },
@@ -817,7 +844,7 @@
           const topDeck = mkEl('div', 'ag-cs-settings-topdeck');
           sa(topDeck, 'data-ag-cs-topdeck', '1');
           const presetPills = mkEl('div', 'ag-cs-preset-pills');
-          for (const [pid, plbl] of [['ultra', U('presetUltra', 'Full Optical')], ['focus', U('presetFocus', 'Deep Focus')], ['eco', U('presetEco', 'Silent Eco')]]) {
+          for (const [pid, plbl] of [['ultra', U('presetUltra', 'Full Optical')], ['cozyEco', U('presetCozyEco', 'Cozy Eco')], ['focus', U('presetFocus', 'Deep Focus')], ['eco', U('presetEco', 'Silent Eco')]]) {
             const pb = mkB('ag-cs-preset-btn', plbl, 'data-ag-cs-preset', pid);
             onClk(pb, () => {
               applyBatch({ ...SCENE_PRESETS[pid] });

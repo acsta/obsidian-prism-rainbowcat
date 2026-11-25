@@ -108,6 +108,11 @@
     for (const k of ['sidebarNavFold', 'sidebarStudio', 'autoUpdate']) out[k] = out[k] === 'on' || out[k] === true ? 'on' : 'off';
     for (const k of ['smoothCaret', 'contextMenu']) out[k] = out[k] === undefined ? true : out[k] !== false && out[k] !== 'off';
     out.accentTone = pickOf(out.accentTone, 'follow|cobalt|iris|amber|mono|rainbow', 'follow');
+    out.rainbowStyle = out.rainbowStyle === 'aurora' ? 'aurora' : 'pixel';
+    out.rainbowPixelSize = pickOf(String(out.rainbowPixelSize ?? '6'), '4|6|8', '6');
+    out.catCount = pickOf(String(out.catCount ?? '4'), '1|2|4', '4');
+    out.catProps = out.catProps === 'off' || out.catProps === false ? 'off' : 'on';
+    out.catQuietMode = out.catQuietMode === 'nap' ? 'nap' : 'auto';
     out.cornerStyle = pickOf(out.cornerStyle, 'sharp|balanced|soft', 'balanced');
     out.scrollBottomMotion = out.scrollBottomMotion === 'instant' ? 'instant' : 'smooth';
     out.codeFont = pickOf(out.codeFont, 'default|jetbrains|cascadia|sfmono', 'default');
@@ -269,8 +274,8 @@
   const routeConfigDirtyFlags = (prevCfg, nextCfg, patch) => {
     dirtyFlags.g = true;
     const any = (s) => s.split('|').some((k) => prevCfg[k] !== nextCfg[k] || O.hasOwn(patch, k));
-    if (any('palette|lightPreset|accentTone|ambientIntensity|cornerStyle|codeFont|codeLigatures')) dirtyFlags.t = true;
-    if (any('accentTone|composerRestyle|placeholderStyle|mascot|smoothCaret|telemetryModule|motionLevel|language')) dirtyFlags.c = true;
+    if (any('palette|lightPreset|accentTone|rainbowStyle|rainbowPixelSize|ambientIntensity|cornerStyle|codeFont|codeLigatures')) dirtyFlags.t = true;
+    if (any('accentTone|composerRestyle|placeholderStyle|mascot|catCount|catProps|catQuietMode|smoothCaret|telemetryModule|motionLevel|language')) dirtyFlags.c = true;
     if (any('homeLayout|homeRipple|language')) dirtyFlags.r = true;
     if (any('sidebarRestyle|sidebarCompact|sidebarNavFold')) dirtyFlags.s = true;
     if (any('thoughtTranslate|thoughtTrigger|thoughtView')) dirtyFlags.l = dirtyFlags.tk = true;
@@ -361,6 +366,11 @@
   const getThoughtTranslateMode = () => pickOf(cfg.thoughtTranslate, 'machine|ai', 'off');
   const getThoughtTriggerTiming = () => (cfg.thoughtTrigger === 'expand' ? 'expand' : 'preload');
   const getAccentTone = () => pickOf(cfg.accentTone, 'cobalt|iris|amber|mono|rainbow', 'follow');
+  const getRainbowStyle = () => (cfg.rainbowStyle === 'aurora' ? 'aurora' : 'pixel');
+  const getRainbowPixelSize = () => pickOf(String(cfg.rainbowPixelSize ?? '6'), '4|6|8', '6');
+  const getCatCount = () => pickOf(String(cfg.catCount ?? '4'), '1|2|4', '4');
+  const getCatProps = () => (cfg.catProps === 'off' || cfg.catProps === false ? 'off' : 'on');
+  const getCatQuietMode = () => (cfg.catQuietMode === 'nap' ? 'nap' : 'auto');
   const getCornerStyle = () => pickOf(cfg.cornerStyle, 'sharp|soft', 'balanced');
   const getCodeFont = () => pickOf(cfg.codeFont, 'jetbrains|cascadia|sfmono', 'default');
   const isCodeLigaturesEnabled = () => cfg.codeLigatures === true || cfg.codeLigatures === 'on';
@@ -552,6 +562,7 @@
     msRoot?.[K_PE]?.removeChild(msRoot);
     ra(msAnc, 'data-ag-cs-crab-anchor');
     if (ha(de(), 'data-ag-cs-has-crab')) ra(de(), 'data-ag-cs-has-crab');
+    if (ha(de(), 'data-ag-cat-peek')) ra(de(), 'data-ag-cat-peek');
     msRoot = msRig = msAnc = msOrch = null;
     msLastTier = undefined;
     msLastHostSleep = false;
@@ -567,6 +578,7 @@
         ra(msAnc, 'data-ag-cs-crab-anchor');
         msAnc = null;
       }
+      if (html && ha(html, 'data-ag-cat-peek')) ra(html, 'data-ag-cat-peek');
       if (ha(html, 'data-ag-cs-has-crab')) {
         if (typeof ST === 'function' && !destroyed) {
           if (!crabRemoveAttrTimer) {
@@ -605,6 +617,10 @@
     const nextYield = yieldMode === 'peek' || yieldMode === 'leap' ? yieldMode : 'none';
     if (nextYield === 'peek') setAttrIfChanged(msRoot, 'data-ag-mascot-peek', '1');
     else if (ha(msRoot, 'data-ag-mascot-peek')) ra(msRoot, 'data-ag-mascot-peek');
+    if (html) {
+      if (cfg.mascot === 'cat' && nextYield === 'peek') setAttrIfChanged(html, 'data-ag-cat-peek', '1');
+      else if (ha(html, 'data-ag-cat-peek')) ra(html, 'data-ag-cat-peek');
+    }
 
     const camp = modelInfo?.camp || 'gemini';
     const isOrch = !!(modelInfo?.isOrchestrator);
@@ -613,13 +629,18 @@
     const nextState = {
       camp,
       streaming: !!(activeInfo?.isRunning),
+      isThinking: !!(activeInfo?.isThinking),
       streamTier,
       hasError: !!(activeInfo?.hasError),
+      awaitingDecision: !!(activeInfo?.awaitingDecision),
       yieldMode: nextYield,
       leapOffsetY: 0,
       popoverRightWidth: 0,
       miniPileEnabled: cfg.mascot === 'minis',
       catOnly: cfg.mascot === 'cat',
+      catCount: getCatCount(),
+      catProps: getCatProps(),
+      catQuietMode: getCatQuietMode(),
       orchestrator: isOrch,
       reducedMotion: motionReduced(),
     };
@@ -732,6 +753,11 @@
           lightPreset: getLightPreset(),
           motionLevel: getMotionLevel(),
           accentTone: getAccentTone(),
+          rainbowStyle: getRainbowStyle(),
+          rainbowPixelSize: getRainbowPixelSize(),
+          catCount: getCatCount(),
+          catProps: getCatProps(),
+          catQuietMode: getCatQuietMode(),
           cornerStyle: getCornerStyle(),
           scrollBottomMotion: cfg.scrollBottomMotion === 'instant' ? 'instant' : 'smooth',
           sidebarNavFold: cfg.sidebarNavFold === 'on' ? 'on' : 'off',
@@ -1096,6 +1122,13 @@
       for (const [k, v] of [['', VERSION], ['-omni', getOmniMode()], ['-link-target', getLinkTarget()], ['-sidebar-studio', cfg.sidebarStudio === 'on' ? 'on' : 'off']]) {
         setAttrIfChanged(html, 'data-ag-prism' + k, v);
       }
+      if (getAccentTone() === 'rainbow') {
+        setAttrIfChanged(html, 'data-ag-rainbow-style', getRainbowStyle());
+        setAttrIfChanged(html, 'data-ag-rainbow-px', getRainbowPixelSize());
+      } else {
+        if (ha(html, 'data-ag-rainbow-style')) ra(html, 'data-ag-rainbow-style');
+        if (ha(html, 'data-ag-rainbow-px')) ra(html, 'data-ag-rainbow-px');
+      }
       if (cfg.sidebarRestyle === false) {
         if (ha(html, 'data-ag-cs-sidebar-collapsed')) ra(html, 'data-ag-cs-sidebar-collapsed');
         qa(D, '.ag-cs-sidebar-glide-pill').forEach((n) => n.remove());
@@ -1131,7 +1164,7 @@
         lastAppliedLang = lang;
         if (prevLang) refreshOpenUiForLanguage();
       }
-      const themeKey = `${palette}|${lightPreset}|${dark ? 'd' : 'l'}|${getAccentTone()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
+      const themeKey = `${palette}|${lightPreset}|${dark ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
       if (themeKey !== lastThemeKey) {
         lastThemeKey = themeKey;
         refreshOptics();
@@ -1198,8 +1231,8 @@
     const inSub = !!(cl(ib, S_SUB)), ea = !!(act && !inSub && ga(de(), 'data-ag-prism-mode') !== 'chat'), og = !inSub && !!isPri;
     const mo = !!(ea && qs(ib, '[role="listbox"], [role="option"], [data-testid="slash-command-menu"]'));
     let _lay, low = false, visTk = false;
-    const getLay = () => (_lay ??= (card?.offsetHeight || rc(card)?.height || 0) > 0), sh = cl(card, '#antigravity\\.agentSidePanelInputBox') || card[K_PE], ops = [];
-    const pq = (el, ok) => { const on = ea && ok && !low; ops.push([el, A_Q, on, '46px']); if (on) low = true; };
+    const getLay = () => (_lay ??= (card?.offsetHeight || rc(card)?.height || 0) > 0), sh = cl(card, '#antigravity\\.agentSidePanelInputBox') || card[K_PE], ops = [], isCatMode = cfg.mascot === 'cat', qGap = isCatMode ? '8px' : '46px';
+    const pq = (el, ok) => { const on = ea && ok && !low; ops.push([el, A_Q, on, qGap]); if (on) low = true; };
     if (sh && sh !== ib) for (const ch of sh.children || []) {
       if (ch === card) break;
       const p = tidOf(ch) === T_RP ? ch : qs(ch, S_RP);
@@ -1231,7 +1264,8 @@
         if (seen.has(tgt)) continue;
         const on = ea && !hid && !low;
         if (og && on) pTk?.add(tgt);
-        if (og || !pTk?.has(tgt)) ops.push([tgt, A_TK, on, tgt === c && tidOf(c) === T_TK ? '52px' : '46px']);
+        const tkGap = isCatMode ? '8px' : (tgt === c && tidOf(c) === T_TK ? '52px' : '46px');
+        if (og || !pTk?.has(tgt)) ops.push([tgt, A_TK, on, tkGap]);
         if (on) low = true;
         seen.add(tgt);
       }
@@ -1291,6 +1325,61 @@
     if (touched) prismRimCtl.markDirty();
   };
 
+  const COMPOSER_POPUP_SEL =
+    '[data-testid="slash-command-menu"], [data-testid="permissions-menu"], .agy-fastpick, [data-testid="context-menu-popup"], .ag-cs-ctx-menu';
+  const COMPOSER_OVERLAY_SEL =
+    '.agy-overlay:not([data-hover-card-popup]), [role="listbox"], [role="menu"]:not(.ag-cs-ctx-menu)';
+
+  const isContextCardVisibleNow = () => {
+    const pulseHost = byId('ag-prism-pulse-bar') || byId('ag-pulse-status-bar');
+    const cardEl = byId('context-card') || pulseHost?.shadowRoot?.getElementById?.('context-card') || null;
+    return !!(cardEl && cardEl[K_IC] !== false && !cardEl.hidden && ga(cardEl, 'aria-hidden') !== 'true' && cardEl.style?.display !== 'none');
+  };
+
+  const hasOpenComposerPopup = (primaryCard) => {
+    if (wasContextCardOpen || isContextCardVisibleNow()) return true;
+    for (const el of qa(D, COMPOSER_POPUP_SEL)) {
+      if (!isHidEl(el, false)) return true;
+    }
+    const cr = primaryCard ? rc(primaryCard) : null;
+    const hasCardRect = !!(cr && cr.height > 1 && cr.width > 1);
+    for (const el of qa(D, COMPOSER_OVERLAY_SEL)) {
+      if (isHidEl(el, false)) continue;
+      if (tidOf(el) === 'model-selector-panel' || cl(el, 'aside, [data-testid="pane-titlebar"], [role="dialog"], #' + SETTINGS_SEC_ID + ', .ag-cs-crab')) continue;
+      if (hasCardRect) {
+        const er = rc(el);
+        if (er && er.height > 1 && er.width > 1) {
+          if (er.bottom >= cr.top - 96 && er.top <= cr.bottom + 24 && er.right >= cr.left - 48 && er.left <= cr.right + 48) return true;
+          continue;
+        }
+      }
+      if (cl(el, S_IB)) return true;
+    }
+    return false;
+  };
+
+  const syncMascotPeekOnly = () => {
+    if (!msRoot || !msAnc || !isMascotEnabled()) return;
+    const html = de();
+    const ib = cl(msAnc, S_IB);
+    const shouldPeek = Boolean(
+      detectVisibleDecisionTakeover() ||
+      (ib && (ha(ib, 'data-ag-cs-menu-open') || qs(ib, '[data-ag-cs-queued="1"]'))) ||
+      ha(html, 'data-ag-cs-model-menu') ||
+      ha(html, A_TKO) ||
+      qs(D, MODEL_PANEL_SEL) ||
+      hasOpenComposerPopup(msAnc)
+    );
+    const nextYield = shouldPeek ? 'peek' : 'none';
+    if (shouldPeek) setAttrIfChanged(msRoot, 'data-ag-mascot-peek', '1');
+    else if (ha(msRoot, 'data-ag-mascot-peek')) ra(msRoot, 'data-ag-mascot-peek');
+    if (html) {
+      if (cfg.mascot === 'cat' && shouldPeek) setAttrIfChanged(html, 'data-ag-cat-peek', '1');
+      else if (ha(html, 'data-ag-cat-peek')) ra(html, 'data-ag-cat-peek');
+    }
+    try { msRig?.setState?.({ yieldMode: nextYield }); } catch {}
+  };
+
   function syncComposers(measured, skipSparks = false) {
     const cPlan = measured?.cPlan || measureCrabClearanceAll(), { cards, primaryCard } = cPlan, ui = uiText(getLang()), mascotOn = isMascotEnabled(), hs = streamChoreoCtl.heroState;
     if (!measured) syncModelMenuRootAttrs(qs(D, MODEL_PANEL_SEL));
@@ -1333,9 +1422,11 @@
       priPlan?.mo ||
       priPlan?.ops?.some(([, , on]) => on) ||
       ha(de(), 'data-ag-cs-model-menu') ||
-      qs(D, MODEL_PANEL_SEL)
+      qs(D, MODEL_PANEL_SEL) ||
+      hasOpenComposerPopup(primaryCard)
     );
     const activeInfoForCrab = getLightweightActiveInfo(primaryCard);
+    if (activeInfoForCrab) activeInfoForCrab.awaitingDecision = Boolean(cPlan.awaitingDecision);
     syncCrab(primaryCard, activeInfoForCrab, primaryModelInfo, mascotShouldPeek ? 'peek' : 'none');
     syncConvAuraSemantics(activeInfoForCrab, cPlan.awaitingDecision);
     if (hs.pendingModelShiftNotify) {
@@ -1688,11 +1779,11 @@
   };
 
   const syncContextCardOpenNotify = () => {
-    const pulseHost = byId('ag-prism-pulse-bar') || byId('ag-pulse-status-bar');
-    const cardEl = byId('context-card') || pulseHost?.shadowRoot?.getElementById?.('context-card') || null;
-    const openNow = !!(cardEl && cardEl[K_IC] !== false && !cardEl.hidden && ga(cardEl, 'aria-hidden') !== 'true' && cardEl.style?.display !== 'none');
+    const openNow = isContextCardVisibleNow();
+    const changed = openNow !== wasContextCardOpen;
     if (openNow && !wasContextCardOpen) notifyMascot('vial-opened');
     wasContextCardOpen = openNow;
+    if (changed) runGuardedMut(() => syncMascotPeekOnly());
   };
 
   function ensurePulseBridge(forceSync = false) {
@@ -2010,7 +2101,18 @@
         }
       } else if (isDialogRoot || ancDlg) {
         chkDlg(isDialogRoot);
-      } else if (tid === 'overview-panel' || cls.includes('agy-overlay') || q('[data-testid="overview-panel"]') || (q('.agy-overlay') && !q('[' + HC_ATTR + ']'))) {
+      } else if (
+        tid === 'overview-panel' ||
+        tid === 'slash-command-menu' ||
+        tid === 'permissions-menu' ||
+        tid === 'context-menu-popup' ||
+        role === 'listbox' ||
+        role === 'menu' ||
+        cls.includes('agy-overlay') ||
+        cls.includes('agy-fastpick') ||
+        q('[data-testid="overview-panel"], [data-testid="slash-command-menu"], [data-testid="permissions-menu"], .agy-fastpick, [role="listbox"], [role="menu"]') ||
+        (q('.agy-overlay') && !q('[' + HC_ATTR + ']'))
+      ) {
         dirtyFlags.o = true;
       }
     } else {
@@ -2018,7 +2120,7 @@
         dirtyFlags.c = true;
       }
       if (role === 'dialog' || ancDlg) chkDlg(role === 'dialog');
-      else if (tid === 'overview-panel' || cls.includes('agy-overlay')) dirtyFlags.o = true;
+      else if (tid === 'overview-panel' || tid === 'slash-command-menu' || tid === 'permissions-menu' || role === 'listbox' || role === 'menu' || cls.includes('agy-overlay') || cls.includes('agy-fastpick')) dirtyFlags.o = true;
     }
 
     if (isAdded && q('[data-testid="background-task-command"]')) {
@@ -2223,8 +2325,9 @@
       }
       if (flags.f || flags.c || modelOverlayChanged) {
         syncComposers(measured, deferHeavyConvWork);
-      } else if (!deferHeavyConvWork && flags.tk) {
-        streamChoreoCtl.syncThinkingSparks(latestPrimaryModelInfo);
+      } else {
+        if (flags.o && msRoot && isMascotEnabled()) syncMascotPeekOnly();
+        if (!deferHeavyConvWork && flags.tk) streamChoreoCtl.syncThinkingSparks(latestPrimaryModelInfo);
       }
       if (flags.f || flags.r || flags.s || flags.c) {
         streamChoreoCtl.syncHeroRouteChoreography(measured);
@@ -2893,13 +2996,13 @@
 
   let activePollMs = 0;
   const restartPollTimer = () => {
-    const nextMs = Math.max(5000, Number(cfg.pollIntervalMs || currentBaseConfig.pollIntervalMs) || 5000);
+    const nextMs = Math.max(1500, Math.min(30000, Number(cfg.pollIntervalMs || currentBaseConfig.pollIntervalMs) || 3000));
     if (pollTimer !== null && activePollMs === nextMs) return;
     if (pollTimer !== null) { clearInterval(pollTimer); pollTimer = null; }
     activePollMs = nextMs;
     pollTimer = setInterval(() => {
       if (destroyed || D.hidden) return;
-      const expectedThemeKey = `${getEffectivePalette()}|${getLightPreset()}|${isDarkTheme() ? 'd' : 'l'}|${getAccentTone()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
+      const expectedThemeKey = `${getEffectivePalette()}|${getLightPreset()}|${isDarkTheme() ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
       if (expectedThemeKey !== lastThemeKey || !ha(de(), 'data-ag-prism')) applyRootAttrs();
       if (homeStudioCtl.wasHero() && cfg.homeLayout === 'studio') homeStudioCtl.scheduleUsageRollupRefresh(1800);
     }, nextMs);
@@ -2992,6 +3095,11 @@
           thoughtTrigger: getThoughtTriggerTiming(),
           thoughtView: getThoughtView(),
           accentTone: getAccentTone(),
+          rainbowStyle: getRainbowStyle(),
+          rainbowPixelSize: getRainbowPixelSize(),
+          catCount: getCatCount(),
+          catProps: getCatProps(),
+          catQuietMode: getCatQuietMode(),
           cornerStyle: getCornerStyle(),
           scrollBottomMotion: cfg.scrollBottomMotion === 'instant' ? 'instant' : 'smooth',
           sidebarNavFold: cfg.sidebarNavFold === 'on' ? 'on' : 'off',
@@ -3076,6 +3184,7 @@
         for (const s of '|thought-view|omni|link-target|sidebar-studio|sidebar-host-sync'.split('|')) {
           ra(html, s ? 'data-ag-prism-' + s : 'data-ag-prism');
         }
+        for (const a of ['data-ag-rainbow-style', 'data-ag-rainbow-px', 'data-ag-cat-peek']) ra(html, a);
         rp(html, '--ag-spring-sidebar-ease');
         rp(html, '--ag-spring-sidebar-dur');
       }

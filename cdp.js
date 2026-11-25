@@ -69,6 +69,11 @@ const DEFAULT_CONFIG = {
   hostLocalization: 'auto',
   autoUpdate: 'off',
   updateChannel: 'stable',
+  rainbowStyle: 'pixel',
+  rainbowPixelSize: '6',
+  catCount: '4',
+  catProps: 'on',
+  catQuietMode: 'auto',
   pollIntervalMs: 2500,
 };
 
@@ -113,6 +118,11 @@ const VALIDATORS = {
   hostLocalization: ['auto', 'on', 'off'],
   autoUpdate: ['on', 'off'],
   updateChannel: ['stable', 'beta'],
+  rainbowStyle: ['pixel', 'aurora'],
+  rainbowPixelSize: ['4', '6', '8'],
+  catCount: ['1', '2', '4'],
+  catProps: ['on', 'off'],
+  catQuietMode: ['auto', 'nap'],
 };
 
 function validateConfigEntry(key, value) {
@@ -207,6 +217,27 @@ function reconcileConfigAliases(raw) {
   }
   if (has('mascot') && out.mascot === 'dual') {
     out.mascot = 'crab';
+  }
+  if (has('rainbowStyle')) {
+    out.rainbowStyle = out.rainbowStyle === 'aurora' ? 'aurora' : 'pixel';
+  }
+  if (has('rainbowPixelSize')) {
+    const pxStr = String(out.rainbowPixelSize);
+    out.rainbowPixelSize = pxStr === '4' || pxStr === '6' || pxStr === '8' ? pxStr : '6';
+  }
+  if (has('catCount')) {
+    const cntStr = String(out.catCount);
+    out.catCount = cntStr === '1' || cntStr === '2' || cntStr === '4' ? cntStr : '4';
+  }
+  if (has('catProps')) {
+    if (typeof out.catProps === 'boolean') {
+      out.catProps = out.catProps ? 'on' : 'off';
+    } else {
+      out.catProps = out.catProps === 'off' ? 'off' : 'on';
+    }
+  }
+  if (has('catQuietMode')) {
+    out.catQuietMode = out.catQuietMode === 'nap' ? 'nap' : 'auto';
   }
   return out;
 }
@@ -4910,7 +4941,6 @@ const RUNTIME_PARTS = [
   'vial-core.js',
   'pulse-vial-bridge.js',
   'vendor/pulse-dashboard/inline-fallback.js',
-  'vendor/effort-slider/slider-coexist.js',
   'settings-panel.js',
   'home-studio-panel.js',
   'home-ripple-host.js',
@@ -4947,7 +4977,8 @@ const BUNDLE_CACHE_MAX_FILE_BYTES = 4 * 1024 * 1024;
 const BUNDLE_CACHE_MAX_EXPR_BYTES = 2 * 1024 * 1024;
 const BUNDLE_CACHE_MAX_BOOTCFG_BYTES = 64 * 1024;
 const CHANNEL_CACHE_MAX_PAYLOAD_BYTES = 1024 * 1024;
-const CHANNEL_CACHE_NAMES = ['omni', 'sidebar', 'hostI18n', 'thought', 'inlineDiff', 'wallpaper'];
+const LEGACY_SIX_CHANNEL_NAMES = new Set(['omni', 'sidebar', 'hostI18n', 'thought', 'inlineDiff', 'wallpaper']);
+const CHANNEL_CACHE_NAMES = ['omni', 'sidebar', 'hostI18n', 'thought', 'inlineDiff', 'wallpaper', 'catSanctuary', 'effortSlider'];
 const SHA256_HEX_RE = /^[0-9a-f]{64}$/;
 const CODE_HASH_RE = /^[0-9a-z]{1,16}$/;
 
@@ -4963,6 +4994,7 @@ const _bundleCacheStats = {
   cssMinifyRuns: 0,
   deferredExprHashRuns: 0,
   channelDiskHits: 0,
+  extendedChannelDiskHits: 0,
   channelDiskMisses: 0,
   channelCompileRuns: 0,
   channelHitsByName: { omni: 0, sidebar: 0, hostI18n: 0, thought: 0, inlineDiff: 0, wallpaper: 0 },
@@ -5762,6 +5794,11 @@ function buildConfigRefreshExpression(customConfig, extraMeta = null) {
           window.__agPrismHostI18n?.destroy?.();
         }
       } catch {}
+      if (effectiveCfg?.mascot !== 'cat') {
+        try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch {}
+        try { delete window.__agCatSanctuaryFactory; } catch {}
+        try { delete globalThis.__agCatSanctuaryFactory; } catch {}
+      }
       if (document.documentElement) {
         if (effectiveCfg?.thoughtTranslate && effectiveCfg.thoughtTranslate !== 'off') {
           document.documentElement.setAttribute('data-ag-prism-thought-view', effectiveCfg.thoughtView === 'bilingual' ? 'bilingual' : 'immersive');
@@ -5769,6 +5806,14 @@ function buildConfigRefreshExpression(customConfig, extraMeta = null) {
           document.documentElement.removeAttribute('data-ag-prism-thought-view');
         }
         document.documentElement.setAttribute('data-ag-prism-sidebar-studio', effectiveCfg?.sidebarStudio === 'on' ? 'on' : 'off');
+        if (effectiveCfg?.accentTone === 'rainbow') {
+          document.documentElement.setAttribute('data-ag-rainbow-style', effectiveCfg.rainbowStyle === 'aurora' ? 'aurora' : 'pixel');
+          const rPx = String(effectiveCfg.rainbowPixelSize || '6');
+          document.documentElement.setAttribute('data-ag-rainbow-px', rPx === '4' || rPx === '6' || rPx === '8' ? rPx : '6');
+        } else {
+          document.documentElement.removeAttribute('data-ag-rainbow-style');
+          document.documentElement.removeAttribute('data-ag-rainbow-px');
+        }
       }
       return { refreshed: true, version: api.version };
     }
@@ -5983,7 +6028,7 @@ function getInjectWrapperTemplate() {
     const destroyModules = (includeMain) => {
       const ks = includeMain
         ? ['__agPrismTelemetry', '__agPrismEffortSlider', '__agPrismThought', '__agPrismOmni', '__agPrismContextMenu', '__agPrism']
-        : ['__agPrismTelemetry', '__agPrismEffortSlider', '__agPrismThought', '__agPrismOmni', '__agPrismContextMenu'];
+        : ['__agPrismTelemetry', '__agPrismThought', '__agPrismOmni', '__agPrismContextMenu'];
       for (const k of ks) {
         try { window[k]?.destroy?.(); } catch {}
       }
@@ -6114,8 +6159,7 @@ function getInjectWrapperTemplate() {
           existingPrism &&
             existingPrism.version === ${JSON.stringify(PLUGIN_VERSION)} &&
             existingPrism.codeHash === __AG_INJ_CODEHASH__ &&
-            window.__agPrismTelemetry &&
-            window.__agPrismEffortSlider
+            window.__agPrismTelemetry
         );
         if (bundleUnchanged) {
           existingPrism.refreshConfig(bootCfg);
@@ -6145,6 +6189,14 @@ function getInjectWrapperTemplate() {
           if (!document.documentElement.hasAttribute('data-ag-prism')) document.documentElement.setAttribute('data-ag-prism', ${JSON.stringify(PLUGIN_VERSION)});
           if (effectiveCfg?.thoughtTranslate && effectiveCfg.thoughtTranslate !== 'off') document.documentElement.setAttribute('data-ag-prism-thought-view', effectiveCfg.thoughtView === 'bilingual' ? 'bilingual' : 'immersive');
           else document.documentElement.removeAttribute('data-ag-prism-thought-view');
+          if (effectiveCfg?.accentTone === 'rainbow') {
+            document.documentElement.setAttribute('data-ag-rainbow-style', effectiveCfg.rainbowStyle === 'aurora' ? 'aurora' : 'pixel');
+            const rPx = String(effectiveCfg.rainbowPixelSize || '6');
+            document.documentElement.setAttribute('data-ag-rainbow-px', rPx === '4' || rPx === '6' || rPx === '8' ? rPx : '6');
+          } else {
+            document.documentElement.removeAttribute('data-ag-rainbow-style');
+            document.documentElement.removeAttribute('data-ag-rainbow-px');
+          }
         }
       } catch (e) {
         status = 'error: ' + (e && e.message ? e.message : String(e));
@@ -6575,6 +6627,7 @@ function resetBundleCacheStats() {
   _bundleCacheStats.cssMinifyRuns = 0;
   _bundleCacheStats.deferredExprHashRuns = 0;
   _bundleCacheStats.channelDiskHits = 0;
+  _bundleCacheStats.extendedChannelDiskHits = 0;
   _bundleCacheStats.channelDiskMisses = 0;
   _bundleCacheStats.channelCompileRuns = 0;
   _bundleCacheStats.channelHitsByName = { omni: 0, sidebar: 0, hostI18n: 0, thought: 0, inlineDiff: 0, wallpaper: 0 };
@@ -6586,6 +6639,8 @@ function resetBundleCacheStats() {
   try { _thoughtAssetsCache.cachedPaths?.clear?.(); } catch {}
   try { _inlineDiffClientCache.cachedPaths?.clear?.(); } catch {}
   try { _wallpaperAssetsCache.cachedPaths?.clear?.(); } catch {}
+  try { _catSanctuaryClientCache.cachedPaths?.clear?.(); } catch {}
+  try { _effortSliderAssetsCache.cachedPaths?.clear?.(); } catch {}
   invalidateBundleCacheRootCache();
 }
 
@@ -6632,7 +6687,7 @@ function isValidChannelCacheEntry(channelName, entry) {
   if (!hasOwn('payloadSha256') || typeof entry.payloadSha256 !== 'string' || !SHA256_HEX_RE.test(entry.payloadSha256)) {
     return false;
   }
-  if (channelName === 'omni' || channelName === 'sidebar' || channelName === 'inlineDiff') {
+  if (channelName === 'omni' || channelName === 'sidebar' || channelName === 'inlineDiff' || channelName === 'catSanctuary') {
     if (!hasOwn('minCode') || typeof entry.minCode !== 'string' || entry.minCode.length === 0) return false;
     if (Buffer.byteLength(entry.minCode, 'utf8') > CHANNEL_CACHE_MAX_PAYLOAD_BYTES) return false;
     if (channelName === 'sidebar' && /setPrefValues?/i.test(entry.minCode)) return false;
@@ -6654,6 +6709,14 @@ function isValidChannelCacheEntry(channelName, entry) {
     if (totalBytes > CHANNEL_CACHE_MAX_PAYLOAD_BYTES) return false;
     if (computeHash(`${entry.minClient}\n${entry.minSettingsUi}`) !== entry.codeHash) return false;
     return sha256Text(`${entry.codeHash}\0${entry.minClient}\0${entry.minSettingsUi}`) === entry.payloadSha256;
+  }
+  if (channelName === 'effortSlider') {
+    if (!hasOwn('minUpstream') || typeof entry.minUpstream !== 'string' || entry.minUpstream.length === 0) return false;
+    if (!hasOwn('minCoexist') || typeof entry.minCoexist !== 'string' || entry.minCoexist.length === 0) return false;
+    const totalBytes = Buffer.byteLength(entry.minUpstream, 'utf8') + Buffer.byteLength(entry.minCoexist, 'utf8');
+    if (totalBytes > CHANNEL_CACHE_MAX_PAYLOAD_BYTES) return false;
+    if (computeHash(`${entry.minUpstream}\n${entry.minCoexist}`) !== entry.codeHash) return false;
+    return sha256Text(`${entry.codeHash}\0${entry.minUpstream}\0${entry.minCoexist}`) === entry.payloadSha256;
   }
   return false;
 }
@@ -6803,7 +6866,11 @@ function resolveChannelAssetsWithDiskCache({
 
   const diskHit = tryReadChannelCacheHitSync(resolvedCachePath, channelName, sourceHash);
   if (diskHit.hit) {
-    _bundleCacheStats.channelDiskHits += 1;
+    if (LEGACY_SIX_CHANNEL_NAMES.has(channelName)) {
+      _bundleCacheStats.channelDiskHits += 1;
+    } else {
+      _bundleCacheStats.extendedChannelDiskHits += 1;
+    }
     _bundleCacheStats.channelHitsByName[channelName] =
       (_bundleCacheStats.channelHitsByName[channelName] || 0) + 1;
     const restored = fromCacheEntry(diskHit.entry);
@@ -6950,6 +7017,8 @@ function markChannelCachedOnPath(cachePath, chMap) {
     thought: _thoughtAssetsCache,
     inlineDiff: _inlineDiffClientCache,
     wallpaper: _wallpaperAssetsCache,
+    catSanctuary: _catSanctuaryClientCache,
+    effortSlider: _effortSliderAssetsCache,
   };
   for (const name of CHANNEL_CACHE_NAMES) {
     const rec = chMap[name];
@@ -8609,6 +8678,433 @@ function buildWallpaperExpression(config = null, opts = null) {
   })()`;
 }
 
+let _catSanctuaryClientCache = { sig: '', sourceHash: '', minCode: '', codeHash: '', cachedPaths: new Set() };
+
+function shouldEnableCatSanctuary(config = null) {
+  try {
+    const cfg = config && typeof config === 'object' ? reconcileConfigAliases(config) : readConfig();
+    return cfg?.mascot === 'cat';
+  } catch {
+    return false;
+  }
+}
+
+function readCompiledCatSanctuaryClient(opts = null) {
+  const clientPath = path.join(__dirname, 'vendor', 'cat-sanctuary', 'cat-sanctuary-client.js');
+  if (!fs.existsSync(clientPath)) {
+    return { sig: '', minCode: '', codeHash: '' };
+  }
+  const sig = getFileSig(clientPath);
+  const cachePath = resolveBundleCachePathOption(opts);
+  if (!cachePath && _catSanctuaryClientCache.sig === sig && _catSanctuaryClientCache.codeHash) {
+    return _catSanctuaryClientCache;
+  }
+  const rawBuf = fs.readFileSync(clientPath);
+  return resolveChannelAssetsWithDiskCache({
+    channelName: 'catSanctuary',
+    memCache: _catSanctuaryClientCache,
+    setMemCache: (v) => { _catSanctuaryClientCache = v; },
+    sig,
+    fileEntries: [{ rel: 'vendor/cat-sanctuary/cat-sanctuary-client.js', content: rawBuf }],
+    opts,
+    compileFn: () => {
+      const minCode = minifySingleSource(rawBuf.toString('utf8'));
+      const codeHash = computeHash(minCode);
+      return { minCode, codeHash };
+    },
+    toCacheEntry: (assets, sourceHash) => ({
+      sourceHash,
+      codeHash: assets.codeHash,
+      minCode: assets.minCode,
+      payloadSha256: sha256Text(`${assets.codeHash}\0${assets.minCode}`),
+      updatedAt: Date.now(),
+    }),
+    fromCacheEntry: (entry) => ({
+      minCode: entry.minCode,
+      codeHash: entry.codeHash,
+    }),
+  });
+}
+
+const CAT_SANCTUARY_REMOVE_EXPRESSION = `(() => {
+  try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch {}
+  try { document.querySelectorAll?.('.ag-v2-cat-sanctuary')?.forEach?.((el) => el.remove()); } catch {}
+  try { document.querySelectorAll?.('[data-cat-sanctuary="1"]')?.forEach?.((el) => el.removeAttribute('data-cat-sanctuary')); } catch {}
+  try { document.documentElement?.removeAttribute?.('data-ag-cat-peek'); } catch {}
+  try { delete window.__agCatSanctuaryFactory; } catch {}
+  try { delete globalThis.__agCatSanctuaryFactory; } catch {}
+  try { delete window.__agPrismCatRimState; } catch {}
+  try { delete globalThis.__agPrismCatRimState; } catch {}
+  return { ok: true, status: 'off' };
+})()`;
+
+function buildCatSanctuaryCleanupExpression() {
+  return CAT_SANCTUARY_REMOVE_EXPRESSION;
+}
+
+// 第八通道独立注入（Cat Sanctuary 像素猫舍引擎）：完全独立于 Channel 1，仅 mascot === 'cat' 时按需注入，缺文件时安全返回 ''，支持顺序无关握手与热重载
+function buildCatSanctuaryExpression(config = null, opts = null) {
+  const cfg = config && typeof config === 'object' ? reconcileConfigAliases(config) : readConfig();
+  if (!shouldEnableCatSanctuary(cfg) && !(opts && opts.force === true)) {
+    return '';
+  }
+  let minCode = '';
+  let codeHash = '';
+  if (opts && typeof opts.customClientSource === 'string') {
+    minCode = opts.customClientSource ? minifySingleSource(opts.customClientSource) : '';
+    codeHash = minCode ? computeHash(minCode) : '';
+  } else {
+    const compiled = readCompiledCatSanctuaryClient(opts);
+    minCode = compiled.minCode;
+    codeHash = compiled.codeHash;
+  }
+  if (!minCode || !codeHash) {
+    return '';
+  }
+
+  const hashJson = serializeJsonForEval(codeHash);
+
+  return `(() => {
+    try {
+      if (window.self !== window.top) return { ok: false, status: 'skipped-subframe' };
+    } catch {
+      return { ok: false, status: 'skipped-subframe' };
+    }
+    const hasDomMarker = () => {
+      try {
+        if (
+          document.body &&
+          document.body.classList &&
+          (document.body.classList.contains('theme-standalone') || document.body.classList.contains('monaco-workbench'))
+        ) {
+          return true;
+        }
+        return Boolean(
+          typeof document.querySelector === 'function' &&
+            document.querySelector(
+              '.agy-shell, .agy-home, [data-testid="aux-pane-split"], [data-testid="conversation-view"], [data-testid="agent-input-box"], [data-testid="model-selector-trigger"], .monaco-workbench'
+            )
+        );
+      } catch {
+        return false;
+      }
+    };
+    let needDomMarkerOnReady = false;
+    let isPlainHttpLocalhost = false;
+    try {
+      const loc = typeof window !== 'undefined' && window.location;
+      const href = loc && typeof loc.href === 'string' ? loc.href : '';
+      if (href) {
+        const low = href.toLowerCase();
+        if (low.startsWith('devtools://') || low.startsWith('data:') || low.startsWith('chrome:') || low.startsWith('chrome-extension:') || low.startsWith('edge:') || low.startsWith('blob:') || low.startsWith('plugin:')) {
+          return { ok: false, status: 'skipped-non-host' };
+        }
+        if (low.startsWith('vscode-file://') || low.startsWith('app://') || low.startsWith('about:')) {
+          const ttl = String(document.title || '').trim();
+          if (/^(?:untitled|launchpad)$/i.test(ttl) || /\\/launchpad(?:\\.html)?(?:[?#]|$)/i.test(low)) {
+            return { ok: false, status: 'skipped-non-host' };
+          }
+        }
+        if (low.startsWith('http:') || low.startsWith('https:')) {
+          const m = /^(https?):\\/\\/(127\\.0\\.0\\.1|localhost|\\[::1\\])(?::\\d+)?(\\/[^?#]*)?(?:[?#]|$)/i.exec(href);
+          if (!m) return { ok: false, status: 'skipped-non-host' };
+          const pathname = (m[3] || '/').toLowerCase();
+          if (/^\\/(?:viewer(?:\\/|$)|sandbox(?:\\/|$)|stream(?:\\/|$)|api(?:\\/|$))/.test(pathname)) {
+            return { ok: false, status: 'skipped-non-host' };
+          }
+          if (!hasDomMarker()) {
+            isPlainHttpLocalhost = m[1].toLowerCase() === 'http';
+            const rs = String(document.readyState || '');
+            if (isPlainHttpLocalhost) {
+              if (rs === 'loading') needDomMarkerOnReady = true;
+              else return { ok: false, status: 'skipped-non-host' };
+            } else if (!/\\bantigravity\\b/i.test(String(document.title || ''))) {
+              if (rs === 'loading') needDomMarkerOnReady = true;
+              else return { ok: false, status: 'skipped-non-host' };
+            }
+          }
+        }
+      }
+    } catch {}
+
+    const targetHash = ${hashJson};
+    const mountOrReuse = () => {
+      if (needDomMarkerOnReady && !hasDomMarker() && (isPlainHttpLocalhost || !/\\bantigravity\\b/i.test(String(document.title || '')))) {
+        return { ok: false, status: 'skipped-non-host' };
+      }
+      const existing = window.__agCatSanctuaryFactory || globalThis.__agCatSanctuaryFactory;
+      if (typeof existing === 'function' && existing.__prismCodeHash === targetHash) {
+        try {
+          if (!document.querySelector?.('.ag-v2-cat-sanctuary')) {
+            (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.onFactoryReady?.(existing);
+          }
+        } catch {}
+        return { ok: true, reused: true, codeHash: targetHash };
+      }
+
+      try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch {}
+      try { delete window.__agCatSanctuaryFactory; } catch {}
+      try { delete globalThis.__agCatSanctuaryFactory; } catch {}
+
+      ;${minCode};
+
+      const factory = window.__agCatSanctuaryFactory || globalThis.__agCatSanctuaryFactory;
+      if (typeof factory === 'function') {
+        factory.__prismCodeHash = targetHash;
+        try { window.__agCatSanctuaryFactory = factory; } catch {}
+        try { globalThis.__agCatSanctuaryFactory = factory; } catch {}
+        return { ok: true, status: 'mounted', codeHash: targetHash };
+      }
+      return { ok: false, status: 'missing-factory', codeHash: targetHash };
+    };
+
+    if ((needDomMarkerOnReady || !document.documentElement) && typeof document.addEventListener === 'function') {
+      document.addEventListener('DOMContentLoaded', () => { try { mountOrReuse(); } catch {} }, { once: true });
+      return { ok: true, status: 'deferred', codeHash: targetHash };
+    }
+    return mountOrReuse();
+  })()`;
+}
+
+let _effortSliderAssetsCache = { sig: '', sourceHash: '', minUpstream: '', minCoexist: '', codeHash: '', cachedPaths: new Set() };
+
+function shouldEnableEffortSlider(config = null) {
+  try {
+    const cfg = config && typeof config === 'object' ? reconcileConfigAliases(config) : readConfig();
+    return cfg?.effortSliderModule !== 'off' && cfg?.effortSliderModule !== false;
+  } catch {
+    return true;
+  }
+}
+
+function readCompiledEffortSliderAssets(opts = null) {
+  const upstreamPath = path.join(__dirname, 'vendor', 'effort-slider', 'upstream-client.js');
+  const coexistPath = path.join(__dirname, 'vendor', 'effort-slider', 'slider-coexist.js');
+  if (!fs.existsSync(upstreamPath) || !fs.existsSync(coexistPath)) {
+    return { sig: '', minUpstream: '', minCoexist: '', codeHash: '' };
+  }
+  const sig = `${getFileSig(upstreamPath)}|${getFileSig(coexistPath)}`;
+  const cachePath = resolveBundleCachePathOption(opts);
+  if (!cachePath && _effortSliderAssetsCache.sig === sig && _effortSliderAssetsCache.codeHash) {
+    return _effortSliderAssetsCache;
+  }
+  const upstreamBuf = fs.readFileSync(upstreamPath);
+  const coexistBuf = fs.readFileSync(coexistPath);
+  return resolveChannelAssetsWithDiskCache({
+    channelName: 'effortSlider',
+    memCache: _effortSliderAssetsCache,
+    setMemCache: (v) => { _effortSliderAssetsCache = v; },
+    sig,
+    fileEntries: [
+      { rel: 'vendor/effort-slider/upstream-client.js', content: upstreamBuf },
+      { rel: 'vendor/effort-slider/slider-coexist.js', content: coexistBuf },
+    ],
+    opts,
+    compileFn: () => {
+      const upstreamPrepped = stripUnusedUpstreamMenuObserver(upstreamBuf.toString('utf8'));
+      const minUpstream = minifySingleSource(upstreamPrepped);
+      const minCoexist = minifySingleSource(coexistBuf.toString('utf8'));
+      const codeHash = computeHash(`${minUpstream}\n${minCoexist}`);
+      return { minUpstream, minCoexist, codeHash };
+    },
+    toCacheEntry: (assets, sourceHash) => ({
+      sourceHash,
+      codeHash: assets.codeHash,
+      minUpstream: assets.minUpstream,
+      minCoexist: assets.minCoexist,
+      payloadSha256: sha256Text(`${assets.codeHash}\0${assets.minUpstream}\0${assets.minCoexist}`),
+      updatedAt: Date.now(),
+    }),
+    fromCacheEntry: (entry) => ({
+      minUpstream: entry.minUpstream,
+      minCoexist: entry.minCoexist,
+      codeHash: entry.codeHash,
+    }),
+  });
+}
+
+const EFFORT_SLIDER_REMOVE_EXPRESSION = `(() => {
+  try { (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider)?.destroy?.(); } catch {}
+  try {
+    const st = document.querySelector?.('#ag-codex-effort-slider-styles[data-ag-prism-slider="1"]');
+    if (st) st.remove();
+  } catch {}
+  try { document.getElementById?.('ag-prism-effort-slider-hide')?.remove?.(); } catch {}
+  try { document.documentElement?.removeAttribute?.('data-ces-slider-ready'); } catch {}
+  try {
+    ['data-ces-orch-row', 'data-ces-model-selected', 'data-ces-orch-b', 'data-ces-orch-tunable'].forEach((attr) => {
+      document.querySelectorAll?.('[' + attr + ']')?.forEach?.((el) => el.removeAttribute(attr));
+    });
+  } catch {}
+  try { delete window.__agPrismEffortSlider; } catch {}
+  try { delete globalThis.__agPrismEffortSlider; } catch {}
+  try { delete window.AntigravityCodexEffortSlider; } catch {}
+  try { delete globalThis.AntigravityCodexEffortSlider; } catch {}
+  try { delete window.__agCodexEffortSliderDisableAutoBoot; } catch {}
+  try { delete globalThis.__agCodexEffortSliderDisableAutoBoot; } catch {}
+  return { ok: true, status: 'off' };
+})()`;
+
+function buildEffortSliderCleanupExpression() {
+  return EFFORT_SLIDER_REMOVE_EXPRESSION;
+}
+
+// 第九通道独立注入（Effort Slider 推理强度滑块与共存层）：完全独立于 Channel 1，effortSliderModule === 'off' 时 0 B Fail-Closed，支持顺序无关握手与热重载
+function buildEffortSliderExpression(config = null, opts = null) {
+  const cfg = config && typeof config === 'object' ? reconcileConfigAliases(config) : readConfig();
+  if (!shouldEnableEffortSlider(cfg) && !(opts && opts.force === true)) {
+    return '';
+  }
+  let minUpstream = '';
+  let minCoexist = '';
+  let codeHash = '';
+  if (opts && typeof opts.customUpstreamSource === 'string' && typeof opts.customCoexistSource === 'string') {
+    minUpstream = opts.customUpstreamSource ? minifySingleSource(opts.customUpstreamSource) : '';
+    minCoexist = opts.customCoexistSource ? minifySingleSource(opts.customCoexistSource) : '';
+    codeHash = minUpstream && minCoexist ? computeHash(`${minUpstream}\n${minCoexist}`) : '';
+  } else {
+    const compiled = readCompiledEffortSliderAssets(opts);
+    minUpstream = compiled.minUpstream;
+    minCoexist = compiled.minCoexist;
+    codeHash = compiled.codeHash;
+  }
+  if (!minUpstream || !minCoexist || !codeHash) {
+    return '';
+  }
+
+  const bootCfg = {
+    effortSliderModule: cfg?.effortSliderModule === 'on' ? 'on' : cfg?.effortSliderModule === 'off' ? 'off' : 'auto',
+    effortMemory: cfg?.effortMemory === 'off' || cfg?.effortMemory === false ? 'off' : 'on',
+  };
+  const bootCfgJson = serializeJsonForEval(bootCfg);
+  const hashJson = serializeJsonForEval(codeHash);
+
+  return `(() => {
+    try {
+      if (window.self !== window.top) return { ok: false, status: 'skipped-subframe' };
+    } catch {
+      return { ok: false, status: 'skipped-subframe' };
+    }
+    const hasDomMarker = () => {
+      try {
+        if (
+          document.body &&
+          document.body.classList &&
+          (document.body.classList.contains('theme-standalone') || document.body.classList.contains('monaco-workbench'))
+        ) {
+          return true;
+        }
+        return Boolean(
+          typeof document.querySelector === 'function' &&
+            document.querySelector(
+              '.agy-shell, .agy-home, [data-testid="aux-pane-split"], [data-testid="conversation-view"], [data-testid="agent-input-box"], [data-testid="model-selector-trigger"], .monaco-workbench'
+            )
+        );
+      } catch {
+        return false;
+      }
+    };
+    let needDomMarkerOnReady = false;
+    let isPlainHttpLocalhost = false;
+    try {
+      const loc = typeof window !== 'undefined' && window.location;
+      const href = loc && typeof loc.href === 'string' ? loc.href : '';
+      if (href) {
+        const low = href.toLowerCase();
+        if (low.startsWith('devtools://') || low.startsWith('data:') || low.startsWith('chrome:') || low.startsWith('chrome-extension:') || low.startsWith('edge:') || low.startsWith('blob:') || low.startsWith('plugin:')) {
+          return { ok: false, status: 'skipped-non-host' };
+        }
+        if (low.startsWith('vscode-file://') || low.startsWith('app://') || low.startsWith('about:')) {
+          const ttl = String(document.title || '').trim();
+          if (/^(?:untitled|launchpad)$/i.test(ttl) || /\\/launchpad(?:\\.html)?(?:[?#]|$)/i.test(low)) {
+            return { ok: false, status: 'skipped-non-host' };
+          }
+        }
+        if (low.startsWith('http:') || low.startsWith('https:')) {
+          const m = /^(https?):\\/\\/(127\\.0\\.0\\.1|localhost|\\[::1\\])(?::\\d+)?(\\/[^?#]*)?(?:[?#]|$)/i.exec(href);
+          if (!m) return { ok: false, status: 'skipped-non-host' };
+          const pathname = (m[3] || '/').toLowerCase();
+          if (/^\\/(?:viewer(?:\\/|$)|sandbox(?:\\/|$)|stream(?:\\/|$)|api(?:\\/|$))/.test(pathname)) {
+            return { ok: false, status: 'skipped-non-host' };
+          }
+          if (!hasDomMarker()) {
+            isPlainHttpLocalhost = m[1].toLowerCase() === 'http';
+            const rs = String(document.readyState || '');
+            if (isPlainHttpLocalhost) {
+              if (rs === 'loading') needDomMarkerOnReady = true;
+              else return { ok: false, status: 'skipped-non-host' };
+            } else if (!/\\bantigravity\\b/i.test(String(document.title || ''))) {
+              if (rs === 'loading') needDomMarkerOnReady = true;
+              else return { ok: false, status: 'skipped-non-host' };
+            }
+          }
+        }
+      }
+    } catch {}
+
+    const bootCfg = ${bootCfgJson};
+    const targetHash = ${hashJson};
+    const getEffectiveCfg = () => {
+      try {
+        const st = (window.__agPrism || window.__agClaudeStyle)?.getState?.();
+        if (st && st.cfg && typeof st.cfg === 'object') return st.cfg;
+      } catch {}
+      return bootCfg;
+    };
+    const cleanupEffortSlider = () => {
+      try { (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider)?.destroy?.(); } catch {}
+      try {
+        const st = document.querySelector?.('#ag-codex-effort-slider-styles[data-ag-prism-slider="1"]');
+        if (st) st.remove();
+      } catch {}
+      try { document.getElementById?.('ag-prism-effort-slider-hide')?.remove?.(); } catch {}
+      try { delete window.__agPrismEffortSlider; } catch {}
+      try { delete globalThis.__agPrismEffortSlider; } catch {}
+      try { delete window.AntigravityCodexEffortSlider; } catch {}
+      try { delete globalThis.AntigravityCodexEffortSlider; } catch {}
+    };
+
+    const mountOrReuse = () => {
+      if (needDomMarkerOnReady && !hasDomMarker() && (isPlainHttpLocalhost || !/\\bantigravity\\b/i.test(String(document.title || '')))) {
+        return { ok: false, status: 'skipped-non-host' };
+      }
+      const effectiveCfg = getEffectiveCfg();
+      if (effectiveCfg?.effortSliderModule === 'off' || effectiveCfg?.effortSliderModule === false) {
+        cleanupEffortSlider();
+        return { ok: true, status: 'off', codeHash: targetHash };
+      }
+      const existing = window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider;
+      if (existing && typeof existing.sync === 'function' && existing.__prismCodeHash === targetHash) {
+        try { existing.sync(effectiveCfg); } catch {}
+        return { ok: true, reused: true, codeHash: targetHash };
+      }
+
+      cleanupEffortSlider();
+      try { globalThis.__agCodexEffortSliderDisableAutoBoot = true; } catch {}
+      try { if (typeof window !== 'undefined') window.__agCodexEffortSliderDisableAutoBoot = true; } catch {}
+
+      ;${minUpstream};
+      ;${minCoexist};
+
+      const mounted = window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider;
+      if (mounted && typeof mounted === 'object') {
+        mounted.__prismCodeHash = targetHash;
+        try { window.__agPrismEffortSlider = mounted; } catch {}
+        try { globalThis.__agPrismEffortSlider = mounted; } catch {}
+        try { mounted.sync?.(effectiveCfg); } catch {}
+        return { ok: true, status: 'mounted', codeHash: targetHash };
+      }
+      return { ok: false, status: 'missing-controller', codeHash: targetHash };
+    };
+
+    if ((needDomMarkerOnReady || !document.documentElement) && typeof document.addEventListener === 'function') {
+      document.addEventListener('DOMContentLoaded', () => { try { mountOrReuse(); } catch {} }, { once: true });
+      return { ok: true, status: 'deferred', codeHash: targetHash };
+    }
+    return mountOrReuse();
+  })()`;
+}
+
 const REMOVE_EXPRESSION = `(() => {
   try {
     document.querySelectorAll?.('#ag-prism-wallpaper-root video')?.forEach?.((v) => {
@@ -8619,6 +9115,7 @@ const REMOVE_EXPRESSION = `(() => {
     });
   } catch (e) {}
   try { (window.__agPrismWallpaper || globalThis.__agPrismWallpaper)?.destroy?.(); } catch (e) {}
+  try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch (e) {}
   try { window.__agPrismInlineDiff?.destroy?.(); } catch (e) {}
   try {
     if (window.__agPrismTelemetry && typeof window.__agPrismTelemetry.destroy === 'function') {
@@ -8733,6 +9230,9 @@ const REMOVE_EXPRESSION = `(() => {
   try { delete window.__prismMountWallpaperUi; } catch {}
   try { delete window.__agPrismWallpaperBridge; } catch {}
   try { delete window.__agPrismWallpaperResolve; } catch {}
+  try { delete window.__agCatSanctuaryFactory; } catch {}
+  try { delete window.__agCatSanctuaryBridge; } catch {}
+  try { delete window.__agPrismCatRimState; } catch {}
   delete window.__agPrismBrandLogoSvg;
   delete window.__agPrismHostI18n;
   delete window.__agPrismHostI18nFactory;
@@ -8755,6 +9255,9 @@ const REMOVE_EXPRESSION = `(() => {
   delete globalThis.__prismMountWallpaperUi;
   delete globalThis.__agPrismWallpaperBridge;
   delete globalThis.__agPrismWallpaperResolve;
+  delete globalThis.__agCatSanctuaryFactory;
+  delete globalThis.__agCatSanctuaryBridge;
+  delete globalThis.__agPrismCatRimState;
   delete globalThis.__agPrismOmni;
   delete globalThis.__agPrismSidebar;
   delete globalThis.__agPrismThoughtSettingsUi;
@@ -8836,6 +9339,9 @@ const REMOVE_EXPRESSION = `(() => {
       'data-ag-cs-mascot-drag',
       'data-ag-prism-wallpaper',
       'data-ag-prism-wallpaper-hole',
+      'data-ag-rainbow-style',
+      'data-ag-rainbow-px',
+      'data-ag-cat-peek',
     ].forEach((attr) => root.removeAttribute(attr));
     if (root.getAttribute('data-ag-cjk') === '1') root.removeAttribute('data-ag-cjk');
     if (root.style && typeof root.style.removeProperty === 'function') {
@@ -8942,6 +9448,7 @@ const REMOVE_EXPRESSION = `(() => {
     'data-ag-diff-state',
     'data-ag-cs-inline-diff',
     'data-ag-prism-scope',
+    'data-ag-rainbow-pixel',
   ].forEach((attr) => {
     document.querySelectorAll('[' + attr + ']').forEach((el) => el.removeAttribute(attr));
   });
@@ -9005,7 +9512,7 @@ const REMOVE_EXPRESSION = `(() => {
   const nodes = document.querySelectorAll(
     '#' + ${JSON.stringify(STYLE_ID)} +
     ', #' + ${JSON.stringify(LEGACY_STYLE_ID)} +
-    ', #ag-prism-host-alert-css, #ag-prism-settings-v101-css, #ag-prism-studio-v101-css, #ag-prism-omni-css, #ag-prism-sidebar-studio-css, #ag-prism-inline-diff-css, #ag-prism-wallpaper-root, #ag-prism-wallpaper-css, #ag-cs-settings-sec, [data-testid="prism-thought-ai-config"], [data-testid="prism-thought-general-config"], .ag-omni-dock, .ag-omni-menu, .ag-prism-omni-menu, .ag-prism-omni-pane, [data-ag-prism-omni-owned="1"], [data-ag-prism-sidebar-owned="1"], .ag-prism-sidebar-studio, .ag-prism-sidebar-rail, .ag-prism-sidebar-popover, .ag-prism-sidebar-modal, .ag-cs-home-panel, .ag-cs-home-panel-seat, .ag-cs-ripple-layer, .ag-cs-ripple-host, .ag-cs-conv-aura-host, .ag-cs-crab, .ag-cs-mascot, .ag-v2-mascot-stage, .ag-v2-habitat-prop, .ag-cs-crystal-bar, [data-testid="orchestrator-effort-bar"], .ag-cs-prism-rim-cv, .ag-cs-code-fold-btn, .ag-cs-nav-outline-popover, .ag-cs-nav-outline-trigger, .ag-cs-smooth-caret, .ag-cs-perf-backdrop, .ag-cs-ctx-menu, .ag-cs-ctx-toast'
+    ', #ag-prism-host-alert-css, #ag-prism-settings-v101-css, #ag-prism-studio-v101-css, #ag-prism-omni-css, #ag-prism-sidebar-studio-css, #ag-prism-inline-diff-css, #ag-prism-wallpaper-root, #ag-prism-wallpaper-css, #ag-cs-settings-sec, [data-testid="prism-thought-ai-config"], [data-testid="prism-thought-general-config"], .ag-omni-dock, .ag-omni-menu, .ag-prism-omni-menu, .ag-prism-omni-pane, [data-ag-prism-omni-owned="1"], [data-ag-prism-sidebar-owned="1"], .ag-prism-sidebar-studio, .ag-prism-sidebar-rail, .ag-prism-sidebar-popover, .ag-prism-sidebar-modal, .ag-cs-home-panel, .ag-cs-home-panel-seat, .ag-cs-ripple-layer, .ag-cs-ripple-host, .ag-cs-conv-aura-host, .ag-cs-crab, .ag-cs-mascot, .ag-v2-mascot-stage, .ag-v2-habitat-prop, .ag-v2-cat-sanctuary, [data-cat-sanctuary="1"], .ag-cs-crystal-bar, [data-testid="orchestrator-effort-bar"], .ag-cs-prism-rim-cv, .ag-cs-code-fold-btn, .ag-cs-nav-outline-popover, .ag-cs-nav-outline-trigger, .ag-cs-smooth-caret, .ag-cs-perf-backdrop, .ag-cs-ctx-menu, .ag-cs-ctx-toast'
   );
   nodes.forEach((n) => n.remove());
   return { removed: nodes.length };
@@ -9092,5 +9599,13 @@ module.exports = {
   INLINE_DIFF_REMOVE_EXPRESSION,
   buildWallpaperExpression,
   WALLPAPER_REMOVE_EXPRESSION,
+  shouldEnableCatSanctuary,
+  buildCatSanctuaryExpression,
+  buildCatSanctuaryCleanupExpression,
+  CAT_SANCTUARY_REMOVE_EXPRESSION,
+  shouldEnableEffortSlider,
+  buildEffortSliderExpression,
+  buildEffortSliderCleanupExpression,
+  EFFORT_SLIDER_REMOVE_EXPRESSION,
   isSafeV2SidebarClientSource,
 };

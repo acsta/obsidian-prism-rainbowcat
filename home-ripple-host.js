@@ -206,7 +206,7 @@
         sleeping: false,
         parked: false,
         glowClearedAtZero: false,
-        aura: { reach: 0.47, strength: 1.0 },
+        aura: { reach: 0.26, strength: 1.0 },
         tideSwellAt: 0,
         waves: { height: new Float32Array(0), active: () => false, disturb() {}, skimmer() {}, advance() {} },
         glow: rippleCore.mountBrandHorizonGlow ? rippleCore.mountBrandHorizonGlow(glowCanvas) : { mode: 'none', resize() {}, draw() {}, dispose() {} },
@@ -238,12 +238,20 @@
       const isAB = () => getRootHtml()?.getAttribute?.(WB) === '1';
       const hP = () => Boolean(document.hidden || wb || isAB());
 
+      const isPixelRainbow = () => {
+        const html = getRootHtml();
+        return resolveSpectrumMode(isDarkTheme()) === 'rainbow' && (html?.getAttribute?.('data-ag-rainbow-style') || 'pixel') !== 'aurora';
+      };
       const syncG = (w, h) => {
         if (w <= 0 || h <= 0) return;
-        state.glow?.resize?.(w, h, 0.6);
+        const pxMode = isPixelRainbow();
+        const scale = pxMode ? 1 : 0.6;
+        if (pxMode) setAttrIfChanged(glowCanvas, 'data-ag-rainbow-pixel', '1');
+        else if (glowCanvas.hasAttribute?.('data-ag-rainbow-pixel')) glowCanvas.removeAttribute('data-ag-rainbow-pixel');
+        state.glow?.resize?.(w, h, scale);
         if (!glowCanvas.width || !glowCanvas.height) {
-          glowCanvas.width = Math.max(1, Math.round(w * 0.6));
-          glowCanvas.height = Math.max(1, Math.round(h * 0.6));
+          glowCanvas.width = Math.max(1, Math.round(w * scale));
+          glowCanvas.height = Math.max(1, Math.round(h * scale));
         }
       };
       const reclaim = () => {
@@ -255,17 +263,27 @@
         drawnOnce = false;
       };
 
+      let hadHomePanelCalm = false;
       function updateCalmZones() {
         const curHome = state.root;
         if (!curHome || !state.field?.setCalmZones) return;
-        const greet = curHome.querySelector('[data-testid="home-greeting"]');
-        if (!greet) return state.field.setCalmZones([]);
         const c = canvas.getBoundingClientRect();
         cachedCanvasRect = c;
         cachedCanvasRectAt = performance.now();
-        const g = greet.getBoundingClientRect();
-        if (!c.width || !g.width) return;
-        state.field.setCalmZones([{ x: g.left - c.left - 28, y: g.top - c.top - 14, w: g.width + 56, h: g.height + 28 }]);
+        if (!c.width || !c.height) return state.field.setCalmZones([]);
+        const zones = [];
+        const addRect = (el, px, py) => {
+          const r = el?.getBoundingClientRect?.();
+          if (r && r.width > 0 && r.height > 0) {
+            zones.push({ x: r.left - c.left - px, y: r.top - c.top - py, w: r.width + px * 2, h: r.height + py * 2 });
+            return true;
+          }
+          return false;
+        };
+        addRect(curHome.querySelector('[data-testid="home-greeting"]'), 28, 14);
+        hadHomePanelCalm = addRect(curHome.querySelector('.ag-cs-home-panel'), 22, 16);
+        zones.push({ x: 0, y: Math.max(0, c.height * 0.68), w: c.width, h: c.height * 0.34 });
+        state.field.setCalmZones(zones);
       }
 
       function layout() {
@@ -360,13 +378,13 @@
         const inTideSwell = !still && tideElapsed >= 0 && tideElapsed < 480;
         if (state.tideSwellAt > 0 && !inTideSwell) {
           state.tideSwellAt = 0;
-          state.aura.reach = 0.47;
+          state.aura.reach = 0.26;
           state.aura.strength = 1.0;
           forceSingleDraw = true;
         } else if (inTideSwell) {
           const p = Math.max(0, Math.min(1, tideElapsed / 480));
           const ease = 1 - Math.pow(1 - p, 2.2);
-          state.aura.reach = +(0.2 + (0.47 - 0.2) * ease).toFixed(4);
+          state.aura.reach = +(0.14 + (0.26 - 0.14) * ease).toFixed(4);
           state.aura.strength = +(0.32 + (1.0 - 0.32) * ease).toFixed(4);
         }
 
@@ -390,6 +408,7 @@
 
         if (canvas.width > 0 && canvas.height > 0 && needsRender) {
           forceSingleDraw = false;
+          if (!hadHomePanelCalm && state.root?.querySelector?.('.ag-cs-home-panel')) updateCalmZones();
           if (!cachedThemeTokens) cachedThemeTokens = sampleRippleThemeTokens(canvas);
           const spectrumMode = resolveSpectrumMode(cachedThemeTokens.dark);
           const pal = buildRipplePalette(cachedThemeTokens, auraState, now, ambientScale, spectrumMode);
@@ -587,6 +606,8 @@
       layout();
       state.refreshTheme = () => {
         cachedThemeTokens = sampleRippleThemeTokens(canvas);
+        if (state.width > 0 && state.height > 0 && !shrunk) syncG(state.width, state.height);
+        updateCalmZones();
         forceSingleDraw = true;
         state.field.invalidate();
         state.glow?.invalidate?.();
@@ -618,7 +639,7 @@
       if (!rippleMount) syncRipple();
       if (!rippleMount) return;
       rippleMount.tideSwellAt = performance.now();
-      rippleMount.aura.reach = 0.2;
+      rippleMount.aura.reach = 0.14;
       rippleMount.aura.strength = 0.32;
       try {
         rippleMount.field?.triggerTideSwell?.();

@@ -6,6 +6,10 @@ const path = require('path');
 const {
   PID_FILE,
   REMOVE_EXPRESSION,
+  CAT_SANCTUARY_REMOVE_EXPRESSION,
+  buildCatSanctuaryCleanupExpression,
+  EFFORT_SLIDER_REMOVE_EXPRESSION,
+  buildEffortSliderCleanupExpression,
   readPort,
   listPages,
   CdpSession,
@@ -313,9 +317,23 @@ async function main(argv = process.argv.slice(2), opts = {}) {
       console.log(`[i] 端口 ${port} 无响应，无需清理窗口`);
     }
     if (Array.isArray(pages)) {
+      const catCleanupExpr =
+        typeof buildCatSanctuaryCleanupExpression === 'function'
+          ? buildCatSanctuaryCleanupExpression()
+          : CAT_SANCTUARY_REMOVE_EXPRESSION;
+      const effortCleanupExpr =
+        typeof buildEffortSliderCleanupExpression === 'function'
+          ? buildEffortSliderCleanupExpression()
+          : EFFORT_SLIDER_REMOVE_EXPRESSION;
       for (const page of pages) {
         const session = await CdpSession.connect(page.webSocketDebuggerUrl);
         try {
+          if (catCleanupExpr) {
+            await session.evaluate(catCleanupExpr).catch(() => {});
+          }
+          if (effortCleanupExpr) {
+            await session.evaluate(effortCleanupExpr).catch(() => {});
+          }
           const res = await session.evaluate(REMOVE_EXPRESSION);
           console.log(`[✓] 已恢复原生界面: ${page.title || page.url} (清理节点 ${res?.removed ?? 0})`);
         } finally {

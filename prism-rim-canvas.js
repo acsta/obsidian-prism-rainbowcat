@@ -115,11 +115,11 @@
         [1, 'rgba(168,85,247,0)'],
       ],
       light: [
-        [0, 'rgba(244,114,182,0.72)'],
-        [0.25, 'rgba(251,146,60,0.68)'],
-        [0.50, 'rgba(45,212,191,0.70)'],
-        [0.75, 'rgba(56,189,248,0.74)'],
-        [0.92, 'rgba(167,139,250,0.74)'],
+        [0, 'rgba(244,114,182,0.82)'],
+        [0.25, 'rgba(251,146,60,0.78)'],
+        [0.50, 'rgba(45,212,191,0.80)'],
+        [0.75, 'rgba(56,189,248,0.84)'],
+        [0.92, 'rgba(167,139,250,0.84)'],
         [1, 'rgba(167,139,250,0)'],
       ],
     },
@@ -150,6 +150,7 @@
     const lastPointerPos = { x: -9999, y: -9999 };
     let prismRaf = 0;
     let idleT = 0;
+    let catTickT = 0;
     let lastPrismDrawAt = 0;
     let prismBoxCacheDirty = true;
     let prismBoxCacheAt = 0;
@@ -205,7 +206,10 @@
       const h = getRootHtml();
       return h?.getAttribute?.('data-ag-cs-resizing') === '1' || h?.getAttribute?.('data-ag-cs-mascot-drag') === '1';
     };
-    const clrIdle = () => { if (idleT) { typeof clearTimeout === 'function' && clearTimeout(idleT); idleT = 0; } };
+    const clrIdle = () => {
+      if (idleT) { typeof clearTimeout === 'function' && clearTimeout(idleT); idleT = 0; }
+      if (catTickT) { typeof clearTimeout === 'function' && clearTimeout(catTickT); catTickT = 0; }
+    };
     const zCv = (c) => { if (c && (c.width || c.height)) c.width = c.height = 0; };
     const zEnt = (e, all) => { if (e && (all || e.wasCleared)) { e._s = ''; e._g = null; e._gk = ''; e.wasCleared = true; zCv(e.cv); } };
     const shrinkRims = (all) => {
@@ -449,10 +453,75 @@
       ctx.restore();
     }
 
-    function paintPrismRimCanvas(entry, active, localX, localY, radius, dark, toneKey = 'default', ambientScale = 1) {
+    const CAT_SHIMMER_STOPS = [
+      [244, 114, 182],
+      [251, 146, 60],
+      [45, 212, 191],
+      [56, 189, 248],
+      [167, 139, 250],
+    ];
+
+    function sampleCatShimmerRgb(hue) {
+      const f = (((Number(hue) || 0) % 1) + 1) % 1 * CAT_SHIMMER_STOPS.length;
+      const i = Math.floor(f) % CAT_SHIMMER_STOPS.length;
+      const t = f - Math.floor(f);
+      const a = CAT_SHIMMER_STOPS[i];
+      const b = CAT_SHIMMER_STOPS[(i + 1) % CAT_SHIMMER_STOPS.length];
+      return `${Math.round(a[0] + (b[0] - a[0]) * t)},${Math.round(a[1] + (b[1] - a[1]) * t)},${Math.round(a[2] + (b[2] - a[2]) * t)}`;
+    }
+
+    function readActiveCatRim(now) {
+      const raw = G.__agPrismCatRimState;
+      if (!raw || !raw.active || !Array.isArray(raw.cats) || raw.cats.length === 0) return null;
+      if (typeof raw.ts === 'number' && now > 0 && now - raw.ts > 6000) return null;
+      return raw;
+    }
+
+    function buildCatRimSig(catState) {
+      if (!catState || !catState.cats || catState.cats.length === 0) return '';
+      let s = '';
+      const n = Math.min(4, catState.cats.length);
+      for (let i = 0; i < n; i++) {
+        const c = catState.cats[i];
+        s += `${Math.round((Number(c.nx) || 0) * 50)}:${c.moving ? 1 : 0},`;
+      }
+      return s;
+    }
+
+    function drawCatStepShimmer(ctx, dpr, strokeInset, rw, rh, rr, dark, effAlpha, catState) {
+      if (!catState || !catState.cats || catState.cats.length === 0) return;
+      const n = Math.min(4, catState.cats.length);
+      const canClip = typeof ctx.save === 'function' && typeof ctx.restore === 'function';
+      for (let i = 0; i < n; i++) {
+        const cat = catState.cats[i];
+        const nx = Math.max(0.03, Math.min(0.97, Number(cat.nx) || 0));
+        const cx = strokeInset + nx * rw;
+        const cy = strokeInset;
+        const rad = (cat.moving ? 54 : 38) * dpr;
+        const peak = (cat.moving ? (dark ? 0.12 : 0.115) : (dark ? 0.085 : 0.082)) * effAlpha;
+        if (peak <= 0.004) continue;
+        const rgb = sampleCatShimmerRgb(cat.hue !== undefined ? cat.hue : nx);
+        const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rad);
+        cg.addColorStop(0, `rgba(${rgb},${peak.toFixed(4)})`);
+        cg.addColorStop(0.52, `rgba(${rgb},${(peak * 0.42).toFixed(4)})`);
+        cg.addColorStop(1, `rgba(${rgb},0)`);
+        if (canClip) ctx.save();
+        ctx.globalAlpha = 1;
+        strokeRoundedRectPath(ctx, strokeInset, strokeInset, rw, rh, rr);
+        ctx.lineWidth = 1.65 * dpr;
+        ctx.strokeStyle = cg;
+        ctx.stroke();
+        if (canClip) ctx.restore();
+      }
+    }
+
+    function paintPrismRimCanvas(entry, active, localX, localY, radius, dark, toneKey = 'default', ambientScale = 1, catState = null) {
       if (isDragSuspended()) return true;
       if (!entry || !entry.ctx || !entry.cv || !entry.rect) return false;
-      if (!active || ambientScale <= 0.001) {
+      const isMirror = Boolean(entry.mirrorMode);
+      const isReflectBottom = !isMirror && Boolean(entry.reflectBottomMode);
+      const hasCats = Boolean(catState && catState.cats && catState.cats.length > 0 && !isMirror && !isReflectBottom && entry.box?.classList?.contains?.('surface-composer-card'));
+      if ((!active && !hasCats) || ambientScale <= 0.001) {
         entry._s = '';
         if (!entry.wasCleared) {
           if (entry.cv.width > 0 && entry.cv.height > 0) entry.ctx.clearRect(0, 0, entry.cv.width, entry.cv.height);
@@ -460,16 +529,15 @@
         }
         return true;
       }
-      const isMirror = Boolean(entry.mirrorMode);
-      const isReflectBottom = !isMirror && Boolean(entry.reflectBottomMode);
       const dpr = Math.min((typeof window !== 'undefined' && window.devicePixelRatio) || 1, 1.5);
       const w = Math.max(4, Math.round((entry.rect.width + (entry.insetPad || 0)) * dpr));
       const h = Math.max(4, Math.round((entry.rect.height + (entry.insetPad || 0)) * dpr));
       const cssRadius = entry.borderRadius > 0 ? entry.borderRadius : 10;
       const effAlpha = Math.max(0, Math.min(1, ambientScale * (!isMirror && toneKey === 'mono' ? 0.58 : 1)));
-      const sig = `${w}|${h}|${radius}|${dark ? 1 : 0}|${isMirror ? 'mirror' : toneKey}|${isReflectBottom ? 'reflB' : ''}|${effAlpha.toFixed(3)}|${cssRadius}|${entry.insetPad || 0}`;
+      const cSig = hasCats ? buildCatRimSig(catState) : '';
+      const sig = `${w}|${h}|${radius}|${dark ? 1 : 0}|${isMirror ? 'mirror' : toneKey}|${isReflectBottom ? 'reflB' : ''}|${effAlpha.toFixed(3)}|${cssRadius}|${entry.insetPad || 0}|${active ? 1 : 0}|${cSig}`;
       const moveEps = 1.5;
-      if (!entry.wasCleared && entry.cv.width === w && entry.cv.height === h && entry._s === sig && Math.abs(localX - entry._x) < moveEps && Math.abs(localY - entry._y) < moveEps) {
+      if (!entry.wasCleared && entry.cv.width === w && entry.cv.height === h && entry._s === sig && (!active || (Math.abs(localX - entry._x) < moveEps && Math.abs(localY - entry._y) < moveEps))) {
         return true;
       }
       if (entry.cv.width !== w || entry.cv.height !== h) { entry.cv.width = w; entry.cv.height = h; }
@@ -577,37 +645,40 @@
         return true;
       }
 
-      const canXform = typeof ctx.save === 'function' && typeof ctx.translate === 'function' && typeof ctx.restore === 'function';
-      if (canXform) {
-        const gKey = `${gr}|${dark ? 1 : 0}|${toneKey}`;
-        let grad = entry._gk === gKey ? entry._g : null;
-        if (!grad) {
-          grad = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
+      if (active) {
+        const canXform = typeof ctx.save === 'function' && typeof ctx.translate === 'function' && typeof ctx.restore === 'function';
+        if (canXform) {
+          const gKey = `${gr}|${dark ? 1 : 0}|${toneKey}`;
+          let grad = entry._gk === gKey ? entry._g : null;
+          if (!grad) {
+            grad = ctx.createRadialGradient(0, 0, 0, 0, 0, gr);
+            const pal = RIM_PALETTES[toneKey] || RIM_PALETTES.default;
+            const stops = dark ? pal.dark : pal.light;
+            for (let i = 0; i < stops.length; i++) grad.addColorStop(stops[i][0], stops[i][1]);
+            entry._g = grad;
+            entry._gk = gKey;
+          }
+          ctx.save();
+          ctx.globalAlpha = effAlpha;
+          ctx.translate(gx, gy);
+          strokeRoundedRectPath(ctx, strokeInset - gx, strokeInset - gy, rw, rh, rr);
+          ctx.lineWidth = 1.45 * dpr;
+          ctx.strokeStyle = grad;
+          ctx.stroke();
+          ctx.restore();
+        } else {
+          const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
           const pal = RIM_PALETTES[toneKey] || RIM_PALETTES.default;
           const stops = dark ? pal.dark : pal.light;
-          for (let i = 0; i < stops.length; i++) grad.addColorStop(stops[i][0], stops[i][1]);
-          entry._g = grad;
-          entry._gk = gKey;
+          for (let i = 0; i < stops.length; i++) g.addColorStop(stops[i][0], stops[i][1]);
+          ctx.globalAlpha = effAlpha;
+          strokeRoundedRectPath(ctx, strokeInset, strokeInset, rw, rh, rr);
+          ctx.lineWidth = 1.45 * dpr;
+          ctx.strokeStyle = g;
+          ctx.stroke();
         }
-        ctx.save();
-        ctx.globalAlpha = effAlpha;
-        ctx.translate(gx, gy);
-        strokeRoundedRectPath(ctx, strokeInset - gx, strokeInset - gy, rw, rh, rr);
-        ctx.lineWidth = 1.45 * dpr;
-        ctx.strokeStyle = grad;
-        ctx.stroke();
-        ctx.restore();
-      } else {
-        const g = ctx.createRadialGradient(gx, gy, 0, gx, gy, gr);
-        const pal = RIM_PALETTES[toneKey] || RIM_PALETTES.default;
-        const stops = dark ? pal.dark : pal.light;
-        for (let i = 0; i < stops.length; i++) g.addColorStop(stops[i][0], stops[i][1]);
-        ctx.globalAlpha = effAlpha;
-        strokeRoundedRectPath(ctx, strokeInset, strokeInset, rw, rh, rr);
-        ctx.lineWidth = 1.45 * dpr;
-        ctx.strokeStyle = g;
-        ctx.stroke();
       }
+      if (hasCats) drawCatStepShimmer(ctx, dpr, strokeInset, rw, rh, rr, dark, effAlpha, catState);
       ctx.globalAlpha = prevAlpha !== undefined ? prevAlpha : 1;
       return true;
     }
@@ -744,7 +815,8 @@
       }
       lastPrismDrawAt = now;
       const { x, y } = lastPointerPos;
-      const allowReadRect = x >= -1000;
+      const catState = readActiveCatRim(now);
+      const allowReadRect = x >= -1000 || Boolean(catState);
 
       const activeTrack = getActiveCrystalTrack ? getActiveCrystalTrack() : null;
       if (
@@ -793,7 +865,7 @@
           const st = inRange && Math.abs(ly) < 220 ? Math.min(1, ambientScale * (toneKey === 'mono' ? 0.62 : 1)) * (1 - Math.abs(ly) / 220) : 0;
           if (!compRim || st > compRim.strength) compRim = { localX: lx, strength: st, toneKey, dark };
         }
-        if (entry.ctx && paintPrismRimCanvas(entry, inRange, lx, ly, gradR, dark, toneKey, ambientScale)) return;
+        if (entry.ctx && paintPrismRimCanvas(entry, inRange, lx, ly, gradR, dark, toneKey, ambientScale, catState)) return;
         const nx = inRange ? `${lx.toFixed(1)}px` : '-9999px';
         const ny = inRange ? `${ly.toFixed(1)}px` : '-9999px';
         if (entry.pxStr !== nx) { entry.pxStr = nx; entry.box.style.setProperty(vx, nx); }
@@ -807,6 +879,10 @@
         }
       });
       emitComposerRim(compRim);
+      if (catTickT) { clearTimeout(catTickT); catTickT = 0; }
+      if (catState && catState.cats.some((c) => c.moving) && typeof setTimeout === 'function') {
+        catTickT = setTimeout(() => { catTickT = 0; if (!isDestroyed() && !isWB() && !isDragSuspended() && !isRimMotionDisabled() && readAmbientScale() > 0.001) schedRaf(); }, 180);
+      }
       armIdle();
     }
 
@@ -899,8 +975,15 @@
       });
     }
 
+    const notifyCatRim = () => {
+      if (isDestroyed() || isWB() || isDragSuspended() || isRimMotionDisabled() || readAmbientScale() <= 0.001) return;
+      if (!prismRaf) schedRaf();
+    };
+    G.__agPrismNotifyCatRim = notifyCatRim;
+
     function teardownDynPointerRules() {
       cancelPendingRaf();
+      if (G.__agPrismNotifyCatRim === notifyCatRim) delete G.__agPrismNotifyCatRim;
       emitComposerRim(null);
       bindEv('removeEventListener');
       shrinkRims(1);
@@ -923,6 +1006,7 @@
       teardown: teardownDynPointerRules,
       markDirty,
       invalidateMetrics,
+      notifyCatRim,
       getLastPointerPos: () => lastPointerPos,
     };
   }

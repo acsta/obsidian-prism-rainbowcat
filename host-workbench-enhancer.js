@@ -34,12 +34,12 @@
   const A_OVC = 'data-ag-ov-sec-closing';
 
   const UI_RAW = {
-    zh: '折叠|展开|行|提问导航| 轮|收起步骤|已收起 | 项|已是最简|过滤本会话提问...|无匹配提问|章节|',
-    'zh-TW': '摺疊|展開|行|提問導覽| 輪|收起步驟|已收起 | 項|已是最簡|過濾本會話提問...|無匹配提問|章節|',
-    yue: '摺埋|展開|行|提問導覽| 輪|收埋步驟|已收埋 | 項|已係最簡|篩選呢個對話嘅提問...|冇符合嘅提問|章節|',
-    ja: '折りたたむ|展開|行|プロンプト目次||手順を畳む||件畳みました|完了|質問を絞り込む...|一致なし|章|',
-    ko: '접기|펼치기|줄|질문 목차||단계 접기||개 접힘|완료|질문 검색...|일치 항목 없음|챕터|',
-    en: 'Fold|Expand|L|Outline| turns|Fold Steps|Folded ||All clean|Filter prompts...|No matching prompts|Chapter|Prompts',
+    zh: '折叠|展开|行|提问导航| 轮|收起步骤|已收起 | 项|已是最简|过滤本会话提问...|无匹配提问|章节||全部|含代码|含报错|第 | 轮（跳转）',
+    'zh-TW': '摺疊|展開|行|提問導覽| 輪|收起步驟|已收起 | 項|已是最簡|過濾本會話提問...|無匹配提問|章節||全部|含程式碼|含報錯|第 | 輪（跳轉）',
+    yue: '摺埋|展開|行|提問導覽| 輪|收埋步驟|已收埋 | 項|已係最簡|篩選呢個對話嘅提問...|冇符合嘅提問|章節||全部|含程式碼|含報錯|第 | 輪（跳轉）',
+    ja: '折りたたむ|展開|行|プロンプト目次||手順を畳む||件畳みました|完了|質問を絞り込む...|一致なし|章||すべて|コード有|エラー有|ターン |',
+    ko: '접기|펼치기|줄|질문 목차||단계 접기||개 접힘|완료|질문 검색...|일치 항목 없음|챕터||전체|코드 포함|오류 포함|턴 |',
+    en: 'Fold|Expand|L|Outline| turns|Fold Steps|Folded ||All clean|Filter prompts...|No matching prompts|Chapter|Prompts|All|Code|Errors|Turn |',
   };
   const UI_STRINGS = {};
   for (const k in UI_RAW) {
@@ -54,6 +54,10 @@
       searchPlaceholder: a[9],
       emptyMatch: a[10],
       chapterBadge: a[11],
+      filterAll: a[13] || 'All',
+      filterCode: a[14] || 'Code',
+      filterError: a[15] || 'Errors',
+      virtualTurn: (n) => `${a[16] || 'Turn '}${n}${a[17] || ''}`,
     };
   }
 
@@ -313,7 +317,11 @@
     let outlineListEl = null;
     let outlineTitleEl = null;
     let outlineFoldBtn = null;
+    let outlineFilterBar = null;
     let outlineFilterText = '';
+    let outlineFilterMode = 'all';
+    let outlineKbdIdx = -1;
+    let outlinePinned = false;
     let outlineOpen = false;
     let lastOutlineStructSig = '';
     let lastOutlineActiveIdx = -1;
@@ -642,6 +650,7 @@
       mut(() => {
         if (outlineSearchInput) outlineSearchInput.placeholder = ui.searchPlaceholder;
         if (outlineFoldBtn && !foldFeedbackTimer) outlineFoldBtn.textContent = ui.foldSteps;
+        syncOutlineFilterBtns();
         qa(doc, S_TRIG).forEach((b) => setA(b, 'aria-label', ui.outlineBtn || 'Outline'));
       });
       if (outlineOpen) {
@@ -1067,6 +1076,30 @@
       return false;
     }
 
+    function classifyTurnContent(stepEl, nextStepEl) {
+      let hasCode = false,
+        hasError = false;
+      const checkNode = (node) => {
+        if (!node) return;
+        if (!hasCode && (qs(node, 'pre, [data-testid="code-block"], code[class*="language-"]') || tagU(node) === 'PRE')) {
+          hasCode = true;
+        }
+        if (
+          !hasError &&
+          (qs(node, '[data-testid*="error"], [data-status="error"], .text-destructive, [role="alert"]') ||
+            ga(node, 'data-status') === 'error')
+        ) {
+          hasError = true;
+        }
+      };
+      checkNode(stepEl);
+      for (let cur = stepEl?.nextElementSibling, hop = 0; cur && cur !== nextStepEl && hop < 14 && (!hasCode || !hasError); cur = cur.nextElementSibling, hop++) {
+        if (ga(cur, 'data-testid') === 'user-input-step') break;
+        checkNode(cur);
+      }
+      return { hasCode, hasError };
+    }
+
     function collectOutlineModel(navRail) {
       const conv = cl(navRail, S_CV) || findPrimaryConvView();
       const chapters = navRail
@@ -1095,12 +1128,41 @@
       const exact = steps.length > 0 && pd.length === steps.length && pd.every((d) => d.turn > 0);
       let start = Math.max(1, total - steps.length + 1);
       if (!exact && actTurn > 0 && actIdx >= 0 && steps.length > 0) start = Math.max(1, Math.min(start, actTurn - actIdx));
-      const items = steps.map((el, i) => ({
-        el,
-        turnNum: exact ? pd[i].turn : start + i,
-        text: extractPromptSnippet(el),
-        active: i === actIdx,
-      }));
+      const mountedNums = new Set();
+      const items = steps.map((el, i) => {
+        const turnNum = exact ? pd[i].turn : start + i;
+        mountedNums.add(turnNum);
+        const cls = classifyTurnContent(el, steps[i + 1] || null);
+        return {
+          el,
+          dotEl: exact ? dots[i] : null,
+          turnNum,
+          text: extractPromptSnippet(el),
+          active: i === actIdx,
+          hasCode: cls.hasCode,
+          hasError: cls.hasError,
+          virtual: false,
+        };
+      });
+      if (dots.length > steps.length) {
+        const ui = getStrings();
+        for (let i = 0; i < dots.length; i++) {
+          const tn = pd[i].turn || i + 1;
+          if (mountedNums.has(tn)) continue;
+          const rawLbl = String(ga(dots[i], 'title') || '').trim();
+          items.push({
+            el: null,
+            dotEl: dots[i],
+            turnNum: tn,
+            text: rawLbl || ui.virtualTurn(tn),
+            active: isTurnDotActive(dots[i]),
+            hasCode: false,
+            hasError: false,
+            virtual: true,
+          });
+        }
+        items.sort((a, b) => a.turnNum - b.turnNum);
+      }
       return { totalTurns: Math.max(total, items.length), chapters, items };
     }
 
@@ -1117,6 +1179,36 @@
         hideOutlineTimer = 0;
         closeNavOutline();
       }, OUTLINE_HIDE_DELAY_MS);
+    }
+
+    function syncOutlineFilterBtns() {
+      if (!outlineFilterBar) return;
+      const ui = getStrings();
+      const map = { all: ui.filterAll, code: ui.filterCode, error: ui.filterError };
+      for (const b of qa(outlineFilterBar, 'button[data-filter]')) {
+        const f = ga(b, 'data-filter');
+        if (map[f] && b.textContent !== map[f]) b.textContent = map[f];
+        if (f === outlineFilterMode) sa(b, 'data-active', '1');
+        else ra(b, 'data-active');
+      }
+    }
+
+    function stepOutlineKbd(delta) {
+      if (!outlineListEl) return;
+      const rows = Array.from(qa(outlineListEl, 'button.ag-cs-nav-outline-chapter, button.ag-cs-nav-outline-item, button.ag-cs-nav-outline-vitem'));
+      if (!rows.length) {
+        outlineKbdIdx = -1;
+        return;
+      }
+      if (outlineKbdIdx >= 0 && rows[outlineKbdIdx]) ra(rows[outlineKbdIdx], 'data-kbd-active');
+      outlineKbdIdx = outlineKbdIdx < 0 ? (delta > 0 ? 0 : rows.length - 1) : (outlineKbdIdx + delta + rows.length) % rows.length;
+      const cur = rows[outlineKbdIdx];
+      if (cur) {
+        sa(cur, 'data-kbd-active', '1');
+        try {
+          cur.scrollIntoView?.({ block: 'nearest' });
+        } catch {}
+      }
     }
 
     function ensureOutlinePopover(hostParent) {
@@ -1144,16 +1236,48 @@
       search.placeholder = ui.searchPlaceholder;
       search.addEventListener('input', () => {
         outlineFilterText = String(search.value || '').trim().toLowerCase();
+        outlineKbdIdx = -1;
         renderOutlineListOnly();
       });
       search.addEventListener('keydown', (ev) => {
         if (ev.key === 'Escape') {
           ev.stopPropagation();
           closeNavOutline();
+        } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+          ev.preventDefault?.();
+          ev.stopPropagation?.();
+          stepOutlineKbd(ev.key === 'ArrowDown' ? 1 : -1);
         } else if (ev.key === 'Enter') {
-          qs(outlineListEl, 'button.ag-cs-nav-outline-item, button.ag-cs-nav-outline-chapter')?.click?.();
+          ev.preventDefault?.();
+          const rows = Array.from(qa(outlineListEl, 'button.ag-cs-nav-outline-chapter, button.ag-cs-nav-outline-item, button.ag-cs-nav-outline-vitem'));
+          const pick = (outlineKbdIdx >= 0 && rows[outlineKbdIdx]) || rows[0];
+          pick?.click?.();
         }
       });
+      const filterBar = mk('div', 'ag-cs-nav-outline-filters');
+      filterBar.style.cssText = 'display:flex;gap:4px;padding:0 10px 6px;';
+      for (const [fid, flbl] of [
+        ['all', ui.filterAll],
+        ['code', ui.filterCode],
+        ['error', ui.filterError],
+      ]) {
+        const fb = mk('button', 'ag-cs-nav-outline-filter', flbl);
+        fb.type = 'button';
+        sa(fb, 'data-filter', fid);
+        sa(fb, 'data-no-press-spring', '1');
+        if (fid === outlineFilterMode) sa(fb, 'data-active', '1');
+        fb.style.cssText = 'font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid var(--border,rgba(148,163,184,.28));background:transparent;cursor:pointer;';
+        fb.addEventListener('click', (ev) => {
+          ev?.preventDefault?.();
+          ev?.stopPropagation?.();
+          if (outlineFilterMode === fid) return;
+          outlineFilterMode = fid;
+          outlineKbdIdx = -1;
+          mut(() => syncOutlineFilterBtns());
+          renderOutlineListOnly(true);
+        });
+        filterBar.appendChild(fb);
+      }
       const list = mk('div', 'ag-cs-nav-outline-list');
       const pop = markNoTr(
         mk(
@@ -1162,6 +1286,7 @@
           null,
           mk('div', 'ag-cs-nav-outline-head', null, title, foldBtn),
           mk('div', 'ag-cs-nav-outline-search-wrap', null, search),
+          filterBar,
           list
         )
       );
@@ -1171,16 +1296,18 @@
       pop.hidden = true;
       pop.addEventListener('pointerenter', cancelHideOutlineTimer);
       pop.addEventListener('pointerleave', () => {
-        if (doc.activeElement !== search) scheduleHideOutline();
+        if (!outlinePinned && doc.activeElement !== search) scheduleHideOutline();
       });
       hostParent.appendChild(pop);
       outlinePopover = pop;
       outlineTitleEl = title;
       outlineFoldBtn = foldBtn;
       outlineSearchInput = search;
+      outlineFilterBar = filterBar;
       outlineListEl = list;
       lastOutlineStructSig = '';
       lastOutlineActiveIdx = -1;
+      outlineKbdIdx = -1;
       activeOutlineBtn = null;
       outlineItemBtnByIdx.clear();
       return pop;
@@ -1219,19 +1346,23 @@
       const ui = getStrings();
       const model = collectOutlineModel(activeNavRail);
       const q = outlineFilterText;
-      const structParts = [lastCascadeId, lastSyncedLang, model.totalTurns, q, model.chapters.length, model.items.length];
+      const fm = outlineFilterMode;
+      const structParts = [lastCascadeId, lastSyncedLang, model.totalTurns, q, fm, model.chapters.length, model.items.length];
       for (let i = 0; i < model.chapters.length; i++) structParts.push(model.chapters[i].label);
       let activeIdx = -1;
       for (let i = 0; i < model.items.length; i++) {
         const it = model.items[i];
         if (it.active) activeIdx = i;
-        structParts.push(`${it.turnNum}:${it.text}`);
+        structParts.push(`${it.turnNum}:${it.hasCode ? 1 : 0}${it.hasError ? 1 : 0}${it.virtual ? 1 : 0}:${it.text}`);
       }
       const nextStructSig = structParts.join('\x1f');
       if (!forceRebuild && !cascadeChanged && nextStructSig === lastOutlineStructSig && outlineListEl.firstChild) {
         for (let i = 0; i < model.items.length; i++) {
           const btn = outlineItemBtnByIdx.get(i);
-          if (btn) btn.__agTurnEl = model.items[i].el;
+          if (btn) {
+            btn.__agTurnEl = model.items[i].el;
+            btn.__agDotEl = model.items[i].dotEl;
+          }
         }
         if (activeIdx !== lastOutlineActiveIdx) {
           const nextBtn = activeIdx >= 0 ? outlineItemBtnByIdx.get(activeIdx) || null : null;
@@ -1246,41 +1377,47 @@
       }
       lastOutlineStructSig = nextStructSig;
       lastOutlineActiveIdx = activeIdx;
+      outlineKbdIdx = -1;
       activeOutlineBtn = null;
       outlineItemBtnByIdx.clear();
       mut(() => {
         if (outlineTitleEl) outlineTitleEl.textContent = ui.outlineTitle(model.totalTurns);
+        syncOutlineFilterBtns();
         while (outlineListEl.firstChild) outlineListEl.removeChild(outlineListEl.firstChild);
         let renderedCount = 0;
-        for (let i = 0; i < model.chapters.length; i++) {
-          const ch = model.chapters[i];
-          if (q && !ch.label.toLowerCase().includes(q)) continue;
-          const row = mk(
-            'button',
-            'ag-cs-nav-outline-chapter',
-            null,
-            mk('span', 'ag-cs-nav-outline-badge', ui.chapterBadge),
-            mk('span', 'ag-cs-nav-outline-text', ch.label)
-          );
-          row.type = 'button';
-          sa(row, 'data-no-press-spring', '1');
-          row.addEventListener('click', (ev) => {
-            ev?.preventDefault?.();
-            ev?.stopPropagation?.();
-            try {
-              ch.btn.click?.();
-            } catch {}
-          });
-          outlineListEl.appendChild(row);
-          renderedCount++;
+        if (fm === 'all') {
+          for (let i = 0; i < model.chapters.length; i++) {
+            const ch = model.chapters[i];
+            if (q && !ch.label.toLowerCase().includes(q)) continue;
+            const row = mk(
+              'button',
+              'ag-cs-nav-outline-chapter',
+              null,
+              mk('span', 'ag-cs-nav-outline-badge', ui.chapterBadge),
+              mk('span', 'ag-cs-nav-outline-text', ch.label)
+            );
+            row.type = 'button';
+            sa(row, 'data-no-press-spring', '1');
+            row.addEventListener('click', (ev) => {
+              ev?.preventDefault?.();
+              ev?.stopPropagation?.();
+              try {
+                ch.btn.click?.();
+              } catch {}
+            });
+            outlineListEl.appendChild(row);
+            renderedCount++;
+          }
         }
         for (let i = 0; i < model.items.length; i++) {
           const it = model.items[i];
+          if (fm === 'code' && !it.hasCode) continue;
+          if (fm === 'error' && !it.hasError) continue;
           const numStr = `#${it.turnNum}`;
           if (q && !it.text.toLowerCase().includes(q) && !numStr.includes(q)) continue;
           const row = mk(
             'button',
-            'ag-cs-nav-outline-item',
+            it.virtual ? 'ag-cs-nav-outline-vitem' : 'ag-cs-nav-outline-item',
             null,
             mk('span', 'ag-cs-nav-outline-num', numStr),
             mk('span', 'ag-cs-nav-outline-text', it.text)
@@ -1288,7 +1425,9 @@
           row.type = 'button';
           sa(row, 'data-no-press-spring', '1');
           sa(row, 'data-turn-num', it.turnNum);
+          if (it.virtual) sa(row, 'data-virtual', '1');
           row.__agTurnEl = it.el;
+          row.__agDotEl = it.dotEl;
           if (it.active) {
             sa(row, 'data-active', '1');
             activeOutlineBtn = row;
@@ -1298,8 +1437,15 @@
             ev?.preventDefault?.();
             ev?.stopPropagation?.();
             const targetEl = row.__agTurnEl || it.el;
-            scrollElementToTopInViewport(targetEl);
-            pulseSonarOnElement(targetEl);
+            if (targetEl && targetEl.isConnected !== false) {
+              scrollElementToTopInViewport(targetEl);
+              pulseSonarOnElement(targetEl);
+            } else {
+              const dotEl = row.__agDotEl || it.dotEl;
+              try {
+                dotEl?.click?.();
+              } catch {}
+            }
             stats.jumpCount++;
           });
           outlineListEl.appendChild(row);
@@ -1328,7 +1474,7 @@
       return pop;
     }
 
-    function openNavOutline(railOverride = null) {
+    function openNavOutline(railOverride = null, opts = null) {
       if (isDead() || !doc || isHostGroupCardVisible()) return false;
       cancelHideOutlineTimer();
       const navRail = railOverride || qs(doc, '[data-testid="conversation-navigator"]');
@@ -1337,16 +1483,24 @@
       const pop = renderOutlinePopover();
       if (!pop) return false;
       outlineOpen = true;
+      if (opts?.pin) outlinePinned = true;
       mut(() => {
         pop.hidden = false;
         sa(pop, 'data-open', '1');
       });
+      if (opts?.focusSearch) {
+        try {
+          outlineSearchInput?.focus?.();
+        } catch {}
+      }
       return true;
     }
 
     function closeNavOutline() {
       cancelHideOutlineTimer();
       outlineOpen = false;
+      outlinePinned = false;
+      outlineKbdIdx = -1;
       if (!outlinePopover) return;
       mut(() => {
         ra(outlinePopover, 'data-open');
@@ -1373,7 +1527,7 @@
           trigBtn.addEventListener('pointerenter', () => openNavOutline(rail), PASSIVE_OPT);
           trigBtn.addEventListener('click', (ev) => {
             ev?.stopPropagation?.();
-            outlineOpen ? closeNavOutline() : openNavOutline(rail);
+            outlineOpen ? closeNavOutline() : openNavOutline(rail, { pin: true });
           });
           mut(() => rail.appendChild(trigBtn));
         }
@@ -1383,6 +1537,11 @@
           const tgt = ev?.target || null;
           const onTrig = Boolean(cl(tgt, S_TRIG));
           const onGrp = !onTrig && Boolean(cl(tgt, S_NG));
+          if (outlineOpen && outlinePinned && !onGrp) {
+            cancelHideOutlineTimer();
+            lastHoverTarget = tgt;
+            return;
+          }
           if (
             !onTrig &&
             (onGrp ||
@@ -1390,7 +1549,7 @@
           ) {
             lastHoverTarget = tgt;
             if (outlineOpen && doc.activeElement !== outlineSearchInput) {
-              if (onGrp || cl(tgt, S_NT)) closeNavOutline();
+              if (onGrp || cl(tgt, `${S_NT}[data-base-ui-tooltip-trigger]`)) closeNavOutline();
               else scheduleHideOutline();
             }
             return;
@@ -1839,6 +1998,9 @@
       try {
         const t = ev?.target;
         if (isDead() || !t?.closest) return;
+        if (outlineOpen && outlinePinned && outlinePopover && !outlinePopover.contains?.(t) && !activeNavRail?.contains?.(t)) {
+          closeNavOutline();
+        }
         if (cl(t, '[data-testid="permissions-selector-trigger"]')) {
           win?.requestAnimationFrame?.(() => {
             if (!isDead()) syncPermissionsMenuState();
@@ -1875,6 +2037,19 @@
         if (ev.key === 'Escape') {
           if (win?.__agPrismInlineDiff?.closeMenuIfOpen?.()) return;
           if (outlineOpen) return closeNavOutline();
+        }
+        if (
+          ev.altKey &&
+          !ev.ctrlKey &&
+          !ev.metaKey &&
+          !ev.shiftKey &&
+          (ev.code === 'KeyO' || ev.key === 'o' || ev.key === 'O') &&
+          !isEditableElement(ev.target)
+        ) {
+          ev.preventDefault?.();
+          if (outlineOpen) closeNavOutline();
+          else openNavOutline(null, { pin: true, focusSearch: true });
+          return;
         }
         if (
           ev.altKey &&
@@ -2011,6 +2186,10 @@
       outlineListEl = null;
       outlineTitleEl = null;
       outlineFoldBtn = null;
+      outlineFilterBar = null;
+      outlineFilterMode = 'all';
+      outlineKbdIdx = -1;
+      outlinePinned = false;
       sidebarMoreBtn = null;
       sidebarMoreExpanded = false;
       activeNavRail = null;

@@ -18,7 +18,7 @@
   const CONV_AURA_FOCUS_FADE_MS = 600;
 
   function scaleConvReach(fullViewportReach) {
-    return Math.max(0.08, Math.min(0.98, +(fullViewportReach / CONV_AURA_HEIGHT_RATIO).toFixed(4)));
+    return Math.max(0.08, Math.min(0.78, +(fullViewportReach / CONV_AURA_HEIGHT_RATIO).toFixed(4)));
   }
 
   function clamp01(v, fallback = 1) {
@@ -290,7 +290,7 @@
     return fillOptics(
       out,
       idleStr + (dark ? 0.024 : 0.038) * Math.sin(now * 0.0018),
-      scaleConvReach(dark ? 0.16 : 0.22),
+      scaleConvReach(dark ? 0.16 : 0.20),
       idlePrism,
       0,
       0.72,
@@ -765,11 +765,25 @@
         }
       }
 
+      function isPixelRainbowMode() {
+        const sp = resolveSpectrum();
+        const html = typeof document !== 'undefined' ? document.documentElement : null;
+        const isRb = sp === 'rainbow' || (sp === undefined && html?.getAttribute?.('data-ag-cs-accent') === 'rainbow');
+        return Boolean(isRb && (html?.getAttribute?.('data-ag-rainbow-style') || 'pixel') !== 'aurora');
+      }
+
       function applySize(w, parentH) {
         if (isH()) return releaseBacking();
         const h = parentH > 0 ? Math.max(1, Math.round(parentH * CONV_AURA_HEIGHT_RATIO)) : 0;
+        const pxMode = isPixelRainbowMode();
+        if (pxMode) setAttrIfChanged(glowCanvas, 'data-ag-rainbow-pixel', '1');
+        else if (glowCanvas.hasAttribute?.('data-ag-rainbow-pixel')) glowCanvas.removeAttribute('data-ag-rainbow-pixel');
         const rawDpr = (typeof window !== 'undefined' && Number(window.devicePixelRatio)) || 1;
-        const dpr = rippleCore?.resolveHorizonDpr ? rippleCore.resolveHorizonDpr(rawDpr, 0.72) : Math.min(rawDpr, 1) * 0.72;
+        const dpr = pxMode
+          ? 1
+          : rippleCore?.resolveHorizonDpr
+          ? rippleCore.resolveHorizonDpr(rawDpr, 0.72)
+          : Math.min(rawDpr, 1) * 0.72;
         const need = bkRel || (w > 0 && h > 0 && (!glowCanvas.width || !glowCanvas.height));
         if (!need && w === state.width && h === state.height && dpr === state.dpr) return;
         state.width = w;
@@ -1003,6 +1017,7 @@
         state.glow?.invalidate?.();
         if (isH()) return releaseBacking();
         if (bkRel) layout(true);
+        else if (state.width > 0 && state.height > 0) applySize(state.width, Math.round(state.height / CONV_AURA_HEIGHT_RATIO));
         if (state.decisionHolding || state.unfocusedHold || state.sleepReason === 'settled') { forceImmediateDraw = true; drawNow(readNowMs()); }
         else { state.sleepReason = ''; wake(true); }
       };

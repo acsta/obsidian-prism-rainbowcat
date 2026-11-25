@@ -36,14 +36,44 @@ const {
   THOUGHT_REMOVE_EXPRESSION,
   buildInlineDiffInjectExpression,
   INLINE_DIFF_REMOVE_EXPRESSION,
+  shouldEnableCatSanctuary,
+  buildCatSanctuaryExpression,
+  buildCatSanctuaryCleanupExpression,
+  CAT_SANCTUARY_REMOVE_EXPRESSION,
+  shouldEnableEffortSlider,
+  buildEffortSliderExpression,
+  buildEffortSliderCleanupExpression,
+  EFFORT_SLIDER_REMOVE_EXPRESSION,
 } = require('./cdp');
 
 const FALLBACK_THOUGHT_REMOVE_EXPRESSION =
   "(() => { try { window.__agPrismThought?.destroy?.(); } catch {} try { document.querySelectorAll('[data-testid=\"prism-thought-ai-config\"],[data-testid=\"prism-thought-general-config\"]').forEach((n) => n.remove()); } catch {} try { delete window.__agPrismThought; } catch {} try { delete globalThis.__agPrismThought; } catch {} try { delete window.__agPrismThoughtSettingsUi; } catch {} try { delete globalThis.__agPrismThoughtSettingsUi; } catch {} return { ok: true, status: 'off' }; })()";
 const FALLBACK_INLINE_DIFF_REMOVE_EXPRESSION =
   "(() => { try { window.__agPrismInlineDiff?.destroy?.(); } catch {} try { document.getElementById('ag-prism-inline-diff-css')?.remove(); } catch {} try { document.querySelectorAll('.ag-cs-inline-diff-box, .ag-cs-diff-ctx-menu').forEach((n) => n.remove()); } catch {} try { delete window.__agPrismInlineDiff; } catch {} try { delete globalThis.__agPrismInlineDiff; } catch {} try { delete window.__agPrismInlineDiffFactory; } catch {} try { delete globalThis.__agPrismInlineDiffFactory; } catch {} try { delete window.__agPrismInlineDiffResolve; } catch {} return { ok: true, status: 'off' }; })()";
+const FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION =
+  "(() => { try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch {} try { document.querySelectorAll?.('.ag-v2-cat-sanctuary')?.forEach?.((el) => el.remove()); } catch {} try { document.querySelectorAll?.('[data-cat-sanctuary=\"1\"]')?.forEach?.((el) => el.removeAttribute('data-cat-sanctuary')); } catch {} try { document.documentElement?.removeAttribute?.('data-ag-cat-peek'); } catch {} try { delete window.__agCatSanctuaryFactory; } catch {} try { delete globalThis.__agCatSanctuaryFactory; } catch {} try { delete window.__agPrismCatRimState; } catch {} try { delete globalThis.__agPrismCatRimState; } catch {} return { ok: true, status: 'off' }; })()";
+const FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION =
+  "(() => { try { (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider)?.destroy?.(); } catch {} try { document.querySelector?.('#ag-codex-effort-slider-styles[data-ag-prism-slider=\"1\"]')?.remove?.(); } catch {} try { document.getElementById?.('ag-prism-effort-slider-hide')?.remove?.(); } catch {} try { delete window.__agPrismEffortSlider; } catch {} try { delete globalThis.__agPrismEffortSlider; } catch {} try { delete window.AntigravityCodexEffortSlider; } catch {} try { delete globalThis.AntigravityCodexEffortSlider; } catch {} return { ok: true, status: 'off' }; })()";
 const INLINE_DIFF_MAX_PAYLOAD_BYTES = 16384;
 const INLINE_DIFF_MAX_URI_LENGTH = 2048;
+
+function isCatSanctuaryEnabledForConfig(cfg, checker = shouldEnableCatSanctuary) {
+  try {
+    if (typeof checker === 'function') return Boolean(checker(cfg));
+    return cfg?.mascot === 'cat';
+  } catch {
+    return false;
+  }
+}
+
+function isEffortSliderEnabledForConfig(cfg, checker = shouldEnableEffortSlider) {
+  try {
+    if (typeof checker === 'function') return Boolean(checker(cfg));
+    return cfg?.effortSliderModule !== 'off' && cfg?.effortSliderModule !== false;
+  } catch {
+    return true;
+  }
+}
 
 function isThoughtEnabledForConfig(cfg, checker = shouldEnableThought) {
   try {
@@ -129,6 +159,15 @@ function createFastConfigRefreshBroadcaster({
     buildExpression: buildInlineDiffInjectExpression,
     removeExpression: INLINE_DIFF_REMOVE_EXPRESSION || FALLBACK_INLINE_DIFF_REMOVE_EXPRESSION,
   }),
+  getCatSanctuaryHooks = () => ({
+    shouldEnable: shouldEnableCatSanctuary,
+    buildExpression: buildCatSanctuaryExpression,
+    removeExpression:
+      (typeof buildCatSanctuaryCleanupExpression === 'function' ? buildCatSanctuaryCleanupExpression() : '') ||
+      CAT_SANCTUARY_REMOVE_EXPRESSION ||
+      FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION,
+  }),
+  getEffortSliderHooks = null,
   getOmniServerInfo = () => null,
   getSidebarServiceReady = () => false,
   sidebarBinding = SIDEBAR_BINDING,
@@ -175,8 +214,38 @@ function createFastConfigRefreshBroadcaster({
     const inlineDiffHashMatch = inlineDiffExpr ? /const targetHash = "([^"]+)"/.exec(inlineDiffExpr) : null;
     const inlineDiffHash = inlineDiffHashMatch ? inlineDiffHashMatch[1] : inlineDiffExpr;
     const inlineDiffRemoveExpr = inlineDiffHooks.removeExpression || FALLBACK_INLINE_DIFF_REMOVE_EXPRESSION;
+    const catSanctuaryHooks = getCatSanctuaryHooks() || {};
+    const catSanctuaryEnabled = isCatSanctuaryEnabledForConfig(cfgNow, catSanctuaryHooks.shouldEnable);
+    const catSanctuaryExpr =
+      catSanctuaryEnabled && typeof catSanctuaryHooks.buildExpression === 'function'
+        ? catSanctuaryHooks.buildExpression(cfgNow)
+        : '';
+    const catSanctuaryHashMatch = catSanctuaryExpr ? /const targetHash = "([^"]+)"/.exec(catSanctuaryExpr) : null;
+    const catSanctuaryHash = catSanctuaryHashMatch ? catSanctuaryHashMatch[1] : catSanctuaryExpr;
+    const catSanctuaryRemoveExpr = catSanctuaryHooks.removeExpression || FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION;
+    const effortSliderHooks =
+      typeof getEffortSliderHooks === 'function'
+        ? getEffortSliderHooks() || {}
+        : buildInj === buildInjectExpression
+        ? {
+            shouldEnable: shouldEnableEffortSlider,
+            buildExpression: buildEffortSliderExpression,
+            removeExpression:
+              (typeof buildEffortSliderCleanupExpression === 'function' ? buildEffortSliderCleanupExpression() : '') ||
+              EFFORT_SLIDER_REMOVE_EXPRESSION ||
+              FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION,
+          }
+        : { shouldEnable: () => false, buildExpression: () => '', removeExpression: '' };
+    const effortSliderEnabled = isEffortSliderEnabledForConfig(cfgNow, effortSliderHooks.shouldEnable);
+    const effortSliderExpr =
+      effortSliderEnabled && typeof effortSliderHooks.buildExpression === 'function'
+        ? effortSliderHooks.buildExpression(cfgNow)
+        : '';
+    const effortSliderHashMatch = effortSliderExpr ? /const targetHash = "([^"]+)"/.exec(effortSliderExpr) : null;
+    const effortSliderHash = effortSliderHashMatch ? effortSliderHashMatch[1] : effortSliderExpr;
+    const effortSliderRemoveExpr = effortSliderHooks.removeExpression || FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION;
     if (typeof onExpressionsUpdated === 'function') {
-      onExpressionsUpdated({ expr, omniExpr, sidebarExpr, hostI18nExpr, thoughtExpr, inlineDiffExpr });
+      onExpressionsUpdated({ expr, omniExpr, sidebarExpr, hostI18nExpr, thoughtExpr, inlineDiffExpr, catSanctuaryExpr, effortSliderExpr });
     }
     const canFastRefresh = typeof buildRefresh === 'function';
     const baseRefreshExpr = canFastRefresh ? buildRefresh() : null;
@@ -228,6 +297,46 @@ function createFastConfigRefreshBroadcaster({
                 entry.inlineDiffSkipped = false;
                 entry.lastInlineDiffHash = '';
               }
+              if (catSanctuaryExpr && catSanctuaryEnabled) {
+                if (!entry.catSanctuarySkipped && (!entry.catSanctuaryMounted || !entry.catSanctuaryScriptId || entry.lastCatSanctuaryHash !== catSanctuaryHash)) {
+                  const csRes = await entry.session.evaluate(catSanctuaryExpr).catch(() => null);
+                  const csSkipped = Boolean(csRes && typeof csRes.status === 'string' && csRes.status.startsWith('skipped-'));
+                  if (csRes && csRes.ok) {
+                    entry.catSanctuaryMounted = true;
+                    entry.catSanctuarySkipped = false;
+                    entry.lastCatSanctuaryHash = catSanctuaryHash;
+                  } else if (csSkipped) {
+                    entry.catSanctuaryMounted = false;
+                    entry.catSanctuarySkipped = true;
+                    entry.lastCatSanctuaryHash = catSanctuaryHash;
+                  }
+                }
+              } else if (entry.catSanctuaryScriptId || entry.catSanctuaryMounted) {
+                if (catSanctuaryRemoveExpr) await entry.session.evaluate(catSanctuaryRemoveExpr).catch(() => {});
+                entry.catSanctuaryMounted = false;
+                entry.catSanctuarySkipped = false;
+                entry.lastCatSanctuaryHash = '';
+              }
+              if (effortSliderExpr && effortSliderEnabled) {
+                if (!entry.effortSliderSkipped && (!entry.effortSliderMounted || !entry.effortSliderScriptId || entry.lastEffortSliderHash !== effortSliderHash)) {
+                  const esRes = await entry.session.evaluate(effortSliderExpr).catch(() => null);
+                  const esSkipped = Boolean(esRes && typeof esRes.status === 'string' && esRes.status.startsWith('skipped-'));
+                  if (esRes && esRes.ok) {
+                    entry.effortSliderMounted = true;
+                    entry.effortSliderSkipped = false;
+                    entry.lastEffortSliderHash = effortSliderHash;
+                  } else if (esSkipped) {
+                    entry.effortSliderMounted = false;
+                    entry.effortSliderSkipped = true;
+                    entry.lastEffortSliderHash = effortSliderHash;
+                  }
+                }
+              } else if (entry.effortSliderScriptId || entry.effortSliderMounted) {
+                if (effortSliderRemoveExpr) await entry.session.evaluate(effortSliderRemoveExpr).catch(() => {});
+                entry.effortSliderMounted = false;
+                entry.effortSliderSkipped = false;
+                entry.lastEffortSliderHash = '';
+              }
             }
           } else {
             const reRes = await entry.session.evaluate(expr).catch(() => null);
@@ -243,6 +352,10 @@ function createFastConfigRefreshBroadcaster({
               }
               entry.inlineDiffMounted = false;
               entry.inlineDiffSkipped = true;
+              entry.catSanctuaryMounted = false;
+              entry.catSanctuarySkipped = true;
+              entry.effortSliderMounted = false;
+              entry.effortSliderSkipped = true;
               continue;
             }
             if (omniEnabled && omniExpr) await entry.session.evaluate(omniExpr).catch(() => {});
@@ -277,6 +390,42 @@ function createFastConfigRefreshBroadcaster({
               entry.inlineDiffMounted = false;
               entry.inlineDiffSkipped = false;
               entry.lastInlineDiffHash = '';
+            }
+            if (catSanctuaryExpr && catSanctuaryEnabled) {
+              const csRes = await entry.session.evaluate(catSanctuaryExpr).catch(() => null);
+              const csSkipped = Boolean(csRes && typeof csRes.status === 'string' && csRes.status.startsWith('skipped-'));
+              if (csRes && csRes.ok) {
+                entry.catSanctuaryMounted = true;
+                entry.catSanctuarySkipped = false;
+                entry.lastCatSanctuaryHash = catSanctuaryHash;
+              } else if (csSkipped) {
+                entry.catSanctuaryMounted = false;
+                entry.catSanctuarySkipped = true;
+                entry.lastCatSanctuaryHash = catSanctuaryHash;
+              }
+            } else if (entry.catSanctuaryScriptId || entry.catSanctuaryMounted) {
+              if (catSanctuaryRemoveExpr) await entry.session.evaluate(catSanctuaryRemoveExpr).catch(() => {});
+              entry.catSanctuaryMounted = false;
+              entry.catSanctuarySkipped = false;
+              entry.lastCatSanctuaryHash = '';
+            }
+            if (effortSliderExpr && effortSliderEnabled) {
+              const esRes = await entry.session.evaluate(effortSliderExpr).catch(() => null);
+              const esSkipped = Boolean(esRes && typeof esRes.status === 'string' && esRes.status.startsWith('skipped-'));
+              if (esRes && esRes.ok) {
+                entry.effortSliderMounted = true;
+                entry.effortSliderSkipped = false;
+                entry.lastEffortSliderHash = effortSliderHash;
+              } else if (esSkipped) {
+                entry.effortSliderMounted = false;
+                entry.effortSliderSkipped = true;
+                entry.lastEffortSliderHash = effortSliderHash;
+              }
+            } else if (entry.effortSliderScriptId || entry.effortSliderMounted) {
+              if (effortSliderRemoveExpr) await entry.session.evaluate(effortSliderRemoveExpr).catch(() => {});
+              entry.effortSliderMounted = false;
+              entry.effortSliderSkipped = false;
+              entry.lastEffortSliderHash = '';
             }
           }
         }
@@ -326,6 +475,24 @@ function createFastConfigRefreshBroadcaster({
           entry.inlineDiffScriptId = idAdd && idAdd.identifier ? idAdd.identifier : null;
           if (entry.inlineDiffScriptId) entry.lastInlineDiffHash = inlineDiffHash;
         }
+        if (entry.catSanctuaryScriptId) {
+          await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId }).catch(() => {});
+          entry.catSanctuaryScriptId = null;
+        }
+        if (catSanctuaryExpr && catSanctuaryEnabled) {
+          const csAdd = await entry.session.send('Page.addScriptToEvaluateOnNewDocument', { source: catSanctuaryExpr }).catch(() => null);
+          entry.catSanctuaryScriptId = csAdd && csAdd.identifier ? csAdd.identifier : null;
+          if (entry.catSanctuaryScriptId) entry.lastCatSanctuaryHash = catSanctuaryHash;
+        }
+        if (entry.effortSliderScriptId) {
+          await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
+          entry.effortSliderScriptId = null;
+        }
+        if (effortSliderExpr && effortSliderEnabled) {
+          const esAdd = await entry.session.send('Page.addScriptToEvaluateOnNewDocument', { source: effortSliderExpr }).catch(() => null);
+          entry.effortSliderScriptId = esAdd && esAdd.identifier ? esAdd.identifier : null;
+          if (entry.effortSliderScriptId) entry.lastEffortSliderHash = effortSliderHash;
+        }
       } catch {}
     }
   };
@@ -367,6 +534,22 @@ async function injectOnce() {
     typeof buildInlineDiffInjectExpression === 'function'
       ? buildInlineDiffInjectExpression(cfgNow)
       : '';
+  const catSanctuaryExpr =
+    isCatSanctuaryEnabledForConfig(cfgNow) && typeof buildCatSanctuaryExpression === 'function'
+      ? buildCatSanctuaryExpression(cfgNow)
+      : '';
+  const catSanctuaryRemoveExpr =
+    (typeof buildCatSanctuaryCleanupExpression === 'function' ? buildCatSanctuaryCleanupExpression() : '') ||
+    CAT_SANCTUARY_REMOVE_EXPRESSION ||
+    FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION;
+  const effortSliderExpr =
+    isEffortSliderEnabledForConfig(cfgNow) && typeof buildEffortSliderExpression === 'function'
+      ? buildEffortSliderExpression(cfgNow)
+      : '';
+  const effortSliderRemoveExpr =
+    (typeof buildEffortSliderCleanupExpression === 'function' ? buildEffortSliderCleanupExpression() : '') ||
+    EFFORT_SLIDER_REMOVE_EXPRESSION ||
+    FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION;
   for (const page of targets) {
     let session = null;
     try {
@@ -390,6 +573,16 @@ async function injectOnce() {
       }
       if (inlineDiffExpr) {
         await session.evaluate(inlineDiffExpr).catch(() => {});
+      }
+      if (catSanctuaryExpr) {
+        await session.evaluate(catSanctuaryExpr).catch(() => {});
+      } else if (catSanctuaryRemoveExpr) {
+        await session.evaluate(catSanctuaryRemoveExpr).catch(() => {});
+      }
+      if (effortSliderExpr) {
+        await session.evaluate(effortSliderExpr).catch(() => {});
+      } else if (effortSliderRemoveExpr) {
+        await session.evaluate(effortSliderRemoveExpr).catch(() => {});
       }
       log(`[✓] ${shortTitle(page)} (obsidian-prism ${res.version} · 状态: ${res.status})`);
     } catch (err) {
@@ -523,6 +716,26 @@ async function watch() {
     typeof activeBuildInlineDiffExpression === 'function'
       ? activeBuildInlineDiffExpression(initCfg)
       : '';
+  let activeShouldEnableCatSanctuary = shouldEnableCatSanctuary;
+  let activeBuildCatSanctuaryExpression = buildCatSanctuaryExpression;
+  let activeCatSanctuaryRemoveExpression =
+    (typeof buildCatSanctuaryCleanupExpression === 'function' ? buildCatSanctuaryCleanupExpression() : '') ||
+    CAT_SANCTUARY_REMOVE_EXPRESSION ||
+    FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION;
+  let catSanctuaryExpr =
+    isCatSanctuaryEnabledForConfig(initCfg, activeShouldEnableCatSanctuary) && typeof activeBuildCatSanctuaryExpression === 'function'
+      ? activeBuildCatSanctuaryExpression(initCfg)
+      : '';
+  let activeShouldEnableEffortSlider = shouldEnableEffortSlider;
+  let activeBuildEffortSliderExpression = buildEffortSliderExpression;
+  let activeEffortSliderRemoveExpression =
+    (typeof buildEffortSliderCleanupExpression === 'function' ? buildEffortSliderCleanupExpression() : '') ||
+    EFFORT_SLIDER_REMOVE_EXPRESSION ||
+    FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION;
+  let effortSliderExpr =
+    isEffortSliderEnabledForConfig(initCfg, activeShouldEnableEffortSlider) && typeof activeBuildEffortSliderExpression === 'function'
+      ? activeBuildEffortSliderExpression(initCfg)
+      : '';
   let _lazyReadSafeInlineDiff = null;
   async function loadReadSafeInlineDiff() {
     if (typeof _lazyReadSafeInlineDiff === 'function') return _lazyReadSafeInlineDiff;
@@ -587,6 +800,16 @@ async function watch() {
       buildExpression: activeBuildInlineDiffExpression,
       removeExpression: activeInlineDiffRemoveExpression,
     }),
+    getCatSanctuaryHooks: () => ({
+      shouldEnable: activeShouldEnableCatSanctuary,
+      buildExpression: activeBuildCatSanctuaryExpression,
+      removeExpression: activeCatSanctuaryRemoveExpression,
+    }),
+    getEffortSliderHooks: () => ({
+      shouldEnable: activeShouldEnableEffortSlider,
+      buildExpression: activeBuildEffortSliderExpression,
+      removeExpression: activeEffortSliderRemoveExpression,
+    }),
     getOmniServerInfo: () => (omniServer ? omniServer.getServerInfo() : null),
     getSidebarServiceReady: () => Boolean(sidebarService),
     sidebarBinding: SIDEBAR_BINDING,
@@ -598,6 +821,8 @@ async function watch() {
       hostI18nExpr = next.hostI18nExpr;
       thoughtExpr = next.thoughtExpr;
       inlineDiffExpr = next.inlineDiffExpr;
+      catSanctuaryExpr = next.catSanctuaryExpr;
+      effortSliderExpr = next.effortSliderExpr;
     },
   });
 
@@ -615,7 +840,7 @@ async function watch() {
     const res = await entry.session.evaluate(expr);
     entry.sidebarHostVerified = Boolean(res && res.status === 'ok');
     if (res && res.status === 'skipped-non-host') {
-      for (const key of ['scriptId', 'omniScriptId', 'sidebarScriptId', 'hostI18nScriptId', 'thoughtScriptId', 'inlineDiffScriptId']) {
+      for (const key of ['scriptId', 'omniScriptId', 'sidebarScriptId', 'hostI18nScriptId', 'thoughtScriptId', 'inlineDiffScriptId', 'catSanctuaryScriptId', 'effortSliderScriptId']) {
         if (entry[key]) {
           await entry.session
             .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry[key] })
@@ -635,6 +860,12 @@ async function watch() {
       entry.inlineDiffMounted = false;
       entry.inlineDiffSkipped = true;
       entry.lastInlineDiffHash = '';
+      entry.catSanctuaryMounted = false;
+      entry.catSanctuarySkipped = true;
+      entry.lastCatSanctuaryHash = '';
+      entry.effortSliderMounted = false;
+      entry.effortSliderSkipped = true;
+      entry.lastEffortSliderHash = '';
       return res;
     }
 
@@ -749,6 +980,80 @@ async function watch() {
       entry.inlineDiffSkipped = false;
       entry.lastInlineDiffHash = '';
     }
+    const hadCatSanctuary = Boolean(entry.catSanctuaryScriptId || entry.catSanctuaryMounted);
+    if (entry.catSanctuaryScriptId) {
+      await entry.session
+        .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId })
+        .catch(() => {});
+      entry.catSanctuaryScriptId = null;
+    }
+    const catSanctuaryEnabledNow = isCatSanctuaryEnabledForConfig(readConfig(), activeShouldEnableCatSanctuary);
+    if (catSanctuaryExpr && catSanctuaryEnabledNow) {
+      const csAdd = await entry.session
+        .send('Page.addScriptToEvaluateOnNewDocument', { source: catSanctuaryExpr })
+        .catch(() => null);
+      if (csAdd && csAdd.identifier) entry.catSanctuaryScriptId = csAdd.identifier;
+      const csRes = await entry.session.evaluate(catSanctuaryExpr).catch(() => null);
+      const csHashMatch = /const targetHash = "([^"]+)"/.exec(catSanctuaryExpr);
+      const csSkipped = Boolean(csRes && typeof csRes.status === 'string' && csRes.status.startsWith('skipped-'));
+      if (csRes && csRes.ok) {
+        entry.catSanctuaryMounted = true;
+        entry.catSanctuarySkipped = false;
+        entry.lastCatSanctuaryHash = csHashMatch ? csHashMatch[1] : catSanctuaryExpr;
+      } else if (csSkipped) {
+        entry.catSanctuaryMounted = false;
+        entry.catSanctuarySkipped = true;
+        entry.lastCatSanctuaryHash = csHashMatch ? csHashMatch[1] : catSanctuaryExpr;
+      } else {
+        entry.catSanctuaryMounted = false;
+        entry.catSanctuarySkipped = false;
+        entry.lastCatSanctuaryHash = '';
+      }
+    } else {
+      if (hadCatSanctuary && activeCatSanctuaryRemoveExpression) {
+        await entry.session.evaluate(activeCatSanctuaryRemoveExpression).catch(() => {});
+      }
+      entry.catSanctuaryMounted = false;
+      entry.catSanctuarySkipped = false;
+      entry.lastCatSanctuaryHash = '';
+    }
+    const hadEffortSlider = Boolean(entry.effortSliderScriptId || entry.effortSliderMounted);
+    if (entry.effortSliderScriptId) {
+      await entry.session
+        .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId })
+        .catch(() => {});
+      entry.effortSliderScriptId = null;
+    }
+    const effortSliderEnabledNow = isEffortSliderEnabledForConfig(readConfig(), activeShouldEnableEffortSlider);
+    if (effortSliderExpr && effortSliderEnabledNow) {
+      const esAdd = await entry.session
+        .send('Page.addScriptToEvaluateOnNewDocument', { source: effortSliderExpr })
+        .catch(() => null);
+      if (esAdd && esAdd.identifier) entry.effortSliderScriptId = esAdd.identifier;
+      const esRes = await entry.session.evaluate(effortSliderExpr).catch(() => null);
+      const esHashMatch = /const targetHash = "([^"]+)"/.exec(effortSliderExpr);
+      const esSkipped = Boolean(esRes && typeof esRes.status === 'string' && esRes.status.startsWith('skipped-'));
+      if (esRes && esRes.ok) {
+        entry.effortSliderMounted = true;
+        entry.effortSliderSkipped = false;
+        entry.lastEffortSliderHash = esHashMatch ? esHashMatch[1] : effortSliderExpr;
+      } else if (esSkipped) {
+        entry.effortSliderMounted = false;
+        entry.effortSliderSkipped = true;
+        entry.lastEffortSliderHash = esHashMatch ? esHashMatch[1] : effortSliderExpr;
+      } else {
+        entry.effortSliderMounted = false;
+        entry.effortSliderSkipped = false;
+        entry.lastEffortSliderHash = '';
+      }
+    } else {
+      if (hadEffortSlider && activeEffortSliderRemoveExpression) {
+        await entry.session.evaluate(activeEffortSliderRemoveExpression).catch(() => {});
+      }
+      entry.effortSliderMounted = false;
+      entry.effortSliderSkipped = false;
+      entry.lastEffortSliderHash = '';
+    }
     return res;
   }
 
@@ -772,6 +1077,14 @@ async function watch() {
         inlineDiffMounted: false,
         inlineDiffSkipped: false,
         lastInlineDiffHash: '',
+        catSanctuaryScriptId: null,
+        catSanctuaryMounted: false,
+        catSanctuarySkipped: false,
+        lastCatSanctuaryHash: '',
+        effortSliderScriptId: null,
+        effortSliderMounted: false,
+        effortSliderSkipped: false,
+        lastEffortSliderHash: '',
         docGen: 0,
         mainFrameId: null,
         hasFrameTree: false,
@@ -804,6 +1117,8 @@ async function watch() {
         entry.pendingAckEpoch = 0;
         entry.sidebarHostVerified = false;
         entry.inlineDiffSkipped = false;
+        entry.catSanctuarySkipped = false;
+        entry.effortSliderSkipped = false;
       });
       session.on('Page.frameNavigated', (params) => {
         const frame = params?.frame;
@@ -814,6 +1129,8 @@ async function watch() {
           entry.pendingAckEpoch = 0;
           entry.sidebarHostVerified = false;
           entry.inlineDiffSkipped = false;
+          entry.catSanctuarySkipped = false;
+          entry.effortSliderSkipped = false;
         }
       });
       await session.send('Page.enable');
@@ -1007,6 +1324,8 @@ async function watch() {
           if (entry.hostI18nScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.hostI18nScriptId });
           if (entry.thoughtScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.thoughtScriptId });
           if (entry.inlineDiffScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.inlineDiffScriptId });
+          if (entry.catSanctuaryScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId });
+          if (entry.effortSliderScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId });
         } catch {}
         entry.session.close();
       }
@@ -1076,6 +1395,26 @@ async function watch() {
         inlineDiffExpr =
           typeof activeBuildInlineDiffExpression === 'function'
             ? activeBuildInlineDiffExpression(freshCfg)
+            : '';
+        activeShouldEnableCatSanctuary = freshCdp.shouldEnableCatSanctuary;
+        activeBuildCatSanctuaryExpression = freshCdp.buildCatSanctuaryExpression;
+        activeCatSanctuaryRemoveExpression =
+          (typeof freshCdp.buildCatSanctuaryCleanupExpression === 'function' ? freshCdp.buildCatSanctuaryCleanupExpression() : '') ||
+          freshCdp.CAT_SANCTUARY_REMOVE_EXPRESSION ||
+          FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION;
+        catSanctuaryExpr =
+          isCatSanctuaryEnabledForConfig(freshCfg, activeShouldEnableCatSanctuary) && typeof activeBuildCatSanctuaryExpression === 'function'
+            ? activeBuildCatSanctuaryExpression(freshCfg)
+            : '';
+        activeShouldEnableEffortSlider = freshCdp.shouldEnableEffortSlider;
+        activeBuildEffortSliderExpression = freshCdp.buildEffortSliderExpression;
+        activeEffortSliderRemoveExpression =
+          (typeof freshCdp.buildEffortSliderCleanupExpression === 'function' ? freshCdp.buildEffortSliderCleanupExpression() : '') ||
+          freshCdp.EFFORT_SLIDER_REMOVE_EXPRESSION ||
+          FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION;
+        effortSliderExpr =
+          isEffortSliderEnabledForConfig(freshCfg, activeShouldEnableEffortSlider) && typeof activeBuildEffortSliderExpression === 'function'
+            ? activeBuildEffortSliderExpression(freshCfg)
             : '';
       } catch (err) {
         log(`[!] 读取文件失败: ${err.message}`);

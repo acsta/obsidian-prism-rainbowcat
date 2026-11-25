@@ -318,6 +318,7 @@
 
           if (!measured || !measured.collapsed || !hostRect) {
             if (caret.hasAttribute('data-ag-cs-caret-visible')) caret.removeAttribute('data-ag-cs-caret-visible');
+            if (caret.hasAttribute('data-ag-cs-caret-empty')) caret.removeAttribute('data-ag-cs-caret-empty');
             if (ed.hasAttribute('data-ag-cs-smooth-caret')) ed.removeAttribute('data-ag-cs-smooth-caret');
             continue;
           }
@@ -353,6 +354,8 @@
 
           if (isFocused) {
             setAttrIfChanged(caret, 'data-ag-cs-caret-visible', '1');
+            if (isNowEmpty) setAttrIfChanged(caret, 'data-ag-cs-caret-empty', '1');
+            else if (caret.hasAttribute('data-ag-cs-caret-empty')) caret.removeAttribute('data-ag-cs-caret-empty');
             setAttrIfChanged(ed, 'data-ag-cs-smooth-caret', '1');
             if (isTypingEvent) {
               setAttrIfChanged(caret, 'data-ag-cs-caret-typing', '1');
@@ -368,6 +371,7 @@
             }
           } else {
             if (caret.hasAttribute('data-ag-cs-caret-visible')) caret.removeAttribute('data-ag-cs-caret-visible');
+            if (caret.hasAttribute('data-ag-cs-caret-empty')) caret.removeAttribute('data-ag-cs-caret-empty');
             if (ed.hasAttribute('data-ag-cs-smooth-caret')) ed.removeAttribute('data-ag-cs-smooth-caret');
           }
         }

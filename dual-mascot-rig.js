@@ -1557,13 +1557,19 @@
 
     let camp = options.camp === 'claude' ? 'claude' : 'gemini';
     let streaming = Boolean(options.streaming);
+    let isThinking = Boolean(options.isThinking);
     let streamTier = Number(options.streamTier || 2);
     let hasError = Boolean(options.hasError);
+    let awaitingDecision = Boolean(options.awaitingDecision);
     let yieldMode = options.yieldMode || 'none';
     let leapOffsetY = Number(options.leapOffsetY || 0);
     let popoverRightWidth = Number(options.popoverRightWidth || 0);
     let miniPileEnabled = Boolean(options.miniPileEnabled);
     let catOnly = Boolean(options.catOnly);
+    let catCount = options.catCount === '1' || options.catCount === '2' ? options.catCount : '4';
+    let catProps = options.catProps === 'off' ? 'off' : 'on';
+    let catQuietMode = options.catQuietMode === 'nap' ? 'nap' : 'auto';
+    let sanctuaryDragging = false;
     let orchestrator = Boolean(options.orchestrator);
     let prismaticCoat = readChromaSaved();
     const sharedSessionGates =
@@ -1702,989 +1708,105 @@
     }
     hostEl.appendChild(habitatCanvas);
 
-    // ── Pusheen-Style Multi-Cat Sanctuary + Cozy Playground Props (active when catOnly=true) ──
-    const CHIBI_CAT_POSES = Object.fromEntries(Object.entries({
-      standA:'3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O6.3O..|.O3#s#s3#O4.O#s#O.|.O##o##o##o#O3.O3#O.|O##p##o#o##p4O.O#sO.|O11#s#s#O##O..|O11#s#s#O#sO..|O15#O##O..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      standB:'3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O11.|.O3#s#s3#O5.3O..|.O##o##o##o#O3.O#s#O.|O##p##o#o##p5O3#O.|O11#s#s#O#sO..|O11#s#s#O##O..|O16#sO3.|O16#O4.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      blink:'3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O6.3O..|.O3#s#s3#O4.O#s#O.|.O#oo##o##ooO3.O3#O.|O##p##o#o##p4O.O#sO.|O11#s#s#O##O..|O11#s#s#O#sO..|O15#O##O..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      earL:'9.O12.|..OO4.O#O11.|.O##5Os#O5.3O..|.O3#s#s3#O4.O#s#O.|.O##o##o##o#O3.O3#O.|O##p##o#o##p4O.O#sO.|O11#s#s#O##O..|O11#s#s#O#sO..|O15#O##O..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      happy:'3.O5.O12.|..O#O3.O#O6.3O..|..O#s3Os#O5.O#s#O.|.O3#s#s3#O4.O3#O.|.O##o5#o#O3.O#sO..|O##o#o3#o#o5O##O..|O#p4#o4#ps#sO#sO..|O5#o#o3#s#s#O##O..|O16#OO3.|O16#O4.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      sitA:'4.O5.O11.|3.O#O3.O#O10.|3.O#s3Os#O10.|..O3#s#s3#O9.|..O##o##o##o#O8.|.O##p##o#o##p#O7.|.O13#O..3O.|O12#s#O.O#s#O|O4#7b##sO.O3#O|O3#9b##O.O#sO.|O3#9b##OO##O..|O3#9b3#O#sO..|O3#bbw3#wbb4#OO3.|.O##O#w3Ow#O4#O4.|.O##O#w3Ow#O4#O4.|..15O5.',
-      sitB:'4.O5.O11.|3.O#O3.O#O10.|3.O#s3Os#O10.|..O3#s#s3#O9.|..O##o##o##o#O8.|.O##p##o#o##p#O7.|.O13#O6.|O12#s#O..3O.|O4#7b##sO.O#s#O|O3#9b##O.O3#O|O3#9b##O.O#sO.|O3#9b3#OO#O..|O3#bbw3#wbb4#OO3.|.O##O#w3Ow#O4#O4.|.O##O#w3Ow#O4#O4.|..15O5.',
-      wave1:'4.O5.O11.|3.O#O3.O#O10.|3.O#s3Os#O10.|..O3#s#s3#O9.|..O##o##o##o#O8.|.O##p##o#o##p#O7.|.O13#O..3O.|.O11#s#O.O#s#O|.OO##7b##sO.O3#O|Oww##8b##O.O#sO.|OwwO#8b##OO##O..|.OO.#8b3#O#sO..|.O3#bb3#wbb4#OO3.|..O5#OOw#O4#O4.|..O6#Ow#O4#O4.|3.14O5.',
-      wave2:'4.O5.O11.|3.O#O3.O#O10.|3.O#s3Os#O10.|..O3#s#s3#O9.|..O##o##o##o#O8.|.O##p##o#o##p#O7.|.O13#O6.|OO11#s#O..3O.|Oww##7b##sO.O#s#O|OwwO#8b##O.O3#O|.OO.#8b##O.O#sO.|O3#9b3#OO#O..|.O3#bb3#wbb4#OO3.|..O5#OOw#O4#O4.|..O6#Ow#O4#O4.|3.14O5.',
-      groom1:'4.O5.O11.|3.O#O3.O#O10.|3.O#s3Os#O10.|..O3#s#s3#O9.|..O#oo##o##ooO8.|.O##p##o#o##p#O7.|.O13#O6.|.OO10#s#O..3O.|OwwO#7b##sO.O#s#O|Oww##8b##O.O3#O|.OO##8b##O.O#sO.|O3#9b3#OO#O..|.O3#bb3#wbb4#OO3.|..O5#OOw#O4#O4.|..O6#Ow#O4#O4.|3.14O5.',
-      groom2:'4.O5.O11.|3.O#O3.O#O10.|3.O#s3Os#O10.|..O3#s#s3#O9.|..O#oo##o##ooO8.|.O##p##o#o##p#O7.|.OO12#O..3O.|OwwO9#s#O.O#s#O|Oww##7b##sO.O3#O|.OO##8b##O.O#sO.|O3#9b##OO##O..|O3#9b3#O#sO..|.O3#bb3#wbb4#OO3.|..O5#OOw#O4#O4.|..O6#Ow#O4#O4.|3.14O5.',
-      walk1:'22.|3.O5.O12.|..O#O3.O#O6.3O..|..O#s3Os#O5.O#s#O.|.O3#s#s3#O4.O3#O.|.O##o##o##o#O3.O#sO..|O##p##o#o##p5O##O..|O11#s#s#O#sO..|O11#s#s#O##O..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|.OwO.Ow5OwO.OwO4.|.OO..OO4.OO..OO5.',
-      walk2:'3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O6.3O..|.O3#s#s3#O4.O#s#O.|.O##o##o##o#O3.O3#O.|O##p##o#o##p4O.O#sO.|O11#s#s#O##O..|O11#s#s#O#sO..|O15#O##O..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|.OwO#w6#w#OwO5.|.OO.Ow6OwO.OO5.|4.OO6.OO8.',
-      walk3:'22.|3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O7.3O.|.O3#s#s3#O5.O#s#O|.O##o##o##o#O4.O3#O|O##p##o#o##p4O.O#sO.|O11#s#s#O##O..|O11#s#s#O#sO..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w##w3#w##w#O5.|3.OwOOw4OwOOwO5.|3.OO..OO..OO..OO5.',
-      walk4:'3.O5.O12.|..O#O3.O#O6.3O..|..O#s3Os#O5.O#s#O.|.O3#s#s3#O4.O3#O.|.O##o##o##o#O3.O#sO..|O##p##o#o##p5O##O..|O11#s#s#O#sO..|O11#s#s#O##O..|O15#O##O..|O16#OO3.|O#14b#O4.|O#14b#O4.|.O#12b#O5.|..O#w#OwO#OwO#w#O5.|..OwOO.OO.OO.OwO6.|..OO9.OO7.',
-      eat1:'22.|22.|16.3O3.|15.O#s#O..|15.O3#O..|4.O4.O4.O##sO3.|3.O#O..O#5O3#O3.|..O##sOOs##s#s3#O4.|.O9#s#s3#O4.|.O#oo##o9#O4.|O##p##o#o#6b#O4.|O8#7b#O4.|.O6#8b#O4.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      eat2:'22.|22.|17.3O..|16.O#s#O.|16.O3#O.|15.O##sO..|4.O4.O4.O3#O3.|3.O#O..O#4O3#O4.|..O##sOOs##s#s3#O4.|.O9#s#s3#O4.|.O#oo##o9#O4.|O##p##o#o#6b#O4.|.O6#8b#O4.|..O#w##w3#w##w#O5.|..OwOOw5OwOOwO5.|..OO..OO3.OO..OO5.',
-      sleep1:'22.|22.|22.|22.|22.|3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O11.|.O3#s#s3#4O7.|.O#oo##o##oo#s#OO5.|O##p##o#o##p#s3#O4.|O16#O.OO.|O3#12b#OO#sO|O3#12b#O##O.|.O##12b#OO3.|..16O4.',
-      sleep2:'22.|22.|22.|22.|22.|3.O5.O12.|..O#O3.O#O11.|..O#s3Os#4O8.|.O3#s#s5#s#OO5.|.O#oo##o##oo##s##O4.|O##p##o#o##p5#O4.|O16#O.OO.|O3#12b#OO#sO|O3#12b#O##O.|.O##12b#OO3.|..16O4.',
-      stretch:'22.|16.3O3.|15.O#s#O..|15.O3#O..|14.O##sO3.|13.O3#O4.|3.O5.O..O##s#O4.|..O#O3.O#OO3#s#O4.|..O#s3Os#O6#O4.|.O3#s#s9#O4.|.O##o##o##o6#O4.|O##p##o#o##p5#O4.|.O3#8b4#O4.|.OO##6b##OO##O4.|O3wO6#OO..OwO4.|5O..4O4.OO5.',
-      pounce:'3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O6.3O..|.O3#s#s3#O4.O#s#O.|.O##o##o##o#O..O3#O..|O##p##o#o##p4O#sO3.|O11#s#s3#O3.|O11#s#s##O4.|.O##8b4#O5.|.OO#8b3#O6.|OwwO8#O#O7.|.OO..7O.OwO6.|14.OO6.|22.|22.|22.',
-      dangle:'3.O5.O12.|..O#O3.O#O11.|..O#s3Os#O11.|.O3#s#s3#O10.|.O#oo##o##ooO9.|O##p##o#o##p#O8.|O12#O8.|.O#O#4b#O#O9.|.OwO#4b#OwO9.|..O##4b##O..3O5.|..O##4b##OO#s#O5.|..O8#O3#O6.|3.O#O..O#OO#sO7.|3.OwO..OwO.OO8.|3.OO3.OO12.|22.',
-    }).map(([k, v]) => [k, v.replace(/(\d+)(.)/g, (_, n, ch) => ch.repeat(+n)).split('|')]));
-    const CAT_PRESETS = [
-      { id: 'pusheen', px: 2.0, xPct: 0.62, speed: 0.34, mood: 'cozy', coat: 'tabby', pal: { O: '#2D2936', '#': '#A4A6B0', s: '#6E707D', b: '#BCBEC8', o: '#1E1B24', p: '#F9A8C9', w: '#D6D8E2' } },
-      { id: 'calico', px: 1.5, xPct: 0.38, speed: 0.44, mood: 'sweet', coat: 'calico', pal: { O: '#3A2E32', '#': '#FFF8F0', s: '#F3A261', b: '#FFF8F0', o: '#282024', p: '#FF9EBB', w: '#FFFDF9', c2: '#7A6368' } },
-      { id: 'ginger', px: 1.5, xPct: 0.18, speed: 0.56, mood: 'playful', coat: 'tabby', pal: { O: '#3D2A1F', '#': '#F7B977', s: '#D67D38', b: '#FFF3E4', o: '#2A1C14', p: '#FF96B0', w: '#FFF9F0' } },
-      { id: 'ragdoll', px: 2.0, xPct: 0.80, speed: 0.38, mood: 'calm', coat: 'ragdoll', pal: { O: '#2C3144', '#': '#F5F6FA', s: '#68738C', b: '#EAEFF7', o: '#1F2333', p: '#F9A8C9', w: '#FFFFFF' } },
-    ];
-    const SANCTUARY_SYMS = {
-      heart: ['.p.p.', 'ppppp', '.ppp.', '..p..'],
-      hearts2: ['.p.p...p.', 'pppp..ppp', '.pp....p.'],
-      z1: ['ooo', '.o.', 'ooo'],
-      z2: ['oooo', '..o.', '.o..', 'oooo'],
-      spark: ['..y..', '..y..', 'yywyy', '..y..', '..y..'],
-      note: ['..bb', '..b.', 'bbb.', 'bb..'],
-    };
-    const YARN_SPRITE = [
-      '..OOO..',
-      '.OrrrO.',
-      'OrprprO',
-      'OrrprrO',
-      'OprrrpO',
-      '.OrrrO.',
-      '..OOO..',
-    ];
-    // Cozy grounded shelf decorations (px: 1.5 => exact 3x3 device px on Retina, inset from rounded corners)
-    const SHELF_PROPS = [
-      {
-        id: 'bowl',
-        align: 'left',
-        offset: 34,
-        px: 1.5,
-        pal: { O: '#2D3040', b: '#7DD3FC', d: '#38BDF8', w: '#F8FAFC', k: '#E8A860', f: '#C9853E' },
-        rows: [
-          '...OOOOOOOO...',
-          '..OkfkkffkkO..',
-          '.OOOOOOOOOOOO.',
-          'ObbbbwwbbbbbbO',
-          '.OddddddddddO.',
-          '..OOOOOOOOOO..',
-        ],
-      },
-      {
-        id: 'plant',
-        align: 'left',
-        offset: 118,
-        px: 1.5,
-        pal: { O: '#352A26', g: '#34D399', l: '#6EE7B7', p: '#F9A8C9', c: '#E5926E', s: '#C67350' },
-        rows: [
-          '....OO.....',
-          '...OppO..O.',
-          '.O..OO..OlO',
-          'OlO.OgO.OgO',
-          '.OgOOgOOgO.',
-          '..OglglgO..',
-          '.OOOOOOOOO.',
-          '.OccccccccO',
-          '..OcsssssO.',
-          '...OOOOOO..',
-        ],
-      },
-      {
-        id: 'cushion',
-        align: 'right',
-        offset: 128,
-        px: 1.5,
-        pal: { O: '#352E45', c: '#DDD6FE', l: '#EDE9FE', s: '#C4B5FD' },
-        rows: [
-          '.OOOO..........OOOO.',
-          'OllllOOOOOOOOOOllllO',
-          'OlccccccccccccccccsO',
-          'OcccsccccssccccsccsO',
-          '.OssssssssssssssssO.',
-          '..OOOOOOOOOOOOOOOO..',
-        ],
-      },
-      {
-        id: 'post',
-        align: 'right',
-        offset: 30,
-        px: 1.5,
-        pal: { O: '#362C25', w: '#E9C89B', s: '#CFA674', d: '#B48858', p: '#F9A8C9', h: '#FBCFE8' },
-        rows: [
-          '..OOOOOOOOO..',
-          '.OwwwwwwwwwO.',
-          '..OOOOOOOOO..',
-          '....OwwwO.O..',
-          '....OsssO.O..',
-          '....OwwwOOphO',
-          '....OsssOOppO',
-          '....OwwwO.OO.',
-          '....OsssO....',
-          '....OwwwO....',
-          '....OsssO....',
-          '..OOOOOOOOO..',
-          '.OdddddddddO.',
-          '..OOOOOOOOO..',
-        ],
-      },
-    ];
-
+    // ── Channel 8 Cat Sanctuary Bridge (vendor/cat-sanctuary/cat-sanctuary-client.js) ──
     let sanctuary = null;
+    let sanctuaryFactory = null;
+    const globalRoot = win || (typeof globalThis !== "undefined" ? globalThis : null);
+    const resolveSanctuaryFactory = () =>
+      sanctuaryFactory ||
+      (win && typeof win.__agCatSanctuaryFactory === "function" ? win.__agCatSanctuaryFactory : null) ||
+      (typeof globalThis !== "undefined" && typeof globalThis.__agCatSanctuaryFactory === "function"
+        ? globalThis.__agCatSanctuaryFactory
+        : null);
+    const isSanctuaryPaused = () =>
+      Boolean(disposed || !catOnly || isVramSleepState() || isWindowBlurred());
+    const syncSanctuaryPower = () => {
+      if (sanctuary && typeof sanctuary.syncPowerState === "function") {
+        try { sanctuary.syncPowerState(isSanctuaryPaused()); } catch (_) {}
+      }
+    };
+    const disposeSanctuaryInst = () => {
+      sanctuaryDragging = false;
+      if (sanctuary) {
+        try { sanctuary.dispose(); } catch (_) {}
+        sanctuary = null;
+      }
+      if (typeof syncMascotDragRootAttr === "function") syncMascotDragRootAttr();
+    };
     const mountCatSanctuary = () => {
       if (sanctuary) return sanctuary;
-      const wrap = markNoTrOwned(doc.createElement('div'));
-      wrap.className = 'ag-v2-cat-sanctuary';
-      hostEl.appendChild(wrap);
-
-      const drawCrispGrid = (ctx, rows, p, curDpr, yOffGrid, colorOf, flipX, cwPhys) => {
-        const step = p * curDpr;
-        for (let gy = 0; gy < rows.length; gy++) {
-          const r = rows[gy];
-          const y0 = Math.round((yOffGrid + gy) * step);
-          const y1 = Math.round((yOffGrid + gy + 1) * step);
-          const rh = y1 - y0;
-          if (rh <= 0) continue;
-          for (let gx = 0; gx < r.length; gx++) {
-            const col = colorOf(r[gx], gx, gy);
-            if (!col) continue;
-            const lx0 = Math.round(gx * step);
-            const lx1 = Math.round((gx + 1) * step);
-            const rw = lx1 - lx0;
-            if (rw <= 0) continue;
-            ctx.fillStyle = col;
-            ctx.fillRect(flipX ? cwPhys - lx1 : lx0, y0, rw, rh);
-          }
-        }
-      };
-
-      // Mount grounded cozy shelf decorations behind the cats (z-index: 1)
-      const propById = {};
-      const propNodes = SHELF_PROPS.map((sp) => {
-        const cv = markNoTrOwned(doc.createElement('canvas'));
-        cv.className = 'ag-v2-cat-pet';
-        cv.setAttribute('data-shelf-prop', sp.id);
-        cv.setAttribute('aria-hidden', 'true');
-        const cw = Math.round(sp.rows[0].length * sp.px);
-        const ch = Math.round(sp.rows.length * sp.px);
-        cv.style.width = `${cw}px`;
-        cv.style.height = `${ch}px`;
-        cv.style.zIndex = '1';
-        cv.style.cursor = 'pointer';
-        wrap.appendChild(cv);
-        const node = {
-          ...sp,
-          cv,
-          ctx: typeof cv.getContext === 'function' ? cv.getContext('2d') : null,
-          cw,
-          ch,
-          x: sp.offset,
-          drawnDpr: 0,
-        };
-        propById[sp.id] = node;
-        const onPropClick = () => {
-          const now = performance.now();
-          if (sp.id === 'post') {
-            spawnYarn(node.x, now);
-          } else {
-            let best = null;
-            let bestD = Infinity;
-            for (const c of cats) {
-              if (c.dragging) continue;
-              const d = Math.abs((c.x + c.cw * 0.5) - (node.x + node.cw * 0.5));
-              if (d < bestD) { bestD = d; best = c; }
-            }
-            if (best) {
-              sendCatToProp(best, sp.id, now, true);
-              paintCat(best, now);
-              wakeLoop();
-            }
-          }
-        };
-        cv.addEventListener('pointerdown', onPropClick);
-        node.cleanup = () => cv.removeEventListener('pointerdown', onPropClick);
-        return node;
-      });
-
-      let lastPropsSw = 0;
-      let lastPropsDpr = 0;
-      const drawProps = (sw) => {
-        const curDpr = Math.max(1, Math.min(2, dpr || 1));
-        if (sw === lastPropsSw && curDpr === lastPropsDpr) return;
-        lastPropsSw = sw;
-        lastPropsDpr = curDpr;
-        for (const pr of propNodes) {
-          pr.x = pr.align === 'right' ? Math.max(24, sw - pr.offset - pr.cw) : pr.offset;
-          const tx = `translate3d(${Math.round(pr.x)}px,0px,0)`;
-          if (pr.cv.style.transform !== tx) pr.cv.style.transform = tx;
-          if (pr.ctx && pr.drawnDpr !== curDpr) {
-            pr.drawnDpr = curDpr;
-            const pw = Math.round(pr.rows[0].length * pr.px * curDpr);
-            const ph = Math.round(pr.rows.length * pr.px * curDpr);
-            pr.cv.width = pw;
-            pr.cv.height = ph;
-            pr.ctx.setTransform(1, 0, 0, 1, 0, 0);
-            pr.ctx.clearRect(0, 0, pw, ph);
-            pr.ctx.imageSmoothingEnabled = false;
-            drawCrispGrid(pr.ctx, pr.rows, pr.px, curDpr, 0, (ch) => (ch === '.' ? null : pr.pal[ch]), false, pw);
-          }
-        }
-      };
-
-      // Shared interactive pixel yarn ball
-      const yarnCv = markNoTrOwned(doc.createElement('canvas'));
-      yarnCv.className = 'ag-v2-cat-pet';
-      yarnCv.setAttribute('aria-hidden', 'true');
-      yarnCv.style.width = '14px';
-      yarnCv.style.height = '14px';
-      yarnCv.style.zIndex = '4';
-      yarnCv.style.display = 'none';
-      yarnCv.style.pointerEvents = 'none';
-      wrap.appendChild(yarnCv);
-      const yarn = {
-        cv: yarnCv,
-        ctx: typeof yarnCv.getContext === 'function' ? yarnCv.getContext('2d') : null,
-        active: false,
-        x: 120,
-        y: 0,
-        vx: 0,
-        vy: 0,
-        until: 0,
-        drawnDpr: 0,
-      };
-      const drawYarn = () => {
-        if (!yarn.ctx) return;
-        const curDpr = Math.max(1, Math.min(2, dpr || 1));
-        const pw = Math.round(14 * curDpr);
-        if (yarn.cv.width !== pw || yarn.drawnDpr !== curDpr) {
-          yarn.drawnDpr = curDpr;
-          yarn.cv.width = pw;
-          yarn.cv.height = pw;
-          yarn.ctx.setTransform(1, 0, 0, 1, 0, 0);
-          yarn.ctx.clearRect(0, 0, pw, pw);
-          yarn.ctx.imageSmoothingEnabled = false;
-          drawCrispGrid(yarn.ctx, YARN_SPRITE, 2, curDpr, 0, (ch) => (ch === '.' ? null : ch === 'O' ? '#2D1D28' : ch === 'p' ? '#FBCFE8' : '#F472B6'), false, pw);
-        }
-        yarn.cv.style.transform = `translate3d(${Math.round(yarn.x)}px,${Math.round(yarn.y)}px,0)`;
-      };
-      const spawnYarn = (originX, now) => {
-        const sw = Math.max(220, readStageWidth());
-        yarn.active = true;
-        yarn.x = Math.max(28, Math.min(sw - 42, originX));
-        yarn.y = -10;
-        yarn.vx = (originX > sw * 0.5 ? -1 : 1) * (3.6 + Math.random() * 1.8);
-        yarn.vy = -4.2;
-        yarn.until = now + 8500;
-        yarn.cv.style.display = '';
-        drawYarn();
-        wakeLoop();
-      };
-
-      const ptr = { active: false, clientX: 0, clientY: 0, lastAt: 0 };
-      let cachedStageRect = null;
-      let stageRectAt = 0;
-      const onGlobalMove = (ev) => {
-        ptr.active = true;
-        ptr.clientX = ev.clientX || 0;
-        ptr.clientY = ev.clientY || 0;
-        ptr.lastAt = performance.now();
-      };
-      win.addEventListener('pointermove', onGlobalMove, { passive: true });
-
-      const setSym = (c, sym, now, dur) => {
-        c.sym = sym;
-        c.symBornAt = now;
-        c.symUntil = now + dur;
-      };
-
-      const cats = CAT_PRESETS.map((pr, idx) => {
-        const cv = markNoTrOwned(doc.createElement('canvas'));
-        cv.className = 'ag-v2-cat-pet';
-        cv.setAttribute('data-cat-id', pr.id);
-        cv.setAttribute('role', 'button');
-        cv.setAttribute('tabindex', '0');
-        cv.setAttribute('aria-label', pr.id);
-        const cw = Math.round(22 * pr.px);
-        const ch = Math.round(24 * pr.px); // 16 rows sprite + 8 rows headroom for hearts/zZ/sparkles
-        cv.style.width = `${cw}px`;
-        cv.style.height = `${ch}px`;
-        cv.style.zIndex = String(2 + (idx % 2));
-        wrap.appendChild(cv);
-        const now0 = performance.now();
-        const c = {
-          ...pr,
-          idx,
-          cv,
-          ctx: typeof cv.getContext === 'function' ? cv.getContext('2d') : null,
-          cw,
-          ch,
-          x: 40 + idx * 104,
-          y: 0,
-          vy: 0,
-          dir: idx % 2 === 0 ? -1 : 1,
-          state: idx === 0 ? 'stand' : idx === 1 ? 'sit' : idx === 2 ? 'walk' : 'groom',
-          until: now0 + 2600 + idx * 1100,
-          targetX: null,
-          targetProp: null,
-          atProp: null,
-          blinkUntil: 0,
-          nextBlink: now0 + 1400 + idx * 700,
-          twitchUntil: 0,
-          nextTwitch: now0 + 3000 + idx * 1200,
-          sym: null,
-          symBornAt: 0,
-          symUntil: 0,
-          petCount: 0,
-          lastPetAt: 0,
-          gazeDx: 0,
-          dragging: false,
-          dragStartX: 0,
-          dragStartY: 0,
-          dragMoved: false,
-          lastSig: '',
-          lastTx: '',
-          placed: false,
-        };
-        const onPd = (ev) => {
-          if (ev.button !== undefined && ev.button !== 0) return;
-          c.dragging = true;
-          c.dragMoved = false;
-          c.targetX = null;
-          c.targetProp = null;
-          c.atProp = null;
-          c.dragStartX = ev.clientX || 0;
-          c.dragStartY = ev.clientY || 0;
-          const x0 = c.x;
-          const y0 = c.y;
-          const onPm = (mv) => {
-            if (!c.dragging) return;
-            const dx = (mv.clientX || 0) - c.dragStartX;
-            const dy = (mv.clientY || 0) - c.dragStartY;
-            if (Math.abs(dx) > 4 || Math.abs(dy) > 4) c.dragMoved = true;
-            if (c.dragMoved) {
-              const sw = Math.max(220, readStageWidth());
-              c.x = Math.max(18, Math.min(sw - 18 - c.cw, x0 + dx));
-              c.y = Math.min(0, Math.max(-46, y0 + dy));
-              c.state = 'dangle';
-              c.until = performance.now() + 900;
-              paintCat(c, performance.now());
-            }
-          };
-          const onPu = () => {
-            win.removeEventListener('pointermove', onPm);
-            win.removeEventListener('pointerup', onPu);
-            win.removeEventListener('pointercancel', onPu);
-            const now = performance.now();
-            c.dragging = false;
-            if (!c.dragMoved) {
-              const quickTap = now - c.lastPetAt < 480;
-              c.petCount = now - c.lastPetAt < 2200 ? c.petCount + 1 : 1;
-              c.lastPetAt = now;
-              if (quickTap) {
-                spawnYarn(c.x + c.cw * 0.5, now);
-                c.state = 'wave';
-                c.until = now + 900;
-                setSym(c, 'spark', now, 900);
-              } else {
-                c.state = 'happy';
-                c.until = now + 1600;
-                setSym(c, c.petCount >= 3 ? 'hearts2' : 'heart', now, 1500);
-                c.vy = c.petCount >= 3 ? -6.0 : -4.6;
-                c.y = -1;
-              }
-            } else {
-              c.state = 'happy';
-              c.until = now + 1100;
-              c.vy = 0;
-              setSym(c, 'heart', now, 950);
-            }
-            paintCat(c, now);
-            wakeLoop();
-          };
-          win.addEventListener('pointermove', onPm);
-          win.addEventListener('pointerup', onPu);
-          win.addEventListener('pointercancel', onPu);
-        };
-        cv.addEventListener('pointerdown', onPd);
-        c.cleanup = () => cv.removeEventListener('pointerdown', onPd);
-        return c;
-      });
-
-      const isPropBusy = (propId, excludeCat) => cats.some((o) => o !== excludeCat && (o.atProp === propId || o.targetProp === propId));
-
-      const propAnchorX = (c, propId, sw) => {
-        const pr = propById[propId];
-        if (!pr) return c.x;
-        const minX = 18;
-        const maxX = Math.max(minX + 8, sw - 18 - c.cw);
-        let tx = pr.x + pr.cw * 0.5 - c.cw * 0.5;
-        if (propId === 'bowl') tx = pr.x + pr.cw - 3; // stand just to the right of bowl, facing left to eat
-        else if (propId === 'post') tx = pr.x - c.cw + 4; // stand just left of scratching post, facing right
-        return Math.max(minX, Math.min(maxX, Math.round(tx)));
-      };
-
-      const arriveAtProp = (c, propId, now) => {
-        c.targetX = null;
-        c.targetProp = null;
-        c.atProp = propId;
-        if (propId === 'cushion') {
-          c.state = 'sleep';
-          c.y = -2; // softly nestled inside the tufted cushion dip
-          c.vy = 0;
-          c.until = now + 6200 + Math.random() * 4800;
-          c.sym = null;
-        } else if (propId === 'bowl') {
-          c.dir = -1;
-          c.state = 'eat';
-          c.until = now + 3400 + Math.random() * 2200;
-          setSym(c, 'heart', now, 1200);
-        } else if (propId === 'post') {
-          c.dir = 1;
-          c.state = 'wave';
-          c.until = now + 2200 + Math.random() * 1400;
-          setSym(c, 'spark', now, 1100);
-        } else {
-          c.dir = -1;
-          c.state = 'happy';
-          c.until = now + 1800;
-          setSym(c, 'note', now, 1300);
-        }
-      };
-
-      const sendCatToProp = (c, propId, now, fromClick) => {
-        const sw = Math.max(220, readStageWidth());
-        drawProps(sw);
-        const tx = propAnchorX(c, propId, sw);
-        c.atProp = null;
-        if (c.y < 0 && c.vy === 0) c.y = 0;
-        if (Math.abs(tx - c.x) <= 6) {
-          c.x = tx;
-          arriveAtProp(c, propId, now);
-        } else {
-          c.targetX = tx;
-          c.targetProp = propId;
-          c.state = 'walk';
-          c.dir = tx > c.x ? 1 : -1;
-          c.until = now + 7000;
-          if (fromClick) setSym(c, 'spark', now, 750);
-        }
-      };
-
-      const hasCrowdNear = (c, cx) => {
-        for (const o of cats) {
-          if (o === c || o.dragging) continue;
-          const minSep = (c.cw + o.cw) * 0.62;
-          if (Math.abs((cx + c.cw * 0.5) - (o.x + o.cw * 0.5)) < minSep) return o;
-        }
-        return null;
-      };
-
-      const pickClearSpot = (c, sw) => {
-        const minX = 24;
-        const maxX = Math.max(minX + 16, sw - 24 - c.cw);
-        let bestX = c.x;
-        let bestScore = -1;
-        for (let tries = 0; tries < 7; tries++) {
-          const cand = Math.round(minX + Math.random() * (maxX - minX));
-          let nearest = Infinity;
-          for (const o of cats) {
-            if (o === c) continue;
-            nearest = Math.min(nearest, Math.abs((cand + c.cw * 0.5) - (o.x + o.cw * 0.5)));
-          }
-          if (nearest > bestScore) { bestScore = nearest; bestX = cand; }
-        }
-        return bestX;
-      };
-
-      const resolveCatColor = (c, ch, gx, gy, pose) => {
-        if (c.coat === 'calico') {
-          if (ch === '#') {
-            if (gy <= 3 && gx >= 2 && gx <= 6) return c.pal.s;
-            if (gy >= 5 && gy <= 9 && gx >= 11 && gx <= 15) return c.pal.c2;
-            if (gx >= 16) return gy % 2 === 0 ? c.pal.s : c.pal.c2;
-          }
-          if (ch === 's') return gx >= 12 ? c.pal.c2 : c.pal.s;
-        } else if (c.coat === 'ragdoll') {
-          if (ch === '#') {
-            if (gy <= 2 && (gx <= 5 || (gx >= 8 && gx <= 12))) return c.pal.s;
-            if (gx >= 16) return c.pal.s;
-            if (pose.startsWith('stand') && gy >= 6 && gy <= 8 && gx >= 10 && gx <= 15) return '#8B95AC';
-          }
-        }
-        return c.pal[ch];
-      };
-
-      const paintCat = (c, now) => {
-        const ctx = c.ctx;
-        if (!ctx) return;
-        const curDpr = Math.max(1, Math.min(2, dpr || 1));
-        const pw = Math.round(22 * c.px * curDpr);
-        const ph = Math.round(24 * c.px * curDpr);
-        if (c.cv.width !== pw || c.cv.height !== ph) {
-          c.cv.width = pw;
-          c.cv.height = ph;
-          c.lastSig = '';
-        }
-        const tx = `translate3d(${Math.round(c.x)}px,${Math.round(c.y)}px,0)`;
-        if (c.lastTx !== tx) {
-          c.lastTx = tx;
-          c.cv.style.transform = tx;
-        }
-        const walkStep = Math.floor(now / 135) % 4;
-        const slowStep = Math.floor(now / 440) % 2;
-        let poseKey = 'standA';
-        if (c.dragging || c.state === 'dangle') poseKey = 'dangle';
-        else if (c.state === 'pounce' || c.y < -5) poseKey = 'pounce';
-        else if (c.state === 'walk') poseKey = ['walk1', 'walk2', 'walk3', 'walk4'][walkStep];
-        else if (c.state === 'eat') poseKey = Math.floor(now / 260) % 2 === 0 ? 'eat1' : 'eat2';
-        else if (c.state === 'sleep') poseKey = Math.floor(now / 900) % 2 === 0 ? 'sleep1' : 'sleep2';
-        else if (c.state === 'sit') poseKey = slowStep === 0 ? 'sitA' : 'sitB';
-        else if (c.state === 'groom') poseKey = Math.floor(now / 250) % 2 === 0 ? 'groom1' : 'groom2';
-        else if (c.state === 'stretch') poseKey = 'stretch';
-        else if (c.state === 'wave') poseKey = Math.floor(now / 210) % 2 === 0 ? 'wave1' : 'wave2';
-        else if (c.state === 'happy') poseKey = 'happy';
-        else if (now < c.blinkUntil) poseKey = 'blink';
-        else if (now < c.twitchUntil) poseKey = 'earL';
-        else poseKey = slowStep === 0 ? 'standA' : 'standB';
-
-        let activeSym = null;
-        let symPhase = 0;
-        if (c.sym && now < c.symUntil) {
-          activeSym = c.sym;
-          const dur = Math.max(400, c.symUntil - c.symBornAt);
-          symPhase = Math.min(5, Math.floor(((now - c.symBornAt) / dur) * 6));
-        } else if (c.state === 'sleep') {
-          const zCycle = (now % 1800) / 1800;
-          activeSym = zCycle < 0.5 ? 'z1' : 'z2';
-          symPhase = Math.min(5, Math.floor(zCycle * 6));
-        } else if ((c.state === 'groom' || c.state === 'eat') && Math.floor(now / 1100) % 2 === 0) {
-          activeSym = 'note';
-          symPhase = Math.floor((now % 1100) / 220);
-        }
-
-        const isGazePose = poseKey === 'standA' || poseKey === 'standB' || poseKey === 'sitA' || poseKey === 'sitB';
-        const eyeShift = isGazePose ? c.gazeDx : 0;
-        const sitBlink = (poseKey === 'sitA' || poseKey === 'sitB') && now < c.blinkUntil ? 1 : 0;
-        const sig = `${poseKey}:${c.dir}:${eyeShift}:${sitBlink}:${activeSym || ''}:${symPhase}:${curDpr}`;
-        if (c.lastSig === sig) return;
-        c.lastSig = sig;
-
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, pw, ph);
-        ctx.imageSmoothingEnabled = false;
-        const rows = CHIBI_CAT_POSES[poseKey] || CHIBI_CAT_POSES.standA;
-        const isSit = poseKey === 'sitA' || poseKey === 'sitB';
-        const eyeColA = isSit ? 5 : 4;
-        const eyeColB = isSit ? 11 : 10;
-        const eDx = c.dir > 0 ? -eyeShift : eyeShift;
-
-        drawCrispGrid(ctx, rows, c.px, curDpr, 8, (rawCh, gx, gy) => {
-          let ch = rawCh;
-          if (ch === '.') return null;
-          if (gy === 4) {
-            if (sitBlink) {
-              if (gx === eyeColA - 1 || gx === eyeColB + 1) ch = 'o';
-            } else if (eyeShift !== 0) {
-              if ((gx === eyeColA || gx === eyeColB) && ch === 'o') ch = '#';
-              else if (gx === eyeColA + eDx || gx === eyeColB + eDx) ch = 'o';
-            }
-          }
-          return resolveCatColor(c, ch, gx, gy, poseKey);
-        }, c.dir > 0, pw);
-
-        if (activeSym && SANCTUARY_SYMS[activeSym]) {
-          const sRows = SANCTUARY_SYMS[activeSym];
-          const sp = Math.max(1.5, c.px * 0.85);
-          const sStep = sp * curDpr;
-          const rise = symPhase * 0.55 * c.px * curDpr;
-          const driftX = activeSym.startsWith('z') ? symPhase * 0.35 * c.px * curDpr : 0;
-          const sx0 = Math.round(pw * 0.34 + driftX);
-          const sy0 = Math.round((poseKey.startsWith('sleep') ? 4.8 : 2.0) * c.px * curDpr - rise);
-          ctx.save();
-          ctx.globalAlpha = symPhase >= 5 ? 0.25 : symPhase >= 4 ? 0.55 : 0.95;
-          for (let sy = 0; sy < sRows.length; sy++) {
-            const sr = sRows[sy];
-            const y0 = Math.round(sy0 + sy * sStep);
-            const y1 = Math.round(sy0 + (sy + 1) * sStep);
-            for (let sx = 0; sx < sr.length; sx++) {
-              const sc = sr[sx];
-              if (sc === '.') continue;
-              const x0 = Math.round(sx0 + sx * sStep);
-              const x1 = Math.round(sx0 + (sx + 1) * sStep);
-              ctx.fillStyle = sc === 'p' ? '#F472B6' : sc === 'y' ? '#F59E0B' : sc === 'w' ? '#FFFBEB' : sc === 'b' ? '#60A5FA' : '#94A3B8';
-              ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
-            }
-          }
-          ctx.restore();
-        }
-      };
-
-      const pickNextBehavior = (c, now, sw) => {
-        c.targetX = null;
-        c.targetProp = null;
-        if (c.atProp === 'cushion' && c.y < 0) c.y = 0;
-        c.atProp = null;
-
-        if (streaming) {
-          const r = Math.random();
-          if (r < 0.32) { c.state = 'wave'; setSym(c, 'spark', now, 1100); c.until = now + 2200 + Math.random() * 1600; }
-          else if (r < 0.62) { c.state = 'sit'; c.until = now + 2400 + Math.random() * 1800; }
-          else if (r < 0.84) { c.state = 'stand'; c.until = now + 2000 + Math.random() * 1600; }
-          else { c.state = 'happy'; c.vy = -4.2; c.y = -1; setSym(c, 'spark', now, 1000); c.until = now + 1300; }
-          return;
-        }
-
-        // If overlapping another cat, walk away to a clear open spot first!
-        if (hasCrowdNear(c, c.x)) {
-          const tx = pickClearSpot(c, sw);
-          c.targetX = tx;
-          c.state = 'walk';
-          c.dir = tx >= c.x ? 1 : -1;
-          c.until = now + 4500;
-          return;
-        }
-
-        const r = Math.random();
-        const cozyBoost = c.mood === 'cozy' ? 0.08 : 0;
-        const playBoost = c.mood === 'playful' ? 0.08 : 0;
-        if (r < 0.14 && !isPropBusy('cushion', c)) {
-          sendCatToProp(c, 'cushion', now, false);
-        } else if (r < 0.24 && !isPropBusy('bowl', c)) {
-          sendCatToProp(c, 'bowl', now, false);
-        } else if (r < 0.31 + playBoost && !isPropBusy('post', c)) {
-          sendCatToProp(c, 'post', now, false);
-        } else if (r < 0.48 + playBoost) {
-          const tx = pickClearSpot(c, sw);
-          c.targetX = tx;
-          c.state = 'walk';
-          c.dir = tx >= c.x ? 1 : -1;
-          c.until = now + 2400 + Math.random() * 2800;
-        } else if (r < 0.63) {
-          c.state = 'stand';
-          c.until = now + 2800 + Math.random() * 2800;
-        } else if (r < 0.74 + cozyBoost) {
-          c.state = 'sleep';
-          c.until = now + 4800 + Math.random() * 4800;
-        } else if (r < 0.84) {
-          c.state = 'sit';
-          c.until = now + 3000 + Math.random() * 3200;
-        } else if (r < 0.91) {
-          c.state = 'groom';
-          c.until = now + 2500 + Math.random() * 2200;
-        } else if (r < 0.96) {
-          c.state = 'stretch';
-          c.until = now + 1900 + Math.random() * 1200;
-        } else {
-          c.state = 'pounce';
-          c.vy = -5.0;
-          c.y = -1;
-          setSym(c, 'spark', now, 900);
-          c.until = now + 950;
-        }
-      };
-
-      const onStreamingChange = (isStreaming) => {
-        if (!catOnly || disposed) return;
-        const now = performance.now();
-        if (isStreaming) {
-          for (const c of cats) {
-            if (c.dragging) continue;
-            if (c.state === 'sleep' || c.state === 'eat') {
-              if (c.atProp === 'cushion' && c.y < 0) c.y = 0;
-              c.atProp = null;
-              c.targetX = null;
-              c.targetProp = null;
-              c.state = c.idx % 2 === 0 ? 'sit' : 'stand';
-              c.twitchUntil = now + 280;
-              c.until = now + 2200 + c.idx * 500;
-              setSym(c, 'spark', now, 950);
-              paintCat(c, now);
-            }
-          }
-          wakeLoop();
-        }
-      };
-
-      let sRaf = 0;
-      let sIdleTimer = null;
-      let running = false;
-      let peekHidden = yieldMode === 'peek';
-      let lastStepAt = 0;
-      let lastNuzzleAt = 0;
-
-      const cancelSched = () => {
-        if (sRaf && typeof win.cancelAnimationFrame === 'function') {
-          win.cancelAnimationFrame(sRaf);
-          sRaf = 0;
-        }
-        if (sIdleTimer) {
-          clearTimeout(sIdleTimer);
-          sIdleTimer = null;
-        }
-      };
-
-      const needsFastLoop = () => {
-        if (reducedMotion || peekHidden) return false;
-        if (yarn.active) return true;
-        for (const c of cats) {
-          if (c.dragging || c.state === 'walk' || c.vy !== 0 || (c.y < 0 && c.atProp !== 'cushion')) return true;
-        }
-        return false;
-      };
-
-      const scheduleNext = () => {
-        if (!running || disposed || !catOnly || peekHidden) return;
-        cancelSched();
-        if (needsFastLoop() && typeof win.requestAnimationFrame === 'function') {
-          sRaf = win.requestAnimationFrame(onFrame);
-        } else {
-          sIdleTimer = setTimeout(() => {
-            sIdleTimer = null;
-            step(performance.now());
-            scheduleNext();
-          }, 130);
-        }
-      };
-
-      const wakeLoop = () => {
-        if (!running || disposed || !catOnly || peekHidden) return;
-        if (needsFastLoop() && !sRaf) scheduleNext();
-      };
-
-      const onFrame = (ts) => {
-        sRaf = 0;
-        if (!running || disposed || !catOnly || peekHidden) return;
-        const now = ts || performance.now();
-        if (now - lastStepAt >= 28) {
-          step(now);
-        }
-        scheduleNext();
-      };
-
-      const step = (nowArg) => {
-        if (disposed || !catOnly || peekHidden) return;
-        if (isVramSleepState() || isWindowBlurred()) return;
-        const now = typeof nowArg === 'number' ? nowArg : performance.now();
-        const dt = lastStepAt ? Math.min(80, Math.max(12, now - lastStepAt)) : 32;
-        const dtScale = dt / 55;
-        lastStepAt = now;
-
-        const sw = Math.max(220, readStageWidth());
-        const minX = 18;
-        drawProps(sw);
-
-        let stageRect = null;
-        if (ptr.active && now - ptr.lastAt < 1800 && typeof hostEl.getBoundingClientRect === 'function') {
-          if (!cachedStageRect || now - stageRectAt > 400) {
-            cachedStageRect = hostEl.getBoundingClientRect();
-            stageRectAt = now;
-          }
-          stageRect = cachedStageRect;
-        }
-
-        if (yarn.active) {
-          if (now >= yarn.until) {
-            yarn.active = false;
-            yarn.cv.style.display = 'none';
-          } else {
-            yarn.x += yarn.vx * dtScale;
-            yarn.vx *= Math.pow(0.965, dtScale);
-            if (yarn.x <= minX) { yarn.x = minX; yarn.vx = Math.abs(yarn.vx) * 0.85; }
-            else if (yarn.x >= sw - 32) { yarn.x = sw - 32; yarn.vx = -Math.abs(yarn.vx) * 0.85; }
-            if (yarn.y < 0 || yarn.vy !== 0) {
-              yarn.y += yarn.vy * dtScale;
-              yarn.vy += 0.95 * dtScale;
-              if (yarn.y >= 0) {
-                yarn.y = 0;
-                yarn.vy = Math.abs(yarn.vy) > 1.5 ? -yarn.vy * 0.5 : 0;
-              }
-            }
-            drawYarn();
-          }
-        }
-
-        for (const c of cats) {
-          const maxX = Math.max(minX + 8, sw - 18 - c.cw);
-          if (!c.placed) {
-            c.x = Math.max(minX, Math.min(maxX, Math.round(minX + (maxX - minX) * c.xPct)));
-            c.placed = true;
-          } else if (!c.dragging && c.x > maxX) {
-            c.x = maxX;
-          }
-          if (c.dragging) {
-            paintCat(c, now);
-            continue;
-          }
-          if ((c.y < 0 && c.atProp !== 'cushion') || c.vy !== 0) {
-            c.y += c.vy * dtScale;
-            c.vy += 1.45 * dtScale;
-            if (c.y >= 0) {
-              c.y = 0;
-              c.vy = 0;
-              if (c.state === 'pounce') {
-                c.state = 'happy';
-                c.until = now + 700;
-              }
-            }
-          }
-          if (stageRect) {
-            const relX = ptr.clientX - stageRect.left;
-            const relY = ptr.clientY - stageRect.top;
-            const dx = relX - (c.x + c.cw * 0.5);
-            if (Math.abs(dx) < 160 && relY > -90 && relY < 140) {
-              c.gazeDx = dx < -18 ? -1 : dx > 18 ? 1 : 0;
-            } else {
-              c.gazeDx = 0;
-            }
-          } else {
-            c.gazeDx = 0;
-          }
-
-          if (!reducedMotion && now >= c.nextBlink) {
-            c.blinkUntil = now + 170;
-            c.nextBlink = now + 2400 + Math.random() * 3400;
-          }
-          if (!reducedMotion && now >= c.nextTwitch) {
-            c.twitchUntil = now + 220;
-            c.nextTwitch = now + 4000 + Math.random() * 4800;
-          }
-
-          if (!reducedMotion && yarn.active && c.state !== 'sleep') {
-            c.targetX = null;
-            c.targetProp = null;
-            c.atProp = null;
-            const cx = c.x + c.cw * 0.5;
-            const dist = (yarn.x + 7) - cx;
-            if (Math.abs(dist) < c.cw * 0.55) {
-              yarn.vx = (dist >= 0 ? 1 : -1) * (4.4 + Math.random() * 2.0);
-              yarn.vy = -3.8;
-              c.state = 'wave';
-              c.until = now + 650;
-              setSym(c, 'spark', now, 750);
-            } else if (c.mood === 'playful' || Math.abs(dist) < 220) {
-              c.state = 'walk';
-              c.dir = dist < 0 ? -1 : 1;
-              c.until = now + 700;
-            }
-          } else if (!reducedMotion && now >= c.until) {
-            pickNextBehavior(c, now, sw);
-          }
-
-          if (!reducedMotion && c.state === 'walk') {
-            const boost = yarn.active ? 1.38 : 1;
-            const stepPx = c.speed * 2.4 * boost * dtScale;
-            if (c.targetX !== null) {
-              const rem = c.targetX - c.x;
-              if (Math.abs(rem) <= stepPx + 1.5) {
-                c.x = c.targetX;
-                if (c.targetProp) {
-                  arriveAtProp(c, c.targetProp, now);
-                } else {
-                  c.targetX = null;
-                  c.state = Math.random() < 0.5 ? 'stand' : 'sit';
-                  c.until = now + 2400 + Math.random() * 2600;
-                }
-              } else {
-                c.dir = rem > 0 ? 1 : -1;
-                c.x += c.dir * stepPx;
-              }
-            } else {
-              c.x += c.dir * stepPx;
-              if (c.x <= minX) { c.x = minX; c.dir = 1; }
-              else if (c.x >= maxX) { c.x = maxX; c.dir = -1; }
-            }
-          }
-          paintCat(c, now);
-        }
-
-        // Friendly cat-to-cat nuzzle encounter (stops cleanly nose-to-nose without overlapping!)
-        if (!reducedMotion && !yarn.active && now - lastNuzzleAt > 9500) {
-          for (let i = 0; i < cats.length; i++) {
-            for (let j = i + 1; j < cats.length; j++) {
-              const a = cats[i];
-              const b = cats[j];
-              if (a.dragging || b.dragging || a.atProp || b.atProp || (a.state !== 'walk' && b.state !== 'walk')) continue;
-              const dist = Math.abs((a.x + a.cw * 0.5) - (b.x + b.cw * 0.5));
-              const noseDist = (a.cw + b.cw) * 0.54;
-              if (dist < noseDist && dist > noseDist * 0.45) {
-                lastNuzzleAt = now;
-                a.targetX = b.targetX = null;
-                a.targetProp = b.targetProp = null;
-                const aLeft = a.x <= b.x;
-                a.dir = aLeft ? 1 : -1;
-                b.dir = -a.dir;
-                a.state = 'happy';
-                b.state = 'happy';
-                a.until = b.until = now + 1400;
-                setSym(a, 'heart', now, 1400);
-                if (Math.random() < 0.5) { b.vy = -4.0; b.y = -1; }
-                paintCat(a, now);
-                paintCat(b, now);
-                break;
-              }
-            }
-          }
-        }
-      };
-
-      const start = () => {
-        running = true;
-        wrap.style.display = '';
-        lastStepAt = 0;
-        step(performance.now());
-        scheduleNext();
-      };
-      const stop = () => {
-        running = false;
-        wrap.style.display = 'none';
-        cancelSched();
-      };
-      const setPeek = (hidden) => {
-        const next = Boolean(hidden);
-        if (peekHidden === next) return;
-        peekHidden = next;
-        if (peekHidden) {
-          cancelSched();
-          for (const c of cats) {
-            if (c.dragging) { c.dragging = false; c.y = 0; c.vy = 0; }
-          }
-        } else if (running && catOnly && !disposed) {
-          lastStepAt = 0;
-          step(performance.now());
-          scheduleNext();
-        }
-      };
-      const dispose = () => {
-        stop();
-        win.removeEventListener('pointermove', onGlobalMove);
-        yarn.cv.width = 0;
-        yarn.cv.height = 0;
-        for (const pr of propNodes) {
-          pr.cleanup();
-          pr.cv.width = 0;
-          pr.cv.height = 0;
-        }
-        for (const c of cats) {
-          c.cleanup();
-          c.cv.width = 0;
-          c.cv.height = 0;
-        }
-        wrap.remove();
-      };
-      sanctuary = { start, stop, step, onStreamingChange, setPeek, dispose };
+      const factory = resolveSanctuaryFactory();
+      if (typeof factory !== "function") return null;
+      try {
+        sanctuary = factory({
+          hostEl,
+          doc,
+          win,
+          markNoTrOwned,
+          readStageWidth,
+          readDpr,
+          isVramSleepState,
+          isWindowBlurred,
+          getReducedMotion: () => reducedMotion,
+          getStreaming: () => streaming,
+          getIsThinking: () => isThinking,
+          getHasError: () => hasError,
+          getPeekHidden: () => yieldMode === "peek",
+          getConfig: () => ({ catCount, catProps, catQuietMode }),
+          onDragStateChange: (d) => {
+            sanctuaryDragging = Boolean(d);
+            syncMascotDragRootAttr();
+          },
+          registerDragRelease: (fn) => {
+            if (typeof fn !== "function") return () => {};
+            dragReleaseHooks.push(fn);
+            return () => {
+              const idx = dragReleaseHooks.indexOf(fn);
+              if (idx >= 0) dragReleaseHooks.splice(idx, 1);
+            };
+          },
+        });
+      } catch (_) {
+        sanctuary = null;
+      }
       return sanctuary;
     };
     const syncSanctuaryMode = () => {
       if (catOnly) {
-        if (typeof hostEl.setAttribute === 'function') hostEl.setAttribute('data-cat-sanctuary', '1');
-        if (actors.cat.el?.style) actors.cat.el.style.display = 'none';
-        if (actors.clawd.el?.style) actors.clawd.el.style.display = 'none';
-        if (habitatCanvas?.style) habitatCanvas.style.display = 'none';
-        if (miniGroupEl?.style) miniGroupEl.style.display = 'none';
-        mountCatSanctuary().start();
+        if (typeof hostEl.setAttribute === "function") hostEl.setAttribute("data-cat-sanctuary", "1");
+        if (actors.cat.el?.style) actors.cat.el.style.display = "none";
+        if (actors.clawd.el?.style) actors.clawd.el.style.display = "none";
+        if (habitatCanvas?.style) habitatCanvas.style.display = "none";
+        if (miniGroupEl?.style) miniGroupEl.style.display = "none";
+        const inst = mountCatSanctuary();
+        if (inst) {
+          inst.start();
+          inst.setPeek?.(yieldMode === "peek");
+          inst.syncPowerState?.(isSanctuaryPaused());
+        }
       } else {
-        if (typeof hostEl.removeAttribute === 'function') hostEl.removeAttribute('data-cat-sanctuary');
-        if (actors.cat.el?.style) actors.cat.el.style.display = '';
-        if (actors.clawd.el?.style) actors.clawd.el.style.display = '';
-        if (habitatCanvas?.style) habitatCanvas.style.display = '';
+        if (typeof hostEl.removeAttribute === "function") hostEl.removeAttribute("data-cat-sanctuary");
+        if (actors.cat.el?.style) actors.cat.el.style.display = "";
+        if (actors.clawd.el?.style) actors.clawd.el.style.display = "";
+        if (habitatCanvas?.style) habitatCanvas.style.display = "";
         if (sanctuary) sanctuary.stop();
       }
+    };
+    const sanctuaryBridge = {
+      onFactoryReady(factory) {
+        if (disposed || typeof factory !== "function") return;
+        sanctuaryFactory = factory;
+        if (sanctuary) disposeSanctuaryInst();
+        if (catOnly) syncSanctuaryMode();
+      },
+      remount() {
+        if (disposed) return;
+        if (sanctuary) disposeSanctuaryInst();
+        if (catOnly) syncSanctuaryMode();
+      },
+      dispose() {
+        disposeSanctuaryInst();
+      },
     };
     let habitatPreview = 'auto';
     let scheduleWatchUntil = 0;
@@ -2719,10 +1841,13 @@
       drawLayerSet(ctx, 0, oy, cell, PALETTES.clawd, [spr]);
       habitatCanvas.setAttribute('data-habitat-mode', mode);
     };
-    renderHabitatProp(true);
+    if (!catOnly) renderHabitatProp(true);
 
     // ── A1 VRAM 0x0 回收与唤醒恢复（document.hidden / park / hostSleep / detached） ──
     const reclaimStageVram = () => {
+      if (sanctuary && typeof sanctuary.reclaimVram === 'function') {
+        try { sanctuary.reclaimVram(); } catch (_) {}
+      }
       if (vramReclaimed) return;
       vramReclaimed = true;
       releaseFxCanvas();
@@ -2815,6 +1940,7 @@
         !disposed &&
         (Boolean(actors.cat.dragging) ||
           Boolean(actors.clawd.dragging) ||
+          Boolean(sanctuaryDragging) ||
           miniCrabs.some((mc) => Boolean(mc.dragging)));
       if (rootMascotDragAttr === anyDragging) return;
       rootMascotDragAttr = anyDragging;
@@ -3005,6 +2131,10 @@
     };
     const handleStageWidthResize = (prevW, nw) => {
       if (disposed || !Number.isFinite(nw) || nw <= 0 || nw === prevW) return;
+      if (sanctuary && typeof sanctuary.onResize === 'function') {
+        try { sanctuary.onResize(prevW, nw); } catch (_) {}
+      }
+      if (catOnly) return;
       const now = performance.now(), nextMaxX = maxXFor(nw), mains = [actors.cat, actors.clawd], resizingNow = isStageResizing();
       if (nw < prevW) {
         if (reboundTm) { clearTimeout(reboundTm); pendingTimers.delete(reboundTm); reboundTm = null; }
@@ -3819,6 +2949,11 @@
         reclaimStageVram();
         return;
       }
+      if (catOnly) {
+        syncSanctuaryMode();
+        return;
+      }
+      if (sanctuary) syncSanctuaryMode();
       restoreStageVram();
       syncStageDpr();
       renderHabitatProp(false);
@@ -4103,11 +3238,6 @@
         }
       }
 
-      if (catOnly) {
-        syncSanctuaryMode();
-        return;
-      }
-      if (sanctuary) syncSanctuaryMode();
       const nextMiniDisplay = miniPileEnabled ? 'flex' : 'none';
       if (lastMiniDisplay !== nextMiniDisplay) {
         lastMiniDisplay = nextMiniDisplay;
@@ -5342,20 +4472,23 @@
       if (disposed) return;
       if (isHostDetached() || parked) {
         syncHeartbeat();
+        syncSanctuaryPower();
         reclaimStageVram();
         return;
       }
       if (isDocHidden() || isHostSleeping()) {
         syncHeartbeat();
+        syncSanctuaryPower();
         reclaimStageVram();
         return;
       }
       if (!isAttrB()) {
         wb = false;
-        if (dozing && !isDocHidden() && !isHostSleeping()) { wakeUp(); return; }
+        if (dozing && !catOnly && !isDocHidden() && !isHostSleeping()) { wakeUp(); return; }
       }
       syncHeartbeat();
-      if (!theaterTimer && currentTickMs > 0 && !dozing && !reducedMotion) scheduleTheater();
+      syncSanctuaryPower();
+      if (!catOnly && !theaterTimer && currentTickMs > 0 && !dozing && !reducedMotion) scheduleTheater();
       if (!isWindowBlurred() && !isHostSleeping()) renderAllFrames(performance.now());
     };
     const onWBlur = () => {
@@ -5363,6 +4496,7 @@
       wb = true;
       for (let i = 0; i < dragReleaseHooks.length; i++) dragReleaseHooks[i]();
       syncHeartbeat();
+      syncSanctuaryPower();
     };
     const onWFocus = () => { wb = false; syncPwr(); };
     if (win && typeof win.addEventListener === 'function') {
@@ -5380,12 +4514,16 @@
           const resizeEnded = wasResizingAttr && !nowResizingAttr;
           wasResizingAttr = nowResizingAttr;
           if (resizeEnded) onStageResizeReleased();
+          const hasThemeMut = Array.isArray(records) && records.some((r) => r && r.attributeName === 'data-ag-cs-theme');
+          if (hasThemeMut && sanctuary && typeof sanctuary.onThemeChange === 'function') {
+            try { sanctuary.onThemeChange(); } catch (_) {}
+          }
           const hasPowerMut =
             !Array.isArray(records) ||
             records.some((r) => !r || !r.attributeName || r.attributeName === WB || r.attributeName === PM);
           if (hasPowerMut) syncPwr();
         });
-        mo.observe(doc.documentElement, { attributes: true, attributeFilter: [WB, PM, RESIZE_ATTR] });
+        mo.observe(doc.documentElement, { attributes: true, attributeFilter: [WB, PM, RESIZE_ATTR, 'data-ag-cs-theme'] });
         cleanups.push(() => mo.disconnect());
       } catch (_) {}
     }
@@ -5399,6 +4537,7 @@
       if (disposed) return;
       const now = performance.now();
       if (
+        catOnly ||
         isHostDetached() ||
         parked ||
         isDocHidden() ||
@@ -5421,6 +4560,7 @@
       let targetMs = TICK;
       if (
         disposed ||
+        catOnly ||
         isHostDetached() ||
         parked ||
         isDocHidden() ||
@@ -5851,6 +4991,7 @@
       'host-sleep'(p) {
         hostSleep = Boolean(p && p.sleep);
         syncHeartbeat();
+        syncSanctuaryPower();
         if (hostSleep || isVramSleepState()) {
           reclaimStageVram();
         } else if (!isWindowBlurred()) {
@@ -5860,9 +5001,13 @@
     };
     const handleNotify = (event, payload) => {
       if (disposed) return;
+      const pl = payload && typeof payload === 'object' ? payload : {};
+      if (event !== 'host-sleep' && sanctuary && typeof sanctuary.onSemanticEvent === 'function') {
+        try { sanctuary.onSemanticEvent(event, pl); } catch (_) {}
+      }
+      if (catOnly && event !== 'host-sleep') return;
       const fn = Object.prototype.hasOwnProperty.call(NOTIFY, event) ? NOTIFY[event] : null;
       if (!fn) return;
-      const pl = payload && typeof payload === 'object' ? payload : {};
       if (event === 'host-sleep') {
         fn(pl);
         return;
@@ -5892,6 +5037,7 @@
     const onVisibilityChange = () => {
       if (disposed) return;
       syncHeartbeat();
+      syncSanctuaryPower();
       if (isVramSleepState()) {
         reclaimStageVram();
       } else if (!isWindowBlurred()) {
@@ -5961,6 +5107,7 @@
       if (sanctuary) sanctuary.setPeek(isPeek);
     };
 
+    if (globalRoot) globalRoot.__agCatSanctuaryBridge = sanctuaryBridge;
     syncPeekInteractivity();
     renderAllFrames(performance.now());
     syncHeartbeat();
@@ -5970,24 +5117,34 @@
         const prevRight = popoverRightWidth;
         const prevCamp = camp;
         const prevStreaming = streaming;
+        const prevThinking = isThinking;
         const prevStreamTier = streamTier;
         const prevHasError = hasError;
+        const prevAwaiting = awaitingDecision;
         const prevYield = yieldMode;
         const prevLeapOffset = leapOffsetY;
         const prevMiniPile = miniPileEnabled;
         const prevCatOnly = catOnly;
+        const prevCatCount = catCount;
+        const prevCatProps = catProps;
+        const prevCatQuiet = catQuietMode;
         const prevOrch = orchestrator;
         const prevReduced = reducedMotion;
 
         if (next.camp !== undefined) camp = next.camp === 'claude' ? 'claude' : 'gemini';
         if (next.streaming !== undefined) streaming = Boolean(next.streaming);
+        if (next.isThinking !== undefined) isThinking = Boolean(next.isThinking);
         if (next.streamTier !== undefined) streamTier = Number(next.streamTier || 2);
         if (next.hasError !== undefined) hasError = Boolean(next.hasError);
+        if (next.awaitingDecision !== undefined) awaitingDecision = Boolean(next.awaitingDecision);
         if (next.yieldMode !== undefined) yieldMode = next.yieldMode || 'none';
         if (next.leapOffsetY !== undefined) leapOffsetY = Number(next.leapOffsetY || 0);
         if (next.popoverRightWidth !== undefined) popoverRightWidth = Number(next.popoverRightWidth || 0);
         if (next.miniPileEnabled !== undefined) miniPileEnabled = Boolean(next.miniPileEnabled);
         if (next.catOnly !== undefined) catOnly = Boolean(next.catOnly);
+        if (next.catCount !== undefined) catCount = next.catCount === '1' || next.catCount === '2' ? next.catCount : '4';
+        if (next.catProps !== undefined) catProps = next.catProps === 'off' ? 'off' : 'on';
+        if (next.catQuietMode !== undefined) catQuietMode = next.catQuietMode === 'nap' ? 'nap' : 'auto';
         if (next.orchestrator !== undefined) orchestrator = Boolean(next.orchestrator);
         if (next.reducedMotion !== undefined) {
           reducedMotion = Boolean(next.reducedMotion);
@@ -5998,32 +5155,50 @@
         const changed =
           camp !== prevCamp ||
           streaming !== prevStreaming ||
+          isThinking !== prevThinking ||
           streamTier !== prevStreamTier ||
           hasError !== prevHasError ||
+          awaitingDecision !== prevAwaiting ||
           yieldMode !== prevYield ||
           leapOffsetY !== prevLeapOffset ||
           popoverRightWidth !== prevRight ||
           miniPileEnabled !== prevMiniPile ||
           catOnly !== prevCatOnly ||
+          catCount !== prevCatCount ||
+          catProps !== prevCatProps ||
+          catQuietMode !== prevCatQuiet ||
           orchestrator !== prevOrch ||
           reducedMotion !== prevReduced;
 
         if (!changed) return;
 
-        if (camp !== prevCamp) {
+        if (catOnly !== prevCatOnly) {
+          syncSanctuaryMode();
+          syncHeartbeat();
+        }
+        if (camp !== prevCamp && !catOnly) {
           // 挂载后阵营实际变化：自动播放领衔交接（站位交换在其内部完成）
           markActivity();
           campHandoff();
           if (performance.now() - lastHandoffAt > 50) resetHomePositions(popoverRightWidth !== prevRight);
-        } else if (popoverRightWidth !== prevRight || miniPileEnabled !== prevMiniPile || catOnly !== prevCatOnly) {
+        } else if (!catOnly && (popoverRightWidth !== prevRight || miniPileEnabled !== prevMiniPile || catOnly !== prevCatOnly)) {
           resetHomePositions(popoverRightWidth !== prevRight);
         }
         if (yieldMode !== prevYield || leapOffsetY !== prevLeapOffset) {
           syncPeekInteractivity();
         }
+        if (sanctuary) {
+          if (catCount !== prevCatCount || catProps !== prevCatProps || catQuietMode !== prevCatQuiet) {
+            sanctuary.updateConfig?.({ catCount, catProps, catQuietMode });
+          }
+          if (streaming !== prevStreaming) sanctuary.onSemanticEvent?.('streaming', { on: streaming });
+          if (isThinking !== prevThinking) sanctuary.onSemanticEvent?.('isThinking', { on: isThinking });
+          if (hasError !== prevHasError) sanctuary.onSemanticEvent?.('hasError', { on: hasError });
+          if (awaitingDecision !== prevAwaiting) sanctuary.onSemanticEvent?.('awaitingDecision', { on: awaitingDecision });
+          if (reducedMotion !== prevReduced) syncSanctuaryPower();
+        }
         if (reducedMotion !== prevReduced || streaming !== prevStreaming) {
           syncHeartbeat();
-          if (streaming !== prevStreaming && sanctuary) sanctuary.onStreamingChange(streaming);
         }
         renderAllFrames(performance.now());
       },
@@ -6315,6 +5490,7 @@
         if (disposed) return;
         parked = Boolean(on);
         syncHeartbeat();
+        syncSanctuaryPower();
         if (parked) {
           reclaimStageVram();
         } else if (!isVramSleepState() && !isWindowBlurred()) {
@@ -6325,11 +5501,16 @@
         if (disposed) return;
         parked = false;
         syncHeartbeat();
+        syncSanctuaryPower();
         if (!isVramSleepState() && !isWindowBlurred()) renderAllFrames(performance.now());
       },
       syncPowerState: syncPwr,
       dispose() {
         disposed = true;
+        sanctuaryDragging = false;
+        if (globalRoot && globalRoot.__agCatSanctuaryBridge === sanctuaryBridge) {
+          try { delete globalRoot.__agCatSanctuaryBridge; } catch (_) { globalRoot.__agCatSanctuaryBridge = null; }
+        }
         rim.on = false;
         rim.s = 0;
         rimSig = '0';
