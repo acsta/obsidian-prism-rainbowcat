@@ -751,7 +751,7 @@ test('9. inline-fallback.js dual Weekly+5h rainbow quota pill, hover-to-open (#q
     assert.equal(actWins[0].getAttribute('data-window'), 'weekly', 'Weekly window must appear FIRST inside #quota-card');
     assert.equal(actWins[1].getAttribute('data-window'), '5h', '5h window must appear second beneath Weekly');
 
-    // 3) #context-card removes duplicated .pv-qt quota section & populates beautified hero + TTFT/TPS cards
+    // 3) #context-card removes duplicated .pv-qt quota section & populates slice legend + 2x2 borderless metrics + --vial-foot
     const pvQt = sr.querySelector('[data-ag-pulse-quotas="1"]');
     assert.equal(pvQt?.hidden, true, 'pulse-vial-bridge must suppress duplicated .pv-qt inside #context-card when [data-card="quota"] exists');
     assert.equal(sr.getElementById('context-summary').textContent, '35% 已用');
@@ -759,11 +759,24 @@ test('9. inline-fallback.js dual Weekly+5h rainbow quota pill, hover-to-open (#q
     assert.equal(sr.getElementById('context-tokens').textContent, '180K / 512K');
     assert.equal(sr.getElementById('ctx-ttft').textContent, '1.42s');
     assert.equal(sr.getElementById('ctx-tps').textContent, '71.5 tok/s');
+    assert.equal(sr.getElementById('ctx-cache').textContent, '91.0%');
+    assert.equal(sr.getElementById('ctx-compact').textContent, '剩 230K');
+    assert.ok(sr.getElementById('ctx-s0').textContent.endsWith('K'), 'System slice legend must display real token estimate');
+    assert.ok(sr.getElementById('ctx-s1').textContent.endsWith('K'), 'Messages slice legend must display real token estimate');
+    assert.ok(sr.getElementById('ctx-s2').textContent.endsWith('K'), 'Tools slice legend must display real token estimate');
+    assert.equal(xCard.style.getPropertyValue('--vial-foot'), '"剩余 332K"');
 
-    // 4) Smooth hover-to-open (~120ms), hover bridge grace (~220ms), seamless swap between #quota-card & #context-card, and CustomEvent notify
+    // 4) Unified 300ms (0.3s) hover-to-open across ALL 4 chips, hover bridge grace (~220ms), seamless chip-to-chip glide, and CustomEvent notify
+    const sChip = sr.querySelector('[data-card="speed"]');
+    const cChip = sr.querySelector('[data-card="cache"]');
+    const sCard = sr.getElementById('speed-card');
+    const cCard = sr.getElementById('cache-card');
+
     qChip.dispatchEvent({ type: 'mouseenter' });
     await new Promise((r) => setTimeout(r, 150));
-    assert.equal(qCard.hidden, false, 'Hovering [data-card="quota"] must open #quota-card after ~120ms');
+    assert.equal(qCard.hidden, true, 'Card must NOT flash open before 300ms hover delay (at 150ms)');
+    await new Promise((r) => setTimeout(r, 200));
+    assert.equal(qCard.hidden, false, 'Hovering [data-card="quota"] must open #quota-card after 300ms');
     assert.ok(cardEvents.some((d) => d.open === true && d.cards.includes('quota-card')), 'Opening #quota-card must dispatch ag-prism-pulse-card-change');
 
     // Moving cursor from chip into #quota-card keeps card open past 220ms
@@ -773,17 +786,29 @@ test('9. inline-fallback.js dual Weekly+5h rainbow quota pill, hover-to-open (#q
     await new Promise((r) => setTimeout(r, 220));
     assert.equal(qCard.hidden, false, 'Hovering inside #quota-card must cancel close-grace timer');
 
-    // Gliding directly to [data-card="context"] swaps seamlessly to #context-card
+    // Gliding directly across ALL 4 chips swaps seamlessly with zero overlap
     qCard.dispatchEvent({ type: 'mouseleave' });
     xChip.dispatchEvent({ type: 'mouseenter' });
     await new Promise((r) => setTimeout(r, 60));
     assert.equal(xCard.hidden, false, 'Gliding to [data-card="context"] must open #context-card seamlessly');
     assert.equal(qCard.hidden, true, '#quota-card must close with zero overlap on swap');
 
-    // Leaving #context-card closes after ~220ms grace and notifies cats to rise
     xChip.dispatchEvent({ type: 'mouseleave' });
+    cChip.dispatchEvent({ type: 'mouseenter' });
+    await new Promise((r) => setTimeout(r, 60));
+    assert.equal(cCard.hidden, false, 'Gliding to [data-card="cache"] must open #cache-card seamlessly');
+    assert.equal(xCard.hidden, true);
+
+    cChip.dispatchEvent({ type: 'mouseleave' });
+    sChip.dispatchEvent({ type: 'mouseenter' });
+    await new Promise((r) => setTimeout(r, 60));
+    assert.equal(sCard.hidden, false, 'Gliding to [data-card="speed"] must open #speed-card seamlessly');
+    assert.equal(cCard.hidden, true);
+
+    // Leaving #speed-card closes after ~220ms grace and notifies cats to rise
+    sChip.dispatchEvent({ type: 'mouseleave' });
     await new Promise((r) => setTimeout(r, 260));
-    assert.equal(xCard.hidden, true, 'Leaving hovered #context-card must close after ~220ms grace');
+    assert.equal(sCard.hidden, true, 'Leaving hovered #speed-card must close after ~220ms grace');
     assert.equal(cardEvents[cardEvents.length - 1]?.open, false);
 
     // Click toggle + switch button + Escape dismiss
