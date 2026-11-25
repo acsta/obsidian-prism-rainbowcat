@@ -769,7 +769,7 @@
         const sp = resolveSpectrum();
         const html = typeof document !== 'undefined' ? document.documentElement : null;
         const isRb = sp === 'rainbow' || (sp === undefined && html?.getAttribute?.('data-ag-cs-accent') === 'rainbow');
-        return Boolean(isRb && (html?.getAttribute?.('data-ag-rainbow-style') || 'pixel') !== 'aurora');
+        return Boolean(isRb && html?.getAttribute?.('data-ag-rainbow-style') === 'pixel');
       }
 
       function applySize(w, parentH) {

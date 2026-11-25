@@ -240,7 +240,7 @@
 
       const isPixelRainbow = () => {
         const html = getRootHtml();
-        return resolveSpectrumMode(isDarkTheme()) === 'rainbow' && (html?.getAttribute?.('data-ag-rainbow-style') || 'pixel') !== 'aurora';
+        return resolveSpectrumMode(isDarkTheme()) === 'rainbow' && html?.getAttribute?.('data-ag-rainbow-style') === 'pixel';
       };
       const syncG = (w, h) => {
         if (w <= 0 || h <= 0) return;

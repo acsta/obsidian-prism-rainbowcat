@@ -182,7 +182,7 @@ test('1. SCENE_PRESETS.ultra preserves mascot, cozyEco keeps cat mascot, and 5 r
 
   const exampleCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.example.json'), 'utf8'));
   for (const [k, def] of [
-    ['rainbowStyle', 'pixel'],
+    ['rainbowStyle', 'aurora'],
     ['rainbowPixelSize', '6'],
     ['catCount', '4'],
     ['catProps', 'on'],

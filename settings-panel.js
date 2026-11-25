@@ -48,7 +48,7 @@
     palette: mkSp(['obsidian', 'host', 'warm'], null, { claude: 'warm' }),
     lightPreset: mkSp(['crystal', 'alabaster']),
     accentTone: mkSp(['follow', 'cobalt', 'iris', 'amber', 'mono', 'rainbow']),
-    rainbowStyle: mkSp(['pixel', 'aurora'], 'pixel'),
+    rainbowStyle: mkSp(['aurora', 'pixel'], 'aurora'),
     rainbowPixelSize: mkSp(['4', '6', '8'], '6'),
     cornerStyle: mkSp(['sharp', 'balanced', 'soft'], 'balanced'),
     ambientIntensity: mkSp(['0', '35', '70', '100'], '100'),
@@ -426,7 +426,7 @@
         if (dim) sa(dr, 'data-ag-cs-dimmed', '1'); else ra(dr, 'data-ag-cs-dimmed');
       }
       const isRainbow = effVal('accentTone', l) === 'rainbow';
-      const isPixelRainbow = isRainbow && effVal('rainbowStyle', l) !== 'aurora';
+      const isPixelRainbow = isRainbow && effVal('rainbowStyle', l) === 'pixel';
       const isCatMascot = effVal('mascot', l) === 'cat';
       for (const [ck, vis] of [
         ['rainbowStyle', isRainbow],
@@ -707,7 +707,7 @@
             RS('palette', [['host', U('optHost')], ['warm', warmLbl], ['obsidian', U('optObsidian')]]),
             RS('lightPreset', [['crystal', U('optLightCrystal')], ['alabaster', U('optLightAlabaster')]]),
             RS('accentTone', [['follow', U('optToneFollow')], ['cobalt', U('optToneCobalt')], ['iris', U('optToneIris')], ['amber', U('optToneAmber')], ['mono', U('optToneMono')], ['rainbow', U('optToneRainbow')]]),
-            RS('rainbowStyle', [['pixel', U('optRainbowPixel', 'Pixel Bayer')], ['aurora', U('optRainbowAurora', 'Soft Aurora')]]),
+            RS('rainbowStyle', [['aurora', U('optRainbowAurora', 'Soft Aurora')], ['pixel', U('optRainbowPixel', 'Pixel Bayer')]]),
             RS('rainbowPixelSize', [['4', '4px'], ['6', '6px'], ['8', '8px']]),
             RS('cornerStyle', [['sharp', U('optCornerSharp')], ['balanced', U('optCornerBalanced')], ['soft', U('optCornerSoft')]]),
             RS('ambientIntensity', [['0', U('optAmb0', '0%')], ['35', U('optAmb35', '35%')], ['70', U('optAmb70', '70%')], ['100', U('optAmb100', '100%')]]),

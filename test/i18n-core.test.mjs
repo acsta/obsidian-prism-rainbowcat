@@ -389,8 +389,8 @@ test('settings-panel schema, scene presets, strict apiKey-stripping JSON export,
   const { PRISM_SETTINGS_SCHEMA, SCENE_PRESETS, buildSanitizedConfigExport, validateImportedConfigJson, getDefaultSettingsPatch } =
     settingsPanel;
   assert.equal(Object.keys(PRISM_SETTINGS_SCHEMA).length, 39);
-  assert.deepEqual(PRISM_SETTINGS_SCHEMA.rainbowStyle.allowed, ['pixel', 'aurora']);
-  assert.equal(PRISM_SETTINGS_SCHEMA.rainbowStyle.default, 'pixel');
+  assert.deepEqual(PRISM_SETTINGS_SCHEMA.rainbowStyle.allowed, ['aurora', 'pixel']);
+  assert.equal(PRISM_SETTINGS_SCHEMA.rainbowStyle.default, 'aurora');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.rainbowPixelSize.allowed, ['4', '6', '8']);
   assert.equal(PRISM_SETTINGS_SCHEMA.rainbowPixelSize.default, '6');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.catCount.allowed, ['1', '2', '4']);
@@ -506,7 +506,7 @@ test('settings-panel schema, scene presets, strict apiKey-stripping JSON export,
   assert.equal(defaultPatch.effortMemory, 'on');
   assert.equal(defaultPatch.sidebarNavFold, 'off');
   assert.equal(defaultPatch.scrollBottomMotion, 'smooth');
-  assert.equal(defaultPatch.rainbowStyle, 'pixel');
+  assert.equal(defaultPatch.rainbowStyle, 'aurora');
   assert.equal(defaultPatch.rainbowPixelSize, '6');
   assert.equal(defaultPatch.catCount, '4');
   assert.equal(defaultPatch.catProps, 'on');

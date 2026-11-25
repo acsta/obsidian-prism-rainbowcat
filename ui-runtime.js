@@ -108,7 +108,7 @@
     for (const k of ['sidebarNavFold', 'sidebarStudio', 'autoUpdate']) out[k] = out[k] === 'on' || out[k] === true ? 'on' : 'off';
     for (const k of ['smoothCaret', 'contextMenu']) out[k] = out[k] === undefined ? true : out[k] !== false && out[k] !== 'off';
     out.accentTone = pickOf(out.accentTone, 'follow|cobalt|iris|amber|mono|rainbow', 'follow');
-    out.rainbowStyle = out.rainbowStyle === 'aurora' ? 'aurora' : 'pixel';
+    out.rainbowStyle = out.rainbowStyle === 'pixel' ? 'pixel' : 'aurora';
     out.rainbowPixelSize = pickOf(String(out.rainbowPixelSize ?? '6'), '4|6|8', '6');
     out.catCount = pickOf(String(out.catCount ?? '4'), '1|2|4', '4');
     out.catProps = out.catProps === 'off' || out.catProps === false ? 'off' : 'on';
@@ -366,7 +366,7 @@
   const getThoughtTranslateMode = () => pickOf(cfg.thoughtTranslate, 'machine|ai', 'off');
   const getThoughtTriggerTiming = () => (cfg.thoughtTrigger === 'expand' ? 'expand' : 'preload');
   const getAccentTone = () => pickOf(cfg.accentTone, 'cobalt|iris|amber|mono|rainbow', 'follow');
-  const getRainbowStyle = () => (cfg.rainbowStyle === 'aurora' ? 'aurora' : 'pixel');
+  const getRainbowStyle = () => (cfg.rainbowStyle === 'pixel' ? 'pixel' : 'aurora');
   const getRainbowPixelSize = () => pickOf(String(cfg.rainbowPixelSize ?? '6'), '4|6|8', '6');
   const getCatCount = () => pickOf(String(cfg.catCount ?? '4'), '1|2|4', '4');
   const getCatProps = () => (cfg.catProps === 'off' || cfg.catProps === false ? 'off' : 'on');

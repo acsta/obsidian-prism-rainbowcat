@@ -28,7 +28,7 @@
   "scrollBottomMotion": "smooth",
   "contextMenu": true,
   "accentTone": "follow",
-  "rainbowStyle": "pixel",
+  "rainbowStyle": "aurora",
   "rainbowPixelSize": "6",
   "cornerStyle": "balanced",
   "codeFont": "default",

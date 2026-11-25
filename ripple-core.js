@@ -1612,7 +1612,7 @@ color = vec4(rgb * a, a);
         if (rawPx === null || rawPx === undefined) rawPx = html.getAttribute('data-ag-rainbow-px');
       }
     } catch {}
-    if (String(rawStyle || 'pixel').trim().toLowerCase() === 'aurora') return 0;
+    if (String(rawStyle || 'aurora').trim().toLowerCase() !== 'pixel') return 0;
     const n = Number(rawPx);
     if (n === 4 || n === 6 || n === 8) return n;
     return Number.isFinite(n) && n >= 2 && n <= 12 ? Math.round(n) : 6;
@@ -1728,7 +1728,7 @@ float jut = (fbm(vec2(px.x / 220.0 + t * 0.18, t * 0.11)) - 0.5) * 0.68 + (waveA
 float h = y + stretch * (0.36 * jut + 0.11 * (fbm(vec2(px.x / 90.0 - t * 0.21, t * 0.14 + 3.0)) - 0.5));
 float lPad = min(0.22, max(64.0 / max(res.x, 1.0), 0.14));
 float lStart = min(0.03, 18.0 / max(res.x, 1.0));
-float lFade = isPxR > 0.5 ? smoothstep(lStart, lPad, uv.x) : smoothstep(0.0, 0.14, uv.x);
+float lFade = isPxR > 0.5 ? smoothstep(lStart, lPad, uv.x) : (uSpectrum > 5.5 ? smoothstep(0.015, 0.18, uv.x) : smoothstep(0.0, 0.14, uv.x));
 float rFade = 1.0 - smoothstep(isPxR > 0.5 ? max(0.84, 1.0 - 52.0 / max(res.x, 1.0)) : 0.86, 1.0, uv.x);
 float glow = exp(-max(h, 0.0) * max(h, 0.0) * 4.0) * (0.76 + 0.42 * curtain) * lFade * rFade;
 float basePhase = px.x / max(res.x, 1.0) * 0.9 + t * (isPxR > 0.5 ? 0.12 : 0.15) + (isPxR > 0.5 ? 0.18 * fbm(q * 1.4) : 0.22 * fbm(q * 1.5));
@@ -2125,7 +2125,9 @@ outColor = clamp(vec4(premulRgb, outAlpha), 0.0, 1.0);
             const curtain = 0.5 + 0.32 * waveA + 0.18 * waveB;
             const jut = (valueNoise(cssX / 220 + timeSec * 0.18, timeSec * 0.11) - 0.5) * 0.68 + (waveA * 0.65 + waveB * 0.35) * 0.24;
             const hJut = Math.max(0, yNorm + 0.25 * stretchScale * jut);
-            const edgeFade = (uvX < 0.14 ? smooth(uvX / 0.14) : uvX > 0.86 ? smooth((1 - uvX) / 0.14) : 1);
+            const edgeFade = spectrumCode === 6
+              ? (uvX < 0.015 ? 0 : uvX < 0.18 ? smooth((uvX - 0.015) / 0.165) : uvX > 0.86 ? smooth((1 - uvX) / 0.14) : 1)
+              : (uvX < 0.14 ? smooth(uvX / 0.14) : uvX > 0.86 ? smooth((1 - uvX) / 0.14) : 1);
             const gVal = Math.exp(-hJut * hJut * 4.0) * (0.76 + 0.42 * curtain) * edgeFade * topSafe;
             let field = dark
               ? Math.min(1, gVal * 1.12 * darkBreathMod * presence)

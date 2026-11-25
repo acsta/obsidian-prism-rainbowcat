@@ -69,7 +69,7 @@ const DEFAULT_CONFIG = {
   hostLocalization: 'auto',
   autoUpdate: 'off',
   updateChannel: 'stable',
-  rainbowStyle: 'pixel',
+  rainbowStyle: 'aurora',
   rainbowPixelSize: '6',
   catCount: '4',
   catProps: 'on',
@@ -118,7 +118,7 @@ const VALIDATORS = {
   hostLocalization: ['auto', 'on', 'off'],
   autoUpdate: ['on', 'off'],
   updateChannel: ['stable', 'beta'],
-  rainbowStyle: ['pixel', 'aurora'],
+  rainbowStyle: ['aurora', 'pixel'],
   rainbowPixelSize: ['4', '6', '8'],
   catCount: ['1', '2', '4'],
   catProps: ['on', 'off'],
@@ -219,7 +219,7 @@ function reconcileConfigAliases(raw) {
     out.mascot = 'crab';
   }
   if (has('rainbowStyle')) {
-    out.rainbowStyle = out.rainbowStyle === 'aurora' ? 'aurora' : 'pixel';
+    out.rainbowStyle = out.rainbowStyle === 'pixel' ? 'pixel' : 'aurora';
   }
   if (has('rainbowPixelSize')) {
     const pxStr = String(out.rainbowPixelSize);
@@ -5807,7 +5807,7 @@ function buildConfigRefreshExpression(customConfig, extraMeta = null) {
         }
         document.documentElement.setAttribute('data-ag-prism-sidebar-studio', effectiveCfg?.sidebarStudio === 'on' ? 'on' : 'off');
         if (effectiveCfg?.accentTone === 'rainbow') {
-          document.documentElement.setAttribute('data-ag-rainbow-style', effectiveCfg.rainbowStyle === 'aurora' ? 'aurora' : 'pixel');
+          document.documentElement.setAttribute('data-ag-rainbow-style', effectiveCfg.rainbowStyle === 'pixel' ? 'pixel' : 'aurora');
           const rPx = String(effectiveCfg.rainbowPixelSize || '6');
           document.documentElement.setAttribute('data-ag-rainbow-px', rPx === '4' || rPx === '6' || rPx === '8' ? rPx : '6');
         } else {
@@ -6190,7 +6190,7 @@ function getInjectWrapperTemplate() {
           if (effectiveCfg?.thoughtTranslate && effectiveCfg.thoughtTranslate !== 'off') document.documentElement.setAttribute('data-ag-prism-thought-view', effectiveCfg.thoughtView === 'bilingual' ? 'bilingual' : 'immersive');
           else document.documentElement.removeAttribute('data-ag-prism-thought-view');
           if (effectiveCfg?.accentTone === 'rainbow') {
-            document.documentElement.setAttribute('data-ag-rainbow-style', effectiveCfg.rainbowStyle === 'aurora' ? 'aurora' : 'pixel');
+            document.documentElement.setAttribute('data-ag-rainbow-style', effectiveCfg.rainbowStyle === 'pixel' ? 'pixel' : 'aurora');
             const rPx = String(effectiveCfg.rainbowPixelSize || '6');
             document.documentElement.setAttribute('data-ag-rainbow-px', rPx === '4' || rPx === '6' || rPx === '8' ? rPx : '6');
           } else {
