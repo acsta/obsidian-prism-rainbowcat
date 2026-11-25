@@ -1,10 +1,10 @@
 // Obsidian Prism — Channel 8 Multi-Cat Sanctuary Client Runtime
-// 4 distinct pixel-art cat breeds sharing a single unified px: 1.5 Retina grid (0 Mixels):
-// - pusheen (Chonky Silver Tabby, 28x24 -> 42x36px): loaf, belly-roll, big yawn, greedy bowl munch, squishy pet bounce
-// - ginger  (Tiny Ginger Kitten,  20x21 -> 30x32px): bouncy hop-trot, butt-wiggle + butterfly pounce, cozy cuddle
-// - calico  (Fluffy Calico,       26x25 -> 39x38px): heterochromia eyes, plume tail, face groom, elegant big stretch
-// - ragdoll (Slender Siamese,     24x27 -> 36x41px): tall pointed ears, cocoa mask, coral bow, strut, post-scratch frenzy, head-tilt
-// Preserves: dark-theme crisp outer halo, 0Hz blur/hidden/peek pause, full VRAM reclaim, 13-signal semantics, __agPrismCatRimState.
+// 4 Kawaii Q-style pixel-art cats on a single unified px: 1.5 Retina grid (0 Mixels, 100% closed contours):
+// - pusheen (Round Silver Mochi Tabby, 24x23 -> 36x35px): plump dome loaf, happy biscuit kneading, soft pastel yawn, Q-squish
+// - ginger  (Tiny Apricot Kitten,      20x21 -> 30x32px): baby round head, white socks, bouncy 4-beat hop, butterfly wiggle+pounce
+// - calico  (Fluffy Cream Calico,      24x23 -> 36x35px): clean 3-patch coat, pure white face, heterochromia glint, paw-groom, bow-stretch
+// - ragdoll (Soft Cream-Latte Ragdoll, 24x24 -> 36x36px): plush 2-3px paws, clean ivory blaze, vivid sky-blue eyes, coral bow, gentle post-pat
+// Preserves: dark-theme 1px halo, 0Hz blur/hidden/peek pause, full VRAM reclaim, 13-signal semantics, __agPrismCatRimState.
 
 (function (root) {
   'use strict';
@@ -17,7 +17,6 @@
   const IDLE_NAP_AFTER_MS = 30000;
   const DARK_HALO_COLOR = 'rgba(216, 212, 248, 0.46)';
 
-  // Helper: guarantee exact uniform (cols x rows) grid bottom-aligned so feet are always flush on row (rows-1)
   function normPose(lines, cols, rows) {
     const out = [];
     const padTop = Math.max(0, rows - lines.length);
@@ -39,382 +38,379 @@
     return map;
   }
 
-  // ── 1. PUSHEEN: Chonky Silver-Grey American Shorthair Tabby (26x16 body -> 28x24 = 42x36px) ──
-  const PUSHEEN_POSES = buildPoseMap(26, 16, {
+  // ── 1. PUSHEEN: Plump Round Silver-Grey Mochi Tabby (22x15 body -> 24x23 = 36x35px) ──
+  const PUSHEEN_POSES = buildPoseMap(22, 15, {
     standA: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      '.O##o###s###o###O.........',
-      'O##p##o#p#o##p##OO....OO..',
-      'O######bbb##s#s##O...O#sO.',
-      'O####bbbbbb#s#s##O..O#s##O',
-      'O###bbbbbbbb##s##O.O##s#O.',
-      'O##bbbbbbbbb#s###OO#s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O###bbbbbbbbbb#######O....',
-      '.O###bbbbbbbb#######O.....',
-      '..OOw#O#w####O#w#OwO......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O....OO..',
+      'O#############O..O#sO.',
+      'O##o###o###o##O.O##sO.',
+      'O#p####w####p#OO#s##O.',
+      'O###bbbbbb##s###s##O..',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     standB: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      '.O##o###s###o###O.........',
-      'O##p##o#p#o##p##OO........',
-      'O######bbb##s#s##O...OO...',
-      'O####bbbbbb#s#s##O..O#sO..',
-      'O###bbbbbbbb##s##O.O#s##O.',
-      'O##bbbbbbbbb#s###OO##s#O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O###bbbbbbbbbb#######O....',
-      '.O###bbbbbbbb#######O.....',
-      '..OOw#O#w####O#w#OwO......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O........',
+      'O#############O...OO..',
+      'O##o###o###o##O..O#sO.',
+      'O#p####w####p#O.O##sO.',
+      'O###bbbbbb##s##OO#s#O.',
+      'O##bbbbbbbb#s#####OO..',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     blink: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      '.O#oo###s###oo##O.........',
-      'O##p##o#p#o##p##OO....OO..',
-      'O######bbb##s#s##O...O#sO.',
-      'O####bbbbbb#s#s##O..O#s##O',
-      'O###bbbbbbbb##s##O.O##s#O.',
-      'O##bbbbbbbbb#s###OO#s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O###bbbbbbbbbb#######O....',
-      '.O###bbbbbbbb#######O.....',
-      '..OOw#O#w####O#w#OwO......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O....OO..',
+      'O#############O..O#sO.',
+      'O#oo###o###oo#O.O##sO.',
+      'O#p####w####p#OO#s##O.',
+      'O###bbbbbb##s###s##O..',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     earL: [
-      '..........OO..............',
-      '...OO....O##O.............',
-      '..O##OOOO#ss#O............',
-      '.O###s#s##s#s###O.........',
-      '.O##o###s###o###O.........',
-      'O##p##o#p#o##p##OO....OO..',
-      'O######bbb##s#s##O...O#sO.',
-      'O####bbbbbb#s#s##O..O#s##O',
-      'O###bbbbbbbb##s##O.O##s#O.',
-      'O##bbbbbbbbb#s###OO#s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O###bbbbbbbbbb#######O....',
-      '.O###bbbbbbbb#######O.....',
-      '..OOw#O#w####O#w#OwO......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '..........OO..........',
+      '..OOO....O##O.........',
+      '.O###OOOOO##O.........',
+      '.O###s#s#s###O....OO..',
+      'O#############O..O#sO.',
+      'O##o###o###o##O.O##sO.',
+      'O#p####w####p#OO#s##O.',
+      'O###bbbbbb##s###s##O..',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     walk1: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      '.O##o###s###o###O.........',
-      'O##p##o#p#o##p##OO...OO...',
-      'O######bbb##s#s##O..O#sO..',
-      'O####bbbbbb#s#s##O.O#s##O.',
-      'O###bbbbbbbb##s##OO##s#O..',
-      'O##bbbbbbbbb#s####s###O...',
-      'O##bbbbbbbbbb########O....',
-      'O###bbbbbbbbbb######O.....',
-      '.O###bbbbbbbb######O......',
-      '..OwwO.O#w###O#w#.OwwO....',
-      '..OO...OwwO..OwwO..OO.....',
-      '........OO....OO..........',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O...OO...',
+      'O#############O.O#sO..',
+      'O##o###o###o##O.O##sO.',
+      'O#p####w####p#OO#s##O.',
+      'O###bbbbbb##s###s##O..',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '.O#wOO######OO#wO.....',
+      '.OwwO.OOOOOO.OwwO.....',
+      '..OO..........OO......',
     ],
     walk2: [
-      '..........................',
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      '.O##o###s###o###O.........',
-      'O##p##o#p#o##p##OO....OO..',
-      'O######bbb##s#s##O...O#sO.',
-      'O####bbbbbb#s#s##O..O#s##O',
-      'O###bbbbbbbb##s##O.O##s#O.',
-      'O##bbbbbbbbb#s###OO#s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      '.O###bbbbbbbb########O....',
-      '..OOw#O#wwO..OwwO#w#O.....',
-      '....OwwO.OO..OO.OwwO......',
-      '.....OO..........OO.......',
+      '......................',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.....OO..',
+      '.O###s#s#s###O...O#sO.',
+      'O#############O.O##sO.',
+      'O##o###o###o##OO#s##O.',
+      'O#p####w####p###s##O..',
+      'O###bbbbbb##s#####O...',
+      'O##bbbbbbbb#s#####O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..OOO#wOOOOO#wOOO.....',
+      '....OwwO...OwwO.......',
+      '.....OO.....OO........',
     ],
     sitA: [
-      '.....OO......OO...........',
-      '....O##O....O##O..........',
-      '...O#ssOOOOOOss#O.........',
-      '..O###s#s##s#s###O........',
-      '..O##o###s###o###O........',
-      '.O##p##o#p#o##p###O.......',
-      '.O#####s###s######O...OO..',
-      'O###bbbbbbbb####s##O.O#sO.',
-      'O##bbbbbbbbbb##s###OO#s##O',
-      'O##bbbbbbbbbb##s####s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O##bbbbbbbbbb########O....',
-      'O###bbbwwbbwwbbb####O.....',
-      '.O##O#wwO##Oww#O###O......',
-      '.O##O#wwO##Oww#O###O......',
-      '..OOOOOOOOOOOOOOOOO.......',
+      '....OO.....OO.........',
+      '...O##O...O##O........',
+      '...O##OOOOO##O........',
+      '..O###s#s#s###O.......',
+      '.O#############O..OO..',
+      '.O##o###o###o##O.O#sO.',
+      '.O#p####w####p#O.O##sO',
+      'O###bbbbbbbb###OO#s#O.',
+      'O##bbbbbbbbbb##s###O..',
+      'O##bbbbbbbbbb##s###O..',
+      'O##bbbbbbbbbb#####O...',
+      'O###bbbbbbbb######O...',
+      'O###ww#bb#ww#####O....',
+      '.O##wwObbOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     sitB: [
-      '.....OO......OO...........',
-      '....O##O....O##O..........',
-      '...O#ssOOOOOOss#O.........',
-      '..O###s#s##s#s###O........',
-      '..O##o###s###o###O........',
-      '.O##p##o#p#o##p###O.......',
-      '.O#####s###s######O.......',
-      'O###bbbbbbbb####s##O..OO..',
-      'O##bbbbbbbbbb##s###O.O#sO.',
-      'O##bbbbbbbbbb##s####O#s##O',
-      'O##bbbbbbbbbb#####s###s#O.',
-      'O##bbbbbbbbbb########OO...',
-      'O###bbbwwbbwwbbb####O.....',
-      '.O##O#wwO##Oww#O###O......',
-      '.O##O#wwO##Oww#O###O......',
-      '..OOOOOOOOOOOOOOOOO.......',
+      '....OO.....OO.........',
+      '...O##O...O##O........',
+      '...O##OOOOO##O........',
+      '..O###s#s#s###O.......',
+      '.O#############O......',
+      '.O##o###o###o##O..OO..',
+      '.O#p####w####p#O.O#sO.',
+      'O###bbbbbbbb###O.O##sO',
+      'O##bbbbbbbbbb##sO#s#O.',
+      'O##bbbbbbbbbb##s###O..',
+      'O##bbbbbbbbbb#####O...',
+      'O###bbbbbbbb######O...',
+      'O###ww#bb#ww#####O....',
+      '.O##wwObbOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     loaf1: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      'O###oo###s###oo##OO.......',
-      'O##p###o#p#o###p##sO..OO..',
-      'O##bb###s###s######O.O#sO.',
-      'O#bbbb######s#####sOO##O..',
-      'O#bbbbbb###s#######s##O...',
-      '.O##bbbbbbbb#########O....',
-      '..OOOOOOOOOOOOOOOOOOO.....',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##OO........',
+      '.O###s#s#s####OO......',
+      'O###############O.....',
+      'O#oo###o###oo##s#O.OO.',
+      'O#p####w####p##s#OO#sO',
+      'O###bbbbbbbb######s#O.',
+      'O##bbbbbbbbbb######O..',
+      '.O#bbbbbbbbbb#####O...',
+      '..OOOOOOOOOOOOOOOO....',
     ],
     loaf2: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      'O###oo###s###oo##OO.......',
-      'O##p###o#p#o###p##sO......',
-      'O##bb###s###s######O...OO.',
-      'O#bbbb######s#####sO..O#sO',
-      'O#bbbbbb###s#######OO##O..',
-      '.O##bbbbbbbb#########O....',
-      '..OOOOOOOOOOOOOOOOOOO.....',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##OO........',
+      '.O###s#s#s####OO......',
+      'O###############O.....',
+      'O#oo###o###oo##s#O....',
+      'O#p####w####p##s#O.OO.',
+      'O###bbbbbbbb######O#sO',
+      'O##bbbbbbbbbb#####s#O.',
+      '.O#bbbbbbbbbb#####OO..',
+      '..OOOOOOOOOOOOOOOO....',
     ],
-    belly1: [
-      '.........OO....OO.........',
-      '..OO....OwwO..OwwO...OO...',
-      '.O##O...O##O..O##O..O#sO..',
-      'O#ssOOOOO##OOOO##OOO#s##O.',
-      'O#o##o##bbbbbbbbbb###s#O..',
-      'O#p#p###bbbbbbbbbbb###O...',
-      'O######bbbbbbbbbbbb##O....',
-      '.O####bbbbbbbbbbbb##O.....',
-      '..O####s####s####s#O......',
-      '...OOOOOOOOOOOOOOOO.......',
+    knead1: [
+      '....OO.....OO.........',
+      '...O##O...O##O........',
+      '...O##OOOOO##O........',
+      '..O###s#s#s###O.......',
+      '.O###o#####o###O..OO..',
+      '.O##o#o###o#o##O.O#sO.',
+      '.O#p####w####p#O.O##sO',
+      'O###bbbbbbbb###OO#s#O.',
+      'O##bbbbbbbbbb##s###O..',
+      'O##bbbbbbbbbb##s###O..',
+      'O##bbwwbbbbbb#####O...',
+      'O##OwwwO#bbww####O....',
+      'O###OOO##OwwwO##O.....',
+      '.O#######OOOO##O......',
+      '..OOOOOOOOOOOOO.......',
     ],
-    belly2: [
-      '........OO......OO........',
-      '..OO...OwwO....OwwO.......',
-      '.O##O..O##O....O##O...OO..',
-      'O#ssOOOO##OOOOOO##OO.O#sO.',
-      'O#o##o##bbbbbbbbbb##O#s##O',
-      'O#p#p###bbbbbbbbbbb###s#O.',
-      'O######bbbbbbbbbbbb###OO..',
-      '.O####bbbbbbbbbbbb##O.....',
-      '..O####s####s####s#O......',
-      '...OOOOOOOOOOOOOOOO.......',
+    knead2: [
+      '....OO.....OO.........',
+      '...O##O...O##O........',
+      '...O##OOOOO##O........',
+      '..O###s#s#s###O.......',
+      '.O###o#####o###O......',
+      '.O##o#o###o#o##O..OO..',
+      '.O#p####w####p#O.O#sO.',
+      'O###bbbbbbbb###O.O##sO',
+      'O##bbbbbbbbbb##sO#s#O.',
+      'O##bbbbbbbbbb##s###O..',
+      'O##bbbbbbwwbb#####O...',
+      'O##wwbb#OwwwO####O....',
+      'O#OwwwO##OOO####O.....',
+      '.O#OOO#########O......',
+      '..OOOOOOOOOOOOO.......',
     ],
     yawn1: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O##o#s#s##s#o##O.........',
-      'O##o##o#s##o##o##O........',
-      'O##p####uu####p##OO...OO..',
-      'O######uuuu######O...O#sO.',
-      'O####bb#uu#bs#s##O..O#s##O',
-      'O###bbbbbbbb##s##O.O##s#O.',
-      'O##bbbbbbbbb#s###OO#s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O###bbbbbbbbbb#######O....',
-      '.O###bbbbbbbb#######O.....',
-      '..OOw#O#w####O#w#OwO......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O....OO..',
+      'O#oo#######oo#O..O#sO.',
+      'O#p####uu####pO.O##sO.',
+      'O######uu#####OO#s##O.',
+      'O###bbbbbb##s###s##O..',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     yawn2: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      'O##oo###s###oo###O........',
-      'O##p####uu####p##OO...OO..',
-      'O######bbb##s#s##O...O#sO.',
-      'O####bbbbbb#s#s##O..O#s##O',
-      'O###bbbbbbbb##s##O.O##s#O.',
-      'O##bbbbbbbbb#s###OO#s##O..',
-      'O##bbbbbbbbbb#####s###O...',
-      'O###bbbbbbbbbb#######O....',
-      '.O###bbbbbbbb#######O.....',
-      '..OOw#O#w####O#w#OwO......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O....OO..',
+      'O#oo#######oo#O..O#sO.',
+      'O#p####u#####pO.O##sO.',
+      'O#####bbbb####OO#s##O.',
+      'O###bbbbbb##s###s##O..',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     squish: [
-      '....OO........OO..........',
-      '...O##O......O##O.........',
-      '..O#ssOOOOOOOOss#O........',
-      '.O##o##s#s##s##o##OO......',
-      'O##o#o##s###s#o#o###OO.OO.',
-      'O#ppp###o#p#o###ppp###O#sO',
-      'O##bbbb#s###s##s######s##O',
-      'O#bbbbbbbb###s######s###O.',
-      'O##bbbbbbbbbb##########O..',
-      '.OOwwO#bbbbbbbb###OwwOO...',
-      '..OOOOOOOOOOOOOOOOOOOO....',
+      '...OO......OO.........',
+      '..O##O....O##O........',
+      '..O##OOOOOO##O........',
+      '.O####s#s#s###OO..OO..',
+      'O###o######o####OO#sO.',
+      'O##o#o#o##o#o###O##sO.',
+      'O#pp###w####pp##O#s#O.',
+      'O###bbbbbbbb##s###sO..',
+      'O##bbbbbbbbbb#s####O..',
+      'O###bbbbbbbb######O...',
+      '.O#ww#bbbbbb#ww##O....',
+      '..OOwwOOOOOOwwOOO.....',
+      '....OO......OO........',
     ],
     happy: [
-      '....OO......OO............',
-      '...O##O....O##O......OO...',
-      '..O#ssOOOOOOss#O....O#sO..',
-      '.O###s#s##s#s###O..O#s##O.',
-      '.O##o######o####O.O##s#O..',
-      'O##o#o####o#o###OO#s##O...',
-      'O#pp###o#p#o##pp#s###O....',
-      'O####sssssss########O.....',
-      'O##bb#########s####O......',
-      'O#bbbb######s#####O.......',
-      'O#bbbbbb###s######O.......',
-      'O##bbbbbbbb#######O.......',
-      '.O##bbbbbbbb#####O........',
-      '..OOw#O#w###O#w#OwO.......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O....OO...',
+      '..O##OOOOO##O...O#sO..',
+      '.O###s#s#s###O..O##sO.',
+      'O###o#####o###O.O#s#O.',
+      'O##o#o###o#o##OO#s##O.',
+      'O#pp###w####pp##s##O..',
+      'O###bbbbbb##s#####O...',
+      'O##bbbbbbbb#s#####O...',
+      'O##bbbbbbbb#######O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     eat1: [
-      '...................OO.....',
-      '..................O#sO....',
-      '.................O#s##O...',
-      '...OO.....OO....O##s#O....',
-      '..O##O...O##OOOO#s##O.....',
-      '.O#ssOOOOO#ss###s##O......',
-      'O###s#s####s######O.......',
-      'O#oo###s###oo#####O.......',
-      'O#ppp#o#p#o#ppp##O........',
-      'O##bbbb######bb##O........',
-      '.O#bbbbbbbbbbbb#O.........',
-      '..OOw#O#w###O#w#OwO.......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '...OO.....OO..........',
+      '..O##O...O##O....OO...',
+      '..O##OOOOO##O...O#sO..',
+      '.O###s#s#s###O..O##sO.',
+      'O#############OO#s##O.',
+      'O#oo###o###oo###s##O..',
+      'O#p####w####p#s###O...',
+      'O###bbbbbb###s####O...',
+      'O##bbbbbbbb#######O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     eat2: [
-      '....................OO....',
-      '...................O#sO...',
-      '..................O#s##O..',
-      '.................O##s#O...',
-      '...OO.....OO....O#s##O....',
-      '..O##O...O##OOOO#s##O.....',
-      '.O#ssOOOOO#ss###s##O......',
-      'O###s#s####s######O.......',
-      'O#oo###s###oo#####O.......',
-      'O#ppp#o#p#o#ppp##O........',
-      '.O#bbbbbbbbbbbb#O.........',
-      '..OOw#O#w###O#w#OwO.......',
-      '...OwwOwwO..OwwOwwO.......',
-      '....OO.OO....OO.OO........',
+      '......................',
+      '...OO.....OO.....OO...',
+      '..O##O...O##O...O#sO..',
+      '..O##OOOOO##O...O##sO.',
+      '.O###s#s#s###O.O#s##O.',
+      'O#############OO#s#O..',
+      'O#oo###o###oo##s##O...',
+      'O#p####w####p#####O...',
+      'O###bbbbbb########O...',
+      '.O##bbbbbb#######O....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     sleep1: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s##OOOO.......',
-      'O##oo###s###oo##s##OO.....',
-      'O##p##o#p#o##p##s####O....',
-      'O####################O.OO.',
-      'O###bbbbbbbbbbbbb###OO#sO.',
-      'O###bbbbbbbbbbbbb###O##O..',
-      '.O###bbbbbbbbbbbb##OOO....',
-      '..OOOOOOOOOOOOOOOOOO......',
+      '...OO.....OO..........',
+      '..O##O...O##OO........',
+      '..O##OOOOO####OO......',
+      '.O###s#s#s###s##O.....',
+      'O#############s##O.OO.',
+      'O#oo###o###oo####OO#sO',
+      'O#p####w####p#####s#O.',
+      'O###bbbbbbbbbb####OO..',
+      '.O##bbbbbbbbbb###O....',
+      '..OOOOOOOOOOOOOOO.....',
     ],
     sleep2: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#OOOO.......',
-      '.O###s#s##s#s####s#OO.....',
-      'O##oo###s###oo###s###O....',
-      'O##p##o#p#o##p#######O....',
-      'O####################O.OO.',
-      'O###bbbbbbbbbbbbb###OO#sO.',
-      'O###bbbbbbbbbbbbb###O##O..',
-      '.O###bbbbbbbbbbbb##OOO....',
-      '..OOOOOOOOOOOOOOOOOO......',
+      '......................',
+      '...OO.....OO..........',
+      '..O##O...O##OO........',
+      '..O##OOOOO####OO......',
+      '.O###s#s#s###s##O.....',
+      'O#############s##O.OO.',
+      'O#oo###o###oo####OO#sO',
+      'O#p####w####p#####s#O.',
+      'O###bbbbbbbbbb####OO..',
+      '.O##bbbbbbbbbb###O....',
+      '..OOOOOOOOOOOOOOO.....',
     ],
     wave1: [
-      '.....OO......OO...........',
-      '....O##O....O##O..........',
-      '...O#ssOOOOOOss#O.........',
-      '..O###s#s##s#s###O........',
-      '..O##o###s###o###O........',
-      '.O##p##o#p#o##p###O...OO..',
-      '.O#####s###s######O..O#sO.',
-      '.OO###bbbbbb####s##OO#s##O',
-      'Oww###bbbbbbbb##s####s##O.',
-      'OwwO##bbbbbbbb#####s###O..',
-      '.OO.##bbbbbbbb########O...',
-      '.O####bbbwwbbwwbbb###O....',
-      '..O###O#wwO##Oww#O##O.....',
-      '..O###O#wwO##Oww#O##O.....',
-      '...OOOOOOOOOOOOOOOOO......',
+      '....OO.....OO.........',
+      '...O##O...O##O........',
+      '...O##OOOOO##O........',
+      '..O###s#s#s###O...OO..',
+      '.O#############O.O#sO.',
+      '.O##o###o###o##O.O##sO',
+      'OO#p####w####p#OO#s#O.',
+      'Oww#bbbbbbbb###s###O..',
+      'Oww#bbbbbbbb###s###O..',
+      '.OO#bbbbbbbbb#####O...',
+      '.O##bbbbbbbbb#####O...',
+      '.O###bbbbbbb######O...',
+      '.O###ww#bb#ww####O....',
+      '..O##wwObbOww###O.....',
+      '...OOOOOOOOOOOOO......',
     ],
     wave2: [
-      '.....OO......OO...........',
-      '....O##O....O##O..........',
-      '...O#ssOOOOOOss#O.........',
-      '..O###s#s##s#s###O........',
-      '..O##o###s###o###O........',
-      '.O##p##o#p#o##p###O.......',
-      'OO#####s###s######O...OO..',
-      'Oww###bbbbbb####s##O.O#sO.',
-      'OwwO##bbbbbbbb##s###O#s##O',
-      '.OO.##bbbbbbbb#####s##s#O.',
-      'O#####bbbbbbbb#######OO...',
-      '.O####bbbwwbbwwbbb###O....',
-      '..O###O#wwO##Oww#O##O.....',
-      '..O###O#wwO##Oww#O##O.....',
-      '...OOOOOOOOOOOOOOOOO......',
+      '....OO.....OO.........',
+      '...O##O...O##O........',
+      '...O##OOOOO##O........',
+      '..O###s#s#s###O.......',
+      'OO#############O..OO..',
+      'Oww#o###o###o##O.O#sO.',
+      'Owwp####w####p#O.O##sO',
+      '.OO#bbbbbbbb###OO#s#O.',
+      '.O##bbbbbbbb###s###O..',
+      '.O##bbbbbbbbb##s###O..',
+      '.O##bbbbbbbbb#####O...',
+      '.O###bbbbbbb######O...',
+      '.O###ww#bb#ww####O....',
+      '..O##wwObbOww###O.....',
+      '...OOOOOOOOOOOOO......',
     ],
     dangle: [
-      '....OO......OO............',
-      '...O##O....O##O...........',
-      '..O#ssOOOOOOss#O..........',
-      '.O###s#s##s#s###O.........',
-      '.O#oo###s###oo##O.........',
-      'O##p##o#p#o##p##O.........',
-      'O################O........',
-      '.O#O##bbbbbb##O#O.........',
-      '.OwwO#bbbbbb#OwwO....OO...',
-      '..O###bbbbbb###O....O#sO..',
-      '..O###bbbbbb###OO..O#s##O.',
-      '..O############OO#s##O....',
-      '...O#O......O#OO#s#O......',
-      '...OwwO....OwwO.OO........',
-      '...OOO......OOO...........',
-      '..........................',
+      '...OO.....OO..........',
+      '..O##O...O##O.........',
+      '..O##OOOOO##O.........',
+      '.O###s#s#s###O........',
+      'O#oo###o###oo#O.......',
+      'O#p####w####p#O.......',
+      '.O###bbbbb###O........',
+      '.OwwObbbbbOwwO...OO...',
+      '..O##bbbbb##O...O#sO..',
+      '..O##bbbbb##O..O##sO..',
+      '..O#########OOO#s#O...',
+      '...O#wOOO#wOOOO#sO....',
+      '...OwwO.OwwO...OO.....',
+      '....OO...OO...........',
+      '......................',
     ],
   });
 
-  // ── 2. GINGER: Tiny Energetic Ginger Kitten (18x13 body -> 20x21 = 30x32px) ──
+  // ── 2. GINGER: Tiny Energetic Apricot Kitten (18x13 body -> 20x21 = 30x32px) ──
   const GINGER_POSES = buildPoseMap(18, 13, {
     standA: [
       '..OO....OO........',
@@ -424,12 +420,12 @@
       'O#wo####wo#O..O#sO',
       'O#oo#p##oo#O..O##O',
       '.O#pbbbb#pO...O#sO',
-      '..OObbbbOOOO.O##O.',
+      '..O#bbbb###O.O##O.',
       '..O#bbbb###OO##O..',
       '..O##bbb#####OO...',
-      '...O#w#O#w#w#O....',
-      '...OwwO.OwwOwO....',
-      '....OO...OO.OO....',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
     standB: [
       '..OO....OO........',
@@ -439,12 +435,12 @@
       'O#wo####wo#O..O#sO',
       'O#oo#p##oo#O..O##O',
       '.O#pbbbb#pO...O#sO',
-      '..OObbbbOOOO.O##O.',
+      '..O#bbbb###O.O##O.',
       '..O#bbbb###OO##O..',
       '..O##bbb#####OO...',
-      '...O#w#O#w#w#O....',
-      '...OwwO.OwwOwO....',
-      '....OO...OO.OO....',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
     blink: [
       '..OO....OO........',
@@ -454,57 +450,57 @@
       'O##########O..O#sO',
       'O#oo#p##oo#O..O##O',
       '.O#pbbbb#pO...O#sO',
-      '..OObbbbOOOO.O##O.',
+      '..O#bbbb###O.O##O.',
       '..O#bbbb###OO##O..',
       '..O##bbb#####OO...',
-      '...O#w#O#w#w#O....',
-      '...OwwO.OwwOwO....',
-      '....OO...OO.OO....',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
     earL: [
       '........OO........',
-      '.OO....O##O....OO.',
-      'O##OOOO#s#O...O#sO',
+      '.OOO...O##O....OO.',
+      'O###OOOO#sO...O#sO',
       'O###s##s###O..O##O',
       'O#wo####wo#O..O#sO',
       'O#oo#p##oo#O..O##O',
       '.O#pbbbb#pO...O#sO',
-      '..OObbbbOOOO.O##O.',
+      '..O#bbbb###O.O##O.',
       '..O#bbbb###OO##O..',
       '..O##bbb#####OO...',
-      '...O#w#O#w#w#O....',
-      '...OwwO.OwwOwO....',
-      '....OO...OO.OO....',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
-    hop1: [
-      '..................',
+    walk1: [
       '..OO....OO........',
       '.O##O..O##O...OO..',
       '.O#sOOOO#sO..O#sO.',
       'O###s##s###O..O##O',
       'O#wo####wo#O..O#sO',
       'O#oo#p##oo#O..O##O',
-      '.O#pbbbb#pOO.O##O.',
+      '.O#pbbbb#pO..O##O.',
       '..O#bbbb###OO##O..',
       '..O##bbb######O...',
-      '..OwwO#w##OwwO....',
-      '..OO..OwwO.OO.....',
-      '.......OO.........',
+      '.O#wOO####OO#wO...',
+      '.OwwO.OOOO.OwwO...',
+      '..OO........OO....',
+      '..................',
     ],
-    hop2: [
+    walk2: [
+      '..................',
       '..OO....OO.....OO.',
       '.O##O..O##O...O#sO',
       '.O#sOOOO#sO...O##O',
       'O###s##s###O..O#sO',
       'O#wo####wo#O..O##O',
-      'O#oo#p##oo#O.O#sO.',
-      '.O#pbbbb#pOO.O##O.',
+      'O#oo#p##oo#O.O##O.',
+      '.O#pbbbb#pOO.O#sO.',
       '..O#bbbb###OO##O..',
       '..O##bbb######O...',
-      '.OwwO....OwwOwO...',
-      '.OO.......OO.OO...',
-      '..................',
-      '..................',
+      '..OO#wOOOO#wOO....',
+      '...OwwO..OwwO.....',
+      '....OO....OO......',
     ],
     sitA: [
       '...OO....OO.......',
@@ -539,43 +535,45 @@
     wiggle1: [
       '..............OO..',
       '.............O#sO.',
-      '.............O##O.',
-      '..OO....OO..O#sO..',
-      '.O##O..O##O.O##O..',
-      '.O#sOOOO#sOO#sO...',
-      'O###s##s####s#O...',
+      '..OO....OO...O##O.',
+      '.O##O..O##O..O#sO.',
+      '.O#sOOOO#sO.O##O..',
+      'O###s##s###OO#sO..',
       'O#wo####wo####O...',
       'O#oo#p##oo####O...',
-      '.O#pbbbb#p###O....',
-      'OwwObbbb##OwwO....',
-      'OOO.OOOOO..OO.....',
+      '.O#pbbbb#p####O...',
+      'OwwObbbb#####O....',
+      'OOO.OOOOO#w##O....',
+      '.........OwwO.....',
+      '..........OO......',
     ],
     wiggle2: [
       '...............OO.',
       '..............O#sO',
-      '..............O##O',
-      '.............O#sO.',
-      '..OO....OO..O##O..',
-      '.O##O..O##OO#sO...',
-      '.O#sOOOO#s##s#O...',
-      'O###s##s######O...',
-      'O#wo####wo####O...',
-      'O#oo#p##oo###O....',
-      'OwwObbbb##OwwO....',
-      'OOO.OOOOO..OO.....',
-    ],
-    pounce: [
-      '..OO....OO.....OO.',
-      '.O##O..O##O...O#sO',
+      '..OO....OO....O##O',
+      '.O##O..O##O..O#sO.',
       '.O#sOOOO#sO..O##O.',
       'O###s##s###OO#sO..',
-      'O#wo####wo###O....',
-      'O#oo#p##oo###O....',
-      'Owwpbbbb####O.....',
-      'OO.O#bbb####O.....',
-      '....OOOOOOwwO.....',
+      'O#wo####wo####O...',
+      'O#oo#p##oo####O...',
+      '.O#pbbbb#p####O...',
+      'OwwObbbb#####O....',
+      'OOO.OOOOO#w##O....',
+      '.........OwwO.....',
       '..........OO......',
-      '..................',
+    ],
+    pounce: [
+      '..OO....OO........',
+      '.O##O..O##O....OO.',
+      '.O#sOOOO#sO...O#sO',
+      'O###s##s###O..O##O',
+      'O#wo####wo#O.O#sO.',
+      'O#oo#p##oo#OO##O..',
+      'Oww#bbbb######O...',
+      'OOO#bbbb#####O....',
+      '..O#####O#w##O....',
+      '...OOOOO.OwwO.....',
+      '..........OO......',
       '..................',
     ],
     happy: [
@@ -586,60 +584,60 @@
       'O##o####o##O..O##O',
       'O#o#o##o#o#O..O#sO',
       '.O#pbbpbbpO..O##O.',
-      '..OObbbbOOOOO##O..',
-      '..O#bbbb#####OO...',
-      '..O##bbb#####O....',
-      '...O#w#O#w#w#O....',
-      '...OwwO.OwwOwO....',
-      '....OO...OO.OO....',
+      '..O#bbbb###OO##O..',
+      '..O##bbb#####OO...',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
     eat1: [
-      '..............OO..',
-      '.............O#sO.',
-      '..OO....OO...O##O.',
-      '.O##O..O##O.O#sO..',
-      '.O#sOOOO#sOO##O...',
-      'O###s##s#####O....',
-      'O#oo#p##oo###O....',
-      'O#pbbbb#p###O.....',
-      '.O#bbbb#####O.....',
-      '..O#w#O#w#w#O.....',
-      '..OwwO.OwwOwO.....',
-      '...OO...OO.OO.....',
+      '..OO....OO........',
+      '.O##O..O##O...OO..',
+      '.O#sOOOO#sO..O#sO.',
+      'O###s##s###O.O##O.',
+      'O#oo#p##oo#OO#sO..',
+      'O#pbbbb#p###s#O...',
+      '.O#bbbb######O....',
+      '..O##bbb#####O....',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
     eat2: [
-      '...............OO.',
-      '..............O#sO',
-      '..............O##O',
-      '..OO....OO...O#sO.',
-      '.O##O..O##O.O##O..',
-      '.O#sOOOO#sOO##O...',
-      'O###s##s#####O....',
-      'O#oo#p##oo###O....',
-      '.O#pbbbb#####O....',
-      '..O#w#O#w#w#O.....',
-      '..OwwO.OwwOwO.....',
-      '...OO...OO.OO.....',
+      '..................',
+      '..OO....OO....OO..',
+      '.O##O..O##O..O#sO.',
+      '.O#sOOOO#sO..O##O.',
+      'O###s##s###OO#sO..',
+      'O#oo#p##oo###sO...',
+      'O#pbbbb#p####O....',
+      '.O#bbbb#####O.....',
+      '..O#w#O###O#wO....',
+      '..OwwO.OOO.OwwO...',
+      '...OO.......OO....',
     ],
     sleep1: [
       '..OO....OO........',
-      '.O##O..O##O.......',
-      '.O#sOOOO#sOOOO....',
+      '.O##O..O##OO......',
+      '.O#sOOOO#s##OO....',
       'O###s##s###s##O...',
       'O#oo#p##oo####OO..',
-      'O#pbbbbbb####O#sO.',
-      '.O#bbbbbb###O##O..',
-      '..OOOOOOOOOOOO....',
+      'O#pbbbbbbb###O#sO.',
+      'O##bbbbbbb##O##O..',
+      '.O##bbbbbb##OOO...',
+      '..OOOOOOOOOO......',
     ],
     sleep2: [
+      '..................',
       '..OO....OO........',
-      '.O##O..O##OOOO....',
-      '.O#sOOOO#s##s#O...',
-      'O###s##s######O...',
+      '.O##O..O##OO......',
+      '.O#sOOOO#s##OO....',
+      'O###s##s###s##O...',
       'O#oo#p##oo####OO..',
-      'O#pbbbbbb####O#sO.',
-      '.O#bbbbbb###O##O..',
-      '..OOOOOOOOOOOO....',
+      'O#pbbbbbbb###O#sO.',
+      'O##bbbbbbb##O##O..',
+      '.O##bbbbbb##OOO...',
+      '..OOOOOOOOOO......',
     ],
     wave1: [
       '...OO....OO.......',
@@ -648,7 +646,7 @@
       '.O###s##s###O.O##O',
       '.O#wo####wo#O.O#sO',
       '.O#oo#p##oo#O.O##O',
-      'OO#pbbbb#pO..O##O.',
+      'OO#pbbbb#p#O.O##O.',
       'Owwbbbbbb##OO##O..',
       '.OObbbbbb#####O...',
       '..O##bbbb#####O...',
@@ -661,8 +659,8 @@
       '..O#sOOOO#sO.O#sO.',
       '.O###s##s###OO##O.',
       'OO#wo####wo#O.O#sO',
-      'Oww#oo#p##oo#OO##O',
-      '.OO#pbbbb#pO..O#O.',
+      'Oww#oo#p##ooOO##O.',
+      '.OO#pbbbb#pOO##O..',
       '..O#bbbbbb####O...',
       '..O##bbbb#####O...',
       '..O#ww#ww####O....',
@@ -675,757 +673,687 @@
       'O###s##s###O......',
       'O#oo####oo#O......',
       'O#p#bbbb#p#O......',
-      '.O#ObbbbO#O...OO..',
-      '.OwwObbOwwO..O#sO.',
-      '..O#bbbb#OO..O##O.',
-      '..O######OO#s#O...',
-      '...OwwOwwO.OO.....',
-      '...OO..OO.........',
+      '.O#ObbbbO#O..OO...',
+      '.OwwObbOwwO.O#sO..',
+      '..O#bbbb#OOO#sO...',
+      '..O######OO##O....',
+      '...OwwOwwOOOO.....',
+      '....OO.OO.........',
       '..................',
     ],
   });
 
-  // ── 3. CALICO: Fluffy Heterochromia Longhair Calico with Plume Tail (24x17 body -> 26x25 = 39x38px) ──
-  const CALICO_POSES = buildPoseMap(24, 17, {
+  // ── 3. CALICO: Fluffy Cream Calico — Clean 3-Patch Coat, Pure White Face, Big Plume Tail (22x15 -> 36x35px) ──
+  const CALICO_POSES = buildPoseMap(22, 15, {
     standA: [
-      '...OO.....OO......OOOO..',
-      '..OkkO...OaaO....O#aa#O.',
-      '..OkkOOOOOaaO...O#a##k#O',
-      '.Okk####a###aO..O##kk##O',
-      '.Ok##L###R##aO.O#aa###kO',
-      'O##p#o#p#o#p#O.O##a##k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      'O##w####kk###aa###O.....',
-      '.O######k###aa###O......',
-      '..O###O###O###O#O.......',
-      '..O##wO##wO##wOwO.......',
-      '..OwwwOwwwOwwwOwO.......',
-      '...OOO.OOO.OOO.O........',
+      '...OO....OO.....OOO...',
+      '..OaaO..OkkO...OaaaO..',
+      '..OaaOOOOkkO..Oaa##kO.',
+      '.Oaa#####kk#O.O#kkk#O.',
+      '.Oa##o###o##O.O##aa#O.',
+      'O#p##L#p#R#pO.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      'O###wwwww##kk##a#O....',
+      '.O##wwwww####aaaO.....',
+      '.O###www#####aaO......',
+      '..O#w#O####O#wO.......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     standB: [
-      '...OO.....OO.......OOOO.',
-      '..OkkO...OaaO.....O#aa#O',
-      '..OkkOOOOOaaO....O#a##kO',
-      '.Okk####a###aO...O##kk#O',
-      '.Ok##L###R##aO..O#aa##kO',
-      'O##p#o#p#o#p#O..O##a#k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      'O##w####kk###aa###O.....',
-      '.O######k###aa###O......',
-      '..O###O###O###O#O.......',
-      '..O##wO##wO##wOwO.......',
-      '..OwwwOwwwOwwwOwO.......',
-      '...OOO.OOO.OOO.O........',
+      '...OO....OO......OOO..',
+      '..OaaO..OkkO....OaaaO.',
+      '..OaaOOOOkkO...Oaa##kO',
+      '.Oaa#####kk#O..O#kkk#O',
+      '.Oa##o###o##O.O##aa#O.',
+      'O#p##L#p#R#pO.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      'O###wwwww##kk##a#O....',
+      '.O##wwwww####aaaO.....',
+      '.O###www#####aaO......',
+      '..O#w#O####O#wO.......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     blink: [
-      '...OO.....OO......OOOO..',
-      '..OkkO...OaaO....O#aa#O.',
-      '..OkkOOOOOaaO...O#a##k#O',
-      '.Okk####a###aO..O##kk##O',
-      '.Ok#oo###oo#aO.O#aa###kO',
-      'O##p#o#p#o#p#O.O##a##k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      'O##w####kk###aa###O.....',
-      '.O######k###aa###O......',
-      '..O###O###O###O#O.......',
-      '..O##wO##wO##wOwO.......',
-      '..OwwwOwwwOwwwOwO.......',
-      '...OOO.OOO.OOO.O........',
+      '...OO....OO.....OOO...',
+      '..OaaO..OkkO...OaaaO..',
+      '..OaaOOOOkkO..Oaa##kO.',
+      '.Oaa#####kk#O.O#kkk#O.',
+      '.Oa#oo###oo#O.O##aa#O.',
+      'O#p####p###pO.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      'O###wwwww##kk##a#O....',
+      '.O##wwwww####aaaO.....',
+      '.O###www#####aaO......',
+      '..O#w#O####O#wO.......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     earL: [
-      '..........OO......OOOO..',
-      '..OO.....OaaO....O#aa#O.',
-      '.OkkOOOOO#aaO...O#a##k#O',
-      '.Okk####a###aO..O##kk##O',
-      '.Ok##L###R##aO.O#aa###kO',
-      'O##p#o#p#o#p#O.O##a##k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      'O##w####kk###aa###O.....',
-      '.O######k###aa###O......',
-      '..O###O###O###O#O.......',
-      '..O##wO##wO##wOwO.......',
-      '..OwwwOwwwOwwwOwO.......',
-      '...OOO.OOO.OOO.O........',
+      '.........OO.....OOO...',
+      '..OOO...OkkO...OaaaO..',
+      '.OaaaOOOOkkO..Oaa##kO.',
+      '.Oaa#####kk#O.O#kkk#O.',
+      '.Oa##o###o##O.O##aa#O.',
+      'O#p##L#p#R#pO.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      'O###wwwww##kk##a#O....',
+      '.O##wwwww####aaaO.....',
+      '.O###www#####aaO......',
+      '..O#w#O####O#wO.......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     walk1: [
-      '...OO.....OO......OOOO..',
-      '..OkkO...OaaO....O#aa#O.',
-      '..OkkOOOOOaaO...O#a##k#O',
-      '.Okk####a###aO..O##kk##O',
-      '.Ok##L###R##aO.O#aa###kO',
-      'O##p#o#p#o#p#O.O##a##k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      'O##w####kk###aa###O.....',
-      '.O######k###aa###O......',
-      '.OwwwO.##O##wO.OwwwO....',
-      '.OOO...OwwwO....OOO.....',
-      '........OOO.............',
+      '...OO....OO.....OOO...',
+      '..OaaO..OkkO...OaaaO..',
+      '..OaaOOOOkkO..Oaa##kO.',
+      '.Oaa#####kk#O.O#kkk#O.',
+      '.Oa##o###o##O.O##aa#O.',
+      'O#p##L#p#R#pO.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      'O###wwwww##kk##a#O....',
+      '.O##wwwww####aaaO.....',
+      '.O###www#####aaO......',
+      '.O#wOO#####OO#wO......',
+      '.OwwO.OOOOO.OwwO......',
+      '..OO.........OO.......',
     ],
     walk2: [
-      '........................',
-      '...OO.....OO.......OOOO.',
-      '..OkkO...OaaO.....O#aa#O',
-      '..OkkOOOOOaaO....O#a##kO',
-      '.Okk####a###aO...O##kk#O',
-      '.Ok##L###R##aO..O#aa##kO',
-      'O##p#o#p#o#p#O..O##a#k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      '.O######k###aa###O......',
-      '..O###OwwwO.OwwwO#O.....',
-      '..OwwwO.OO...OO.OwwO....',
-      '...OOO...........OO.....',
+      '......................',
+      '...OO....OO......OOO..',
+      '..OaaO..OkkO....OaaaO.',
+      '..OaaOOOOkkO...Oaa##kO',
+      '.Oaa#####kk#O..O#kkk#O',
+      '.Oa##o###o##O.O##aa#O.',
+      'O#p##L#p#R#pO.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      '.O##wwwww##kk##a#O....',
+      '.O###www#####aaaO.....',
+      '..OOO#wOOOO#wOOO......',
+      '....OwwO..OwwO........',
+      '.....OO....OO.........',
     ],
     sitA: [
-      '....OO.....OO...........',
-      '...OkkO...OaaO....OOOO..',
-      '...OkkOOOOOaaO...O#aa#O.',
-      '..Okk####a###aO.O#a##k#O',
-      '..Ok##L###R##aO.O##kk##O',
-      '.O##p#o#p#o#p##OO#aa##kO',
-      '.O#wwwwwwwwwww#OO##a#k#O',
-      'O##wwwwwwwwwww##O##kk##O',
-      'O##wwwwwwwwwwwk#O#a###O.',
-      'O###wwwwwwwwwkk#OO#k#O..',
-      'O###wwwwwwwwwkk##a###O..',
-      'O####wwwwwww#k###aa#O...',
-      'O#####wwwww#####aa##O...',
-      '.O##OwwwOwwOwwwO###O....',
-      '.O##OwwwO##OwwwO###O....',
-      '..OOOOOOOOOOOOOOOOO.....',
+      '....OO....OO..........',
+      '...OaaO..OkkO....OOO..',
+      '...OaaOOOOkkO...OaaaO.',
+      '..Oaa#####kk#O.Oaa##kO',
+      '..Oa##o###o##O.O#kkk#O',
+      '.O#p##L#p#R#pO.O##aa#O',
+      '.O#wwwwwwwww#OO##aa#O.',
+      'O##wwwwwwwww##O###k#O.',
+      'O##wwwwwwwww#kk##k#O..',
+      'O##wwwwwwwww#kkk##O...',
+      'O###wwwwwww##kk#a#O...',
+      'O###wwwwwww###aaaO....',
+      'O###ww#ww#ww##aaO.....',
+      '.O##wwOwwOww###O......',
+      '..OOOOOOOOOOOOO.......',
     ],
     sitB: [
-      '....OO.....OO...........',
-      '...OkkO...OaaO.....OOOO.',
-      '...OkkOOOOOaaO....O#aa#O',
-      '..Okk####a###aO..O#a##kO',
-      '..Ok##L###R##aO..O##kk#O',
-      '.O##p#o#p#o#p##O.O#aa#kO',
-      '.O#wwwwwwwwwww#O.O##ak#O',
-      'O##wwwwwwwwwww##O##kk##O',
-      'O##wwwwwwwwwwwk#O#a###O.',
-      'O###wwwwwwwwwkk#OO#k#O..',
-      'O###wwwwwwwwwkk##a###O..',
-      'O####wwwwwww#k###aa#O...',
-      'O#####wwwww#####aa##O...',
-      '.O##OwwwOwwOwwwO###O....',
-      '.O##OwwwO##OwwwO###O....',
-      '..OOOOOOOOOOOOOOOOO.....',
+      '....OO....OO..........',
+      '...OaaO..OkkO.....OOO.',
+      '...OaaOOOOkkO....OaaaO',
+      '..Oaa#####kk#O..Oaa#kO',
+      '..Oa##o###o##O..O#kk#O',
+      '.O#p##L#p#R#pO.O##aa#O',
+      '.O#wwwwwwwww#O.O#aa##O',
+      'O##wwwwwwwww##OO##k#O.',
+      'O##wwwwwwwww#kk##k#O..',
+      'O##wwwwwwwww#kkk##O...',
+      'O###wwwwwww##kk#a#O...',
+      'O###wwwwwww###aaaO....',
+      'O###ww#ww#ww##aaO.....',
+      '.O##wwOwwOww###O......',
+      '..OOOOOOOOOOOOO.......',
     ],
     groom1: [
-      '....OO.....OO...........',
-      '...OkkO...OaaO....OOOO..',
-      '...OkkOOOOOaaO...O#aa#O.',
-      '..Okk####a###aO.O#a##k#O',
-      '..Ok#oo###oo#aO.O##kk##O',
-      '.O##p#o#p#o#p##OO#aa##kO',
-      '.OOwwwwwwwwwww#OO##a#k#O',
-      'OwwOwwwwwwwwww##O##kk##O',
-      'Oww#wwwwwwwwwwk#O#a###O.',
-      '.OO##wwwwwwwwkk#OO#k#O..',
-      'O###wwwwwwwwwkk##a###O..',
-      'O####wwwwwww#k###aa#O...',
-      'O#####wwwww#####aa##O...',
-      '.O##OwwwO##OwwwO###O....',
-      '.O##OwwwO##OwwwO###O....',
-      '..OOOOOOOOOOOOOOOOO.....',
+      '....OO....OO..........',
+      '...OaaO..OkkO....OOO..',
+      '...OaaOOOOkkO...OaaaO.',
+      '..Oaa#####kk#O.Oaa##kO',
+      '..Oa#o#####o#O.O#kkk#O',
+      '.O##o#o#p#o#oO.O##aa#O',
+      'OO#p#wwwwwww#OO##aa#O.',
+      'Oww#wwwwwwww##O###k#O.',
+      'Oww#wwwwwwww#kk##k#O..',
+      '.OO#wwwwwwww#kkk##O...',
+      '.O##wwwwwww##kk#a#O...',
+      '.O###wwwww####aaaO....',
+      '.O###ww#ww#ww#aaO.....',
+      '..O##wwOwwOww##O......',
+      '...OOOOOOOOOOOO.......',
     ],
     groom2: [
-      '....OO.....OO...........',
-      '...OkkO...OaaO.....OOOO.',
-      '...OkkOOOOOaaO....O#aa#O',
-      '..Okk####a###aO..O#a##kO',
-      '.OO#oo###oo#aO...O##kk#O',
-      'OwwO#p#o#p#o#p#O.O#aa#kO',
-      'Oww#wwwwwwwwww#O.O##ak#O',
-      '.OO#wwwwwwwwww##O##kk##O',
-      'O##wwwwwwwwwwwk#O#a###O.',
-      'O###wwwwwwwwwkk#OO#k#O..',
-      'O###wwwwwwwwwkk##a###O..',
-      'O####wwwwwww#k###aa#O...',
-      'O#####wwwww#####aa##O...',
-      '.O##OwwwO##OwwwO###O....',
-      '.O##OwwwO##OwwwO###O....',
-      '..OOOOOOOOOOOOOOOOO.....',
+      '....OO....OO..........',
+      '...OaaO..OkkO.....OOO.',
+      '...OaaOOOOkkO....OaaaO',
+      '..Oaa#####kk#O..Oaa#kO',
+      '.OOa#o#####o#O..O#kk#O',
+      'Oww#o#o#p#o#oO.O##aa#O',
+      'Owwp#wwwwwww#O.O#aa##O',
+      '.OO#wwwwwwww##OO##k#O.',
+      'O##wwwwwwwww#kk##k#O..',
+      'O##wwwwwwwww#kkk##O...',
+      'O###wwwwwww##kk#a#O...',
+      'O###wwwwwww###aaaO....',
+      'O###ww#ww#ww##aaO.....',
+      '.O##wwOwwOww###O......',
+      '..OOOOOOOOOOOOO.......',
     ],
     stretch1: [
-      '.................OOOO...',
-      '................O#aa#O..',
-      '...............O#a##k#O.',
-      '...............O##kk##O.',
-      '..............O#aa###kO.',
-      '..............O##a##k#O.',
-      '...OO.....OO..O###kk##O.',
-      '..OkkO...OaaO.O#a####O..',
-      '..OkkOOOOOaaOO###kk##O..',
-      '.Okk####a###a###kk#aaO..',
-      '.Ok#oo###oo#a###k##aaO..',
-      'O##p#o#p#o#p#w####aa#O..',
-      '.O#wwwwwwwwww####aa#O...',
-      'OwwwOOwwwwww#####O#wO...',
-      'OOOO..OOOOO#####OwwwO...',
-      '...........OOOOO.OOO....',
+      '..............OOO.....',
+      '.............OaaaO....',
+      '............Oaa##kO...',
+      '...OO....OO.O#kkk#O...',
+      '..OaaO..OkkOO##aa#O...',
+      '..OaaOOOOkk##aa###O...',
+      '.Oaa#####kk###kk##O...',
+      '.Oa##o###o####kkk#O...',
+      'O#p##L#p#R#p###kk#O...',
+      'O#wwwwwwwww###aaaO....',
+      '.O##wwwwwww###aaO.....',
+      '..O#w#O####O#w#wO.....',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     stretch2: [
-      '..................OOOO..',
-      '.................O#aa#O.',
-      '................O#a##k#O',
-      '................O##kk##O',
-      '...............O#aa###kO',
-      '...............O##a##k#O',
-      '...OO.....OO...O###kk##O',
-      '..OkkO...OaaO..O#a####O.',
-      '..OkkOOOOOaaOO###kk##O..',
-      '.Okk####a###a###kk#aaO..',
-      '.Ok#oo###oo#a###k##aaO..',
-      'O##p#o#p#o#p#w####aa#O..',
-      '.O#wwwwwwwwww####aa#O...',
-      'OwwwOOwwwwww#####O#wO...',
-      'OOOO..OOOOO#####OwwwO...',
-      '...........OOOOO.OOO....',
+      '...............OOO....',
+      '..............OaaaO...',
+      '.............Oaa##kO..',
+      '.............O#kkk#O..',
+      '............O##aa##O..',
+      '...OO....OO.O#aa###O..',
+      '..OaaO..OkkOO##kkk#O..',
+      '..OaaOOOOkk###kkkk#O..',
+      '.Oaa#####kk###kk#aaO..',
+      '.Oa#oo###oo###k#aaaO..',
+      'O#p####p###p###aaa#O..',
+      'Owwww#wwwwwww##O#w#O..',
+      '.OOOO#wwwwww###OwwO...',
+      '.....OOOOOOOOOO.OO....',
     ],
     happy: [
-      '...OO.....OO......OOOO..',
-      '..OkkO...OaaO....O#aa#O.',
-      '..OkkOOOOOaaO...O#a##k#O',
-      '.Okk####a###aO..O##kk##O',
-      '.Ok##o###o##aO.O#aa###kO',
-      'O##po#o#o#o#pO.O##a##k#O',
-      'O#wwwww#wwwwwO.O###kk##O',
-      '.OwwwwwwwwwwOO.O#a####O.',
-      '.O#wwwwwwwwk##OO##k##O..',
-      '.O##wwwwwwkk##a###k#O...',
-      'O###wwww#kk##aa####O....',
-      'O##w####kk###aa###O.....',
-      '.O######k###aa###O......',
-      '..O###O###O###O#O.......',
-      '..O##wO##wO##wOwO.......',
-      '..OwwwOwwwOwwwOwO.......',
-      '...OOO.OOO.OOO.O........',
+      '...OO....OO.....OOO...',
+      '..OaaO..OkkO...OaaaO..',
+      '..OaaOOOOkkO..Oaa##kO.',
+      '.Oaa#####kk#O.O#kkk#O.',
+      '.Oa##o###o##O.O##aa#O.',
+      'O#p#o#o#o#o#O.O#aa##O.',
+      'O#wwwwwwwww#OO###k##O.',
+      'O##wwwwwww##kk###k#O..',
+      'O##wwwwwww#kkk###OO...',
+      'O###wwwww##kk##a#O....',
+      '.O##wwwww####aaaO.....',
+      '.O###www#####aaO......',
+      '..O#w#O####O#wO.......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     eat1: [
-      '..................OOOO..',
-      '.................O#aa#O.',
-      '................O#a##k#O',
-      '................O##kk##O',
-      '...OO....OO....O#aa###kO',
-      '..OkkO..OaaOOOO##a##k#O.',
-      '.OkkOOOOOaa#####kk###O..',
-      'Okk####a###a###kk#aaO...',
-      'O#oo###oo#a####k##aaO...',
-      'O#p#o#p#o#pw#####aa#O...',
-      '.O#wwwwwwww#####aa#O....',
-      '..O###O###O###O###O.....',
-      '..OwwwOwwwOwwwOwwwO.....',
-      '...OOO.OOO.OOO.OOO......',
+      '...OO....OO......OOO..',
+      '..OaaO..OkkO....OaaaO.',
+      '..OaaOOOOkkO...Oaa##kO',
+      '.Oaa#####kk#O..O#kkk#O',
+      '.Oa#oo###oo#O.O##aa#O.',
+      'O#p####p###pOO#aa###O.',
+      'O#wwwwwwwww###kk###O..',
+      'O##wwwwwww###kkk##O...',
+      '.O##wwwww####aaa#O....',
+      '.O###www#####aa#O.....',
+      '..O#w#O####O#w#O......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     eat2: [
-      '...................OOOO.',
-      '..................O#aa#O',
-      '.................O#a##kO',
-      '.................O##kk#O',
-      '................O#aa##kO',
-      '...OO....OO....O##a##k#O',
-      '..OkkO..OaaOOOO##kk###O.',
-      '.OkkOOOOOaa#####kk#aaO..',
-      'Okk####a###a###k##aaO...',
-      'O#oo###oo#a#####aa#O....',
-      '.O#wwwwwwww#####aa#O....',
-      '..O###O###O###O###O.....',
-      '..OwwwOwwwOwwwOwwwO.....',
-      '...OOO.OOO.OOO.OOO......',
+      '......................',
+      '...OO....OO.....OOO...',
+      '..OaaO..OkkO...OaaaO..',
+      '..OaaOOOOkkO..Oaa##kO.',
+      '.Oaa#####kk#O.O#kkk#O.',
+      '.Oa#oo###oo#OO##aa##O.',
+      'O#p####p###p##kk###O..',
+      'O#wwwwwwwww##kkk##O...',
+      '.O##wwwwwww##aaa#O....',
+      '.O###wwwww###aa#O.....',
+      '..O#w#O####O#w#O......',
+      '..OwwO.OOOO.OwwO......',
+      '...OO........OO.......',
     ],
     sleep1: [
-      '...OO.....OO............',
-      '..OkkO...OaaO...........',
-      '..OkkOOOOOaaOOOOO.......',
-      '.Okk####a###a##kkOO.....',
-      'O#oo###oo#a###kk#aaO....',
-      'O#p#o#p#o#pw##k##aaO.OO.',
-      'O#wwwwwwwwww####aa#OOaaO',
-      'O##wwwwwwwww####a##O#kkO',
-      '.O##wwwwwww#######O##aO.',
-      '..OOOOOOOOOOOOOOOOOOOO..',
+      '...OO....OO...........',
+      '..OaaO..OkkOO.........',
+      '..OaaOOOOkk##OO.......',
+      '.Oaa#####kk##aaO......',
+      'O#oo####oo###aa#O.OO..',
+      'O#p#####p####kk#OOaaO.',
+      'O#wwwwwwwwww#kk###kkO.',
+      'O##wwwwwwwww####aakO..',
+      '.O##wwwwwwww###aaaO...',
+      '..OOOOOOOOOOOOOOOO....',
     ],
     sleep2: [
-      '...OO.....OO............',
-      '..OkkO...OaaOOOOO.......',
-      '..OkkOOOOOaa###kkOO.....',
-      '.Okk####a###a##k#aaO....',
-      'O#oo###oo#a#####aa#O....',
-      'O#p#o#p#o#pw####aa#O.OO.',
-      'O#wwwwwwwwww####aa#OOaaO',
-      'O##wwwwwwwww####a##O#kkO',
-      '.O##wwwwwww#######O##aO.',
-      '..OOOOOOOOOOOOOOOOOOOO..',
+      '......................',
+      '...OO....OO...........',
+      '..OaaO..OkkOO.........',
+      '..OaaOOOOkk##OO.......',
+      '.Oaa#####kk##aaO......',
+      'O#oo####oo###aa#O.OO..',
+      'O#p#####p####kk#OOaaO.',
+      'O#wwwwwwwwww#kk###kkO.',
+      'O##wwwwwwwww####aakO..',
+      '.O##wwwwwwww###aaaO...',
+      '..OOOOOOOOOOOOOOOO....',
     ],
     wave1: [
-      '....OO.....OO...........',
-      '...OkkO...OaaO....OOOO..',
-      '...OkkOOOOOaaO...O#aa#O.',
-      '..Okk####a###aO.O#a##k#O',
-      '..Ok##L###R##aO.O##kk##O',
-      '.O##p#o#p#o#p##OO#aa##kO',
-      '.OOwwwwwwwwwww#OO##a#k#O',
-      'Oww#wwwwwwwwww##O##kk##O',
-      'OwwOwwwwwwwwwwk#O#a###O.',
-      '.OO##wwwwwwwwkk#OO#k#O..',
-      'O###wwwwwwwwwkk##a###O..',
-      'O####wwwwwww#k###aa#O...',
-      '.O##OwwwO##OwwwO###O....',
-      '.O##OwwwO##OwwwO###O....',
-      '..OOOOOOOOOOOOOOOOO.....',
+      '....OO....OO..........',
+      '...OaaO..OkkO....OOO..',
+      '...OaaOOOOkkO...OaaaO.',
+      '..Oaa#####kk#O.Oaa##kO',
+      '..Oa##o###o##O.O#kkk#O',
+      '.O#p##L#p#R#pO.O##aa#O',
+      'OO#wwwwwwwww#OO##aa#O.',
+      'Owwwwwwwwwww##O###k#O.',
+      'Owwwwwwwwwww#kk##k#O..',
+      '.OOwwwwwwwww#kkk##O...',
+      '.O##wwwwwww##kk#a#O...',
+      '.O###wwwww####aaaO....',
+      '.O###ww#ww#ww#aaO.....',
+      '..O##wwOwwOww##O......',
+      '...OOOOOOOOOOOO.......',
     ],
     wave2: [
-      '....OO.....OO...........',
-      '...OkkO...OaaO.....OOOO.',
-      '...OkkOOOOOaaO....O#aa#O',
-      '..Okk####a###aO..O#a##kO',
-      '..Ok##L###R##aO..O##kk#O',
-      'OO##p#o#p#o#p##O.O#aa#kO',
-      'Oww#wwwwwwwwww#O.O##ak#O',
-      'OwwOwwwwwwwwww##O##kk##O',
-      '.OO#wwwwwwwwwwk#O#a###O.',
-      'O###wwwwwwwwwkk#OO#k#O..',
-      'O####wwwwwww#k###aa#O...',
-      '.O##OwwwO##OwwwO###O....',
-      '.O##OwwwO##OwwwO###O....',
-      '..OOOOOOOOOOOOOOOOO.....',
+      '....OO....OO..........',
+      '...OaaO..OkkO.....OOO.',
+      '...OaaOOOOkkO....OaaaO',
+      '..Oaa#####kk#O..Oaa#kO',
+      'OOa##o###o##O...O#kk#O',
+      'Owwp##L#p#R#pO.O##aa#O',
+      'Oww#wwwwwwww#O.O#aa##O',
+      '.OO#wwwwwwww##OO##k#O.',
+      'O##wwwwwwwww#kk##k#O..',
+      'O##wwwwwwwww#kkk##O...',
+      'O###wwwwwww##kk#a#O...',
+      'O###wwwwwww###aaaO....',
+      'O###ww#ww#ww##aaO.....',
+      '.O##wwOwwOww###O......',
+      '..OOOOOOOOOOOOO.......',
     ],
     dangle: [
-      '...OO.....OO............',
-      '..OkkO...OaaO...........',
-      '..OkkOOOOOaaO...........',
-      '.Okk####a###aO..........',
-      '.Ok#oo###oo#aO..........',
-      'O##p#o#p#o#p#O..........',
-      'O#wwwwwwwwwwwO..........',
-      '.O#OwwwwwwwO#O....OOOO..',
-      '.OwwOwwwwwOwwO...O#aa#O.',
-      '..O##wwwwkk##O..O#a##k#O',
-      '..O##www#kk##OO.O##kk##O',
-      '..O#####k##aa#OO#aa##kO.',
-      '...O#O....O#OO###a##O...',
-      '...OwwO..OwwO.OOOOOO....',
-      '...OOO....OOO...........',
-      '........................',
+      '...OO....OO...........',
+      '..OaaO..OkkO..........',
+      '..OaaOOOOkkO..........',
+      '.Oaa#####kk#O.........',
+      '.Oa#oo###oo#O.........',
+      'O#p####p###pO.........',
+      '.O#wwwwwww#O..........',
+      '.OwwOwwwOwwO....OOO...',
+      '..O#wwwww#O....OaaaO..',
+      '..O#wwwwkk#O..Oaa##kO.',
+      '..O##ww#kk#OOO#kkk#O..',
+      '...O#wOO#wOOOO#aa#O...',
+      '...OwwOOwwO...OOOO....',
+      '....OO..OO............',
+      '......................',
     ],
   });
 
-  // ── 4. RAGDOLL: Tall Slender Pointed Siamese with Cocoa Mask, Ice-Blue Eyes & Coral Bow (22x19 -> 24x27 = 36x41px) ──
-  const SIAMESE_POSES = buildPoseMap(22, 19, {
+  // ── 4. RAGDOLL: Soft Creamy-Ivory & Dusty-Latte Plush Ragdoll (22x16 body -> 24x24 = 36x36px) ──
+  // Clean creamy-white inverted-V blaze on face, vivid sky-blue eyes, coral ribbon bow, cute 2-3px plush paws!
+  const RAGDOLL_POSES = buildPoseMap(22, 16, {
     standA: [
-      '...OO....OO.......OO..',
-      '..OmmO..OmmO.....OmmO.',
-      '..OmmO..OmmO....OmdO..',
-      '..OmmOOOOmmO.....O#O..',
-      '.O#dmmmmmm#dO.....O#O.',
-      '.Odmme#m#emmdO....O#O.',
-      '.Odmmmo#ommmdO...O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '....O#dO####O#dO......',
-      '....OmmO.##.OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '.....OO......OO.......',
+      '...OO.....OO..........',
+      '..OmmO...OmmO.........',
+      '..OmdOOOOOdmO.....OO..',
+      '.Odm#######mdO...OmmO.',
+      '.Od#oe###eo#dO..OmdmO.',
+      'O#dp#e###e#pdO..O##dO.',
+      'O##p###p###p#O.O###O..',
+      '.O###rrcrr###OO###O...',
+      '.O#wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
     standB: [
-      '...OO....OO........OO.',
-      '..OmmO..OmmO......OmmO',
-      '..OmmO..OmmO.....OmdO.',
-      '..OmmOOOOmmO....O#O...',
-      '.O#dmmmmmm#dO....O#O..',
-      '.Odmme#m#emmdO....O#O.',
-      '.Odmmmo#ommmdO...O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '....O#dO####O#dO......',
-      '....OmmO.##.OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '.....OO......OO.......',
+      '...OO.....OO..........',
+      '..OmmO...OmmO.........',
+      '..OmdOOOOOdmO......OO.',
+      '.Odm#######mdO....OmmO',
+      '.Od#oe###eo#dO...OmdmO',
+      'O#dp#e###e#pdO..O##dO.',
+      'O##p###p###p#O.O###O..',
+      '.O###rrcrr###OO###O...',
+      '.O#wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
     blink: [
-      '...OO....OO.......OO..',
-      '..OmmO..OmmO.....OmmO.',
-      '..OmmO..OmmO....OmdO..',
-      '..OmmOOOOmmO.....O#O..',
-      '.O#dmmmmmm#dO.....O#O.',
-      '.Odmmom#ommmdO....O#O.',
-      '.Odmmmo#ommmdO...O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '....O#dO####O#dO......',
-      '....OmmO.##.OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '.....OO......OO.......',
+      '...OO.....OO..........',
+      '..OmmO...OmmO.........',
+      '..OmdOOOOOdmO.....OO..',
+      '.Odm#######mdO...OmmO.',
+      '.Od#oo###oo#dO..OmdmO.',
+      'O#dp#######pdO..O##dO.',
+      'O##p###p###p#O.O###O..',
+      '.O###rrcrr###OO###O...',
+      '.O#wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
     earL: [
-      '.........OO.......OO..',
-      '..OO....OmmO.....OmmO.',
-      '.OmmO...OmmO....OmdO..',
-      '.OmmOOOO#mmO.....O#O..',
-      '.O#dmmmmmm#dO.....O#O.',
-      '.Odmme#m#emmdO....O#O.',
-      '.Odmmmo#ommmdO...O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '....O#dO####O#dO......',
-      '....OmmO.##.OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '.....OO......OO.......',
+      '..........OO..........',
+      '..OOO....OmmO.........',
+      '.OmmmOOOOOdmO.....OO..',
+      '.Odm#######mdO...OmmO.',
+      '.Od#oe###eo#dO..OmdmO.',
+      'O#dp#e###e#pdO..O##dO.',
+      'O##p###p###p#O.O###O..',
+      '.O###rrcrr###OO###O...',
+      '.O#wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
-    strut1: [
-      '...OO....OO.......OO..',
-      '..OmmO..OmmO.....OmmO.',
-      '..OmmO..OmmO....OmdO..',
-      '..OmmOOOOmmO.....O#O..',
-      '.O#dmmmmmm#dO.....O#O.',
-      '.Odmme#m#emmdO....O#O.',
-      '.Odmmmo#ommmdO...O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '...O#dO.O##O.#dO......',
-      '..OmmO..OmmO..OmmO....',
-      '..OmmO..OmmO...OmmO...',
-      '.OmmO...OmmO....OmmO..',
-      '.OmmO...OmmO....OmmO..',
-      '..OO.....OO......OO...',
+    walk1: [
+      '...OO.....OO..........',
+      '..OmmO...OmmO.........',
+      '..OmdOOOOOdmO....OO...',
+      '.Odm#######mdO..OmmO..',
+      '.Od#oe###eo#dO..OmdmO.',
+      'O#dp#e###e#pdO.O##dO..',
+      'O##p###p###p#O.O###O..',
+      '.O###rrcrr###OO###O...',
+      '.O#wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '.O#wOO######OO#wO.....',
+      '.OwwO.OOOOOO.OwwO.....',
+      '..OO..........OO......',
     ],
-    strut2: [
+    walk2: [
       '......................',
-      '...OO....OO........OO.',
-      '..OmmO..OmmO......OmmO',
-      '..OmmO..OmmO.....OmdO.',
-      '..OmmOOOOmmO....O#O...',
-      '.O#dmmmmmm#dO....O#O..',
-      '.Odmme#m#emmdO....O#O.',
-      '.Odmmmo#ommmdO...O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '....O#dO#dO#dO#O......',
-      '....OmmOmmOmmOmmO.....',
-      '.....OmmO..OmmO.......',
-      '.....OmmO..OmmO.......',
-      '......OO....OO........',
+      '...OO.....OO..........',
+      '..OmmO...OmmO......OO.',
+      '..OmdOOOOOdmO.....OmmO',
+      '.Odm#######mdO...OmdmO',
+      '.Od#oe###eo#dO..O##dO.',
+      'O#dp#e###e#pdO.O###O..',
+      'O##p###p###p#OO###O...',
+      '.O###rrcrr#######O....',
+      'O##wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '..OOO#wOOOO#wOOO......',
+      '....OwwO..OwwO........',
+      '.....OO....OO.........',
     ],
     sitA: [
-      '....OO....OO..........',
-      '...OmmO..OmmO.........',
-      '...OmmO..OmmO.....OO..',
-      '...OmmOOOOmmO....OmmO.',
-      '..O#dmmmmmm#dO...OmdO.',
-      '..Odmme#m#emmdO...O#O.',
-      '..Odmmmo#ommmdO...O#O.',
-      '...OOdmmmmmdOO...O#O..',
-      '....O#rrcrr#O....O#O..',
-      '....O#b#r#b#O...O#O...',
-      '...O##bbbbb##O..O#O...',
-      '...O##bbbbb###OO#O....',
-      '...O##bbbbb#####O.....',
-      '...O##bbbbb#####O.....',
-      '...O#d#b#b#d###O......',
-      '...OmmO#b#Omm##O......',
-      '...OmmO###Omm##O......',
-      '...OmmO###Omm##O......',
-      '....OOOOOOOOOOO.......',
+      '....OO.....OO.........',
+      '...OmmO...OmmO........',
+      '...OmdOOOOOdmO........',
+      '..Odm#######mdO...OO..',
+      '..Od#oe###eo#dO..OmmO.',
+      '.O#dp#e###e#pdO.OmdmO.',
+      '.O##p###p###p#O.O##dO.',
+      '..O###rrcrr###O.O##O..',
+      '.O##wwwrwwww##OO###O..',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     sitB: [
-      '....OO....OO..........',
-      '...OmmO..OmmO.........',
-      '...OmmO..OmmO......OO.',
-      '...OmmOOOOmmO.....OmmO',
-      '..O#dmmmmmm#dO....OmdO',
-      '..Odmme#m#emmdO...O#O.',
-      '..Odmmmo#ommmdO...O#O.',
-      '...OOdmmmmmdOO...O#O..',
-      '....O#rrcrr#O....O#O..',
-      '....O#b#r#b#O...O#O...',
-      '...O##bbbbb##O..O#O...',
-      '...O##bbbbb###OO#O....',
-      '...O##bbbbb#####O.....',
-      '...O##bbbbb#####O.....',
-      '...O#d#b#b#d###O......',
-      '...OmmO#b#Omm##O......',
-      '...OmmO###Omm##O......',
-      '...OmmO###Omm##O......',
-      '....OOOOOOOOOOO.......',
+      '....OO.....OO.........',
+      '...OmmO...OmmO........',
+      '...OmdOOOOOdmO........',
+      '..Odm#######mdO.......',
+      '..Od#oe###eo#dO...OO..',
+      '.O#dp#e###e#pdO..OmmO.',
+      '.O##p###p###p#O.OmdmO.',
+      '..O###rrcrr###O.O##dO.',
+      '.O##wwwrwwww##OO###O..',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     tilt: [
-      '.....OO....OO.........',
-      '....OmmO..OmmO........',
-      '...OmmO....OmmO...OO..',
-      '...OmmOOOOOOmmO..OmmO.',
-      '..O#dmmmmmmm#dO..OmdO.',
-      '..Odmme#mm#emmdO..O#O.',
-      '..Odmmm#oo#mmmdO..O#O.',
-      '...OOdmmmmmdOO...O#O..',
-      '....O#rrcrr#O....O#O..',
-      '....O#b#r#b#O...O#O...',
-      '...O##bbbbb##O..O#O...',
-      '...O##bbbbb###OO#O....',
-      '...O##bbbbb#####O.....',
-      '...O##bbbbb#####O.....',
-      '...O#d#b#b#d###O......',
-      '...OmmO#b#Omm##O......',
-      '...OmmO###Omm##O......',
-      '...OmmO###Omm##O......',
-      '....OOOOOOOOOOO.......',
+      '.....OO.....OO........',
+      '....OmmO...OmmO.......',
+      '...OmdOOOOOOdmO.......',
+      '...Odm#######mdO..OO..',
+      '..Od##oe###eo#dO.OmmO.',
+      '..O#dp#e###e#pdOOmdmO.',
+      '..O##p###p###p#OO##dO.',
+      '..O###rrcrr###O.O##O..',
+      '.O##wwwrwwww##OO###O..',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     scratch1: [
-      '....OO....OO..........',
-      '...OmmO..OmmO.........',
-      '...OmmO..OmmO.........',
-      '...OmmOOOOmmO.........',
-      '..O#dmmmmmm#dO........',
-      'OO#dmme#m#emmdO.......',
-      'Omm#dmmmo#ommdO.......',
-      '.OO#OdmmmmmdOO........',
-      '..O##rrcrr#O..........',
-      '..Omm#b#r#b#O.....OO..',
-      '..OO##bbbbb##O...OmmO.',
-      '....O##bbbbb##O..OmdO.',
-      '....O##bbbbb###OO#O...',
-      '.....O#########O#O....',
-      '.....O#dO###O#dO......',
-      '.....OmmO...OmmO......',
-      '.....OmmO...OmmO......',
-      '.....OmmO...OmmO......',
-      '......OO.....OO.......',
+      '....OO.....OO.........',
+      '...OmmO...OmmO........',
+      '...OmdOOOOOdmO........',
+      '..Odm#######mdO...OO..',
+      '..Od#oe###eo#dO..OmmO.',
+      '.O#dp#e###e#pdO.OmdmO.',
+      '.O##p###p###p#O.O##dO.',
+      'OO####rrcrr###O.O##O..',
+      'Oww#wwwrwwww##OO###O..',
+      'Oww#wwwwwwwwww####O...',
+      '.OO#wwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     scratch2: [
-      '....OO....OO..........',
-      '...OmmO..OmmO.........',
-      '...OmmO..OmmO.........',
-      '...OmmOOOOmmO.........',
-      '..O#dmmmmmm#dO........',
-      '..Odmme#m#emmdO.......',
-      '.O#dmmmo#ommmdO.......',
-      'OmmOOdmmmmmdOO........',
-      '.OO##rrcrr#O..........',
-      'Omm###b#r#b#O......OO.',
-      '.OO###bbbbb##O....OmmO',
-      '....O##bbbbb##O...OmdO',
-      '....O##bbbbb###OO#O...',
-      '.....O#########O#O....',
-      '.....O#dO###O#dO......',
-      '.....OmmO...OmmO......',
-      '.....OmmO...OmmO......',
-      '.....OmmO...OmmO......',
-      '......OO.....OO.......',
+      '....OO.....OO.........',
+      '...OmmO...OmmO........',
+      '...OmdOOOOOdmO........',
+      '..Odm#######mdO.......',
+      '..Od#oe###eo#dO...OO..',
+      'OO#dp#e###e#pdO..OmmO.',
+      'Oww#p###p###p#O.OmdmO.',
+      'Oww###rrcrr###O.O##dO.',
+      '.OO#wwwrwwww##OO###O..',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     happy: [
-      '...OO....OO.......OO..',
-      '..OmmO..OmmO.....OmmO.',
-      '..OmmO..OmmO....OmdO..',
-      '..OmmOOOOmmO.....O#O..',
-      '.O#dmmmmmm#dO.....O#O.',
-      '.OdmbbmmbbmdO.....O#O.',
-      '.OdmrmmmrmmdO....O#O..',
-      '..OOdmmmmmdOO....O#O..',
-      '...O#rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbb###OOO#O.....',
-      '...O###b#######O......',
-      '....O##########O......',
-      '....O#dO####O#dO......',
-      '....OmmO.##.OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '....OmmO....OmmO......',
-      '.....OO......OO.......',
+      '...OO.....OO..........',
+      '..OmmO...OmmO.....OO..',
+      '..OmdOOOOOdmO....OmmO.',
+      '.Odm#######mdO..OmdmO.',
+      '.Od##o###o##dO..O##dO.',
+      'O#dpo#o#o#opdO.O###O..',
+      'O##p###p###p#OO###O...',
+      '.O###rrcrr#######O....',
+      '.O#wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      'O###wwwwwww#####O.....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
     eat1: [
-      '.................OO...',
-      '................OmmO..',
-      '...............OmdO...',
-      '................O#O...',
-      '................O#O...',
-      '...OO....OO.....O#O...',
-      '..OmmO..OmmO...O#O....',
-      '..OmmOOOOmmO..O#O.....',
-      '.O#dmmmmmm#dOO#O......',
-      '.Odmmom#ommmd##O......',
-      '.O#rrcrr#######O......',
-      '..O#bbb########O......',
-      '...O#dO####O#dO.......',
-      '...OmmO....OmmO.......',
-      '...OmmO....OmmO.......',
-      '...OmmO....OmmO.......',
-      '....OO......OO........',
+      '...OO.....OO..........',
+      '..OmmO...OmmO.....OO..',
+      '..OmdOOOOOdmO....OmmO.',
+      '.Odm#######mdO..OmdmO.',
+      '.Od#oo###oo#dO..O##dO.',
+      'O#dp###p###pdO.O###O..',
+      'O####rrcrr####O###O...',
+      'O##wwwwrwwww#####O....',
+      'O##wwwwwwwww#####O....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
     eat2: [
-      '..................OO..',
-      '.................OmmO.',
-      '................OmdO..',
-      '.................O#O..',
-      '.................O#O..',
-      '................O#O...',
-      '...OO....OO....O#O....',
-      '..OmmO..OmmO..O#O.....',
-      '..OmmOOOOmmOO#O.......',
-      '.O#dmmmmmm#d##O.......',
-      '.Odmmom#ommmd#O.......',
-      '.O#rrcrr######O.......',
-      '...O#dO####O#dO.......',
-      '...OmmO....OmmO.......',
-      '...OmmO....OmmO.......',
-      '...OmmO....OmmO.......',
-      '....OO......OO........',
+      '......................',
+      '...OO.....OO......OO..',
+      '..OmmO...OmmO....OmmO.',
+      '..OmdOOOOOdmO...OmdmO.',
+      '.Odm#######mdO..O##dO.',
+      '.Od#oo###oo#dO.O###O..',
+      'O#dp###p###pdOO###O...',
+      'O####rrcrr#######O....',
+      'O##wwwwrwwww#####O....',
+      '.O##wwwwwww#####O.....',
+      '..O#w#O###O#w#wO......',
+      '..OwwO.OOO.OwwO.......',
+      '...OO.......OO........',
     ],
     sleep1: [
-      '...OO....OO...........',
-      '..OmmO..OmmO..........',
-      '..OmmOOOOmmOOOO.......',
-      '.O#dmmmmmm#d###OO.....',
-      'Odmmom#ommmd#####O....',
-      'O#rrcrr##########O.OO.',
-      'O##bbbbbbbbb####OOmmO.',
-      '.O##bbbbbbbb###O#mdO..',
-      '..OOOOOOOOOOOOOOOO....',
+      '...OO.....OO..........',
+      '..OmmO...OmmOO........',
+      '..OmdOOOOOdm##OO......',
+      '.Odm#######md###O.....',
+      'O#d#oo###oo##d###O.OO.',
+      'O##p###p###p#####OOmmO',
+      'O####rrcrr#######OmdmO',
+      'O##wwwwwwwwwww####mdO.',
+      '.O##wwwwwwwwww###mmO..',
+      '..OOOOOOOOOOOOOOOOO...',
     ],
     sleep2: [
-      '...OO....OO...........',
-      '..OmmO..OmmOOOO.......',
-      '..OmmOOOOmm####OO.....',
-      '.O#dmmmmmm#d#####O....',
-      'Odmmom#ommmd#####O....',
-      'O#rrcrr##########O.OO.',
-      'O##bbbbbbbbb####OOmmO.',
-      '.O##bbbbbbbb###O#mdO..',
-      '..OOOOOOOOOOOOOOOO....',
+      '......................',
+      '...OO.....OO..........',
+      '..OmmO...OmmOO........',
+      '..OmdOOOOOdm##OO......',
+      '.Odm#######md###O.....',
+      'O#d#oo###oo##d###O.OO.',
+      'O##p###p###p#####OOmmO',
+      'O####rrcrr#######OmdmO',
+      'O##wwwwwwwwwww####mdO.',
+      '.O##wwwwwwwwww###mmO..',
+      '..OOOOOOOOOOOOOOOOO...',
     ],
     wave1: [
-      '....OO....OO..........',
-      '...OmmO..OmmO.....OO..',
-      '...OmmO..OmmO....OmmO.',
-      '...OmmOOOOmmO...OmdO..',
-      '..O#dmmmmmm#dO...O#O..',
-      '..Odmme#m#emmdO..O#O..',
-      '..Odmmmo#ommmdO..O#O..',
-      '...OOdmmmmmdOO...O#O..',
-      '..OO#rrcrr#O....O#O...',
-      'Omm##b#r#b#O...O#O....',
-      '.OO###bbbbb##OO#O.....',
-      '...O##bbbbb####O......',
-      '...O##bbbbb####O......',
-      '...O#d#b#b#d##O.......',
-      '...OmmO###Omm#O.......',
-      '...OmmO###Omm#O.......',
-      '...OmmO###Omm#O.......',
-      '....OOOOOOOOOO........',
+      '....OO.....OO.........',
+      '...OmmO...OmmO........',
+      '...OmdOOOOOdmO....OO..',
+      '..Odm#######mdO..OmmO.',
+      '..Od#oe###eo#dO.OmdmO.',
+      '.O#dp#e###e#pdO.O##dO.',
+      'OO##p###p###p#O.O##O..',
+      'Oww###rrcrr###OO###O..',
+      'Oww#wwwrwwww######O...',
+      '.OO#wwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     wave2: [
-      '....OO....OO..........',
-      '...OmmO..OmmO......OO.',
-      '...OmmO..OmmO.....OmmO',
-      '...OmmOOOOmmO....OmdO.',
-      '..O#dmmmmmm#dO...O#O..',
-      '..Odmme#m#emmdO..O#O..',
-      'OO#dmmmo#ommmdO..O#O..',
-      'OmmOOdmmmmmdOO...O#O..',
-      '.OO##rrcrr#O....O#O...',
-      '...O#b#r#b#O...O#O....',
-      '...O##bbbbb##OO#O.....',
-      '...O##bbbbb####O......',
-      '...O##bbbbb####O......',
-      '...O#d#b#b#d##O.......',
-      '...OmmO###Omm#O.......',
-      '...OmmO###Omm#O.......',
-      '...OmmO###Omm#O.......',
-      '....OOOOOOOOOO........',
+      '....OO.....OO.........',
+      '...OmmO...OmmO........',
+      '...OmdOOOOOdmO........',
+      '..Odm#######mdO...OO..',
+      'OOd#oe###eo#dO...OmmO.',
+      'Owwdp#e###e#pdO.OmdmO.',
+      'Oww#p###p###p#O.O##dO.',
+      '.OO###rrcrr###OO###O..',
+      '.O##wwwrwwww######O...',
+      'O##wwwwwwwwwww####O...',
+      'O##wwwwwwwwwww####O...',
+      'O###wwwwwwwww####O....',
+      'O###ww#ww#ww#####O....',
+      '.O##wwOwwOww####O.....',
+      '..OOOOOOOOOOOOOO......',
     ],
     dangle: [
-      '...OO....OO...........',
-      '..OmmO..OmmO..........',
-      '..OmmO..OmmO..........',
-      '..OmmOOOOmmO..........',
-      '.O#dmmmmmm#dO.........',
-      '.Odmmom#ommmdO........',
-      '..OOdmmmmmdOO.........',
-      '...O#rrcrr#O..........',
-      '..O#ObbbbO#O......OO..',
-      '..OmmObbOmmO.....OmmO.',
-      '...O#bbbb#O.....OmdO..',
-      '...O#bbbb#O....O#O....',
-      '...O######OO..O#O.....',
-      '....O#dO#dOO#O........',
-      '....OmmOmmO.O.........',
-      '....OmmOmmO...........',
-      '....OmmOmmO...........',
-      '.....OO.OO............',
+      '...OO.....OO..........',
+      '..OmmO...OmmO.........',
+      '..OmdOOOOOdmO.........',
+      '.Odm#######mdO........',
+      '.Od#oo###oo#dO........',
+      'O#dp###p###pdO........',
+      '.O###rrcrr###O........',
+      '.OwwOwwrwwOwwO...OO...',
+      '..O#wwwwwww#O...OmmO..',
+      '..O#wwwwwww#O..OmdmO..',
+      '..O#########OOO##dO...',
+      '...O#wOOO#wOOOO##O....',
+      '...OwwO.OwwO...OO.....',
+      '....OO...OO...........',
       '......................',
     ],
   });
 
-  // 4 distinct species presets (ordered so catCount 1->[pusheen], 2->[pusheen,ginger], 3->+calico, 4->all)
+  // 4 cohesive Kawaii Q-style breeds (unified px: 1.5, ordered so catCount 1->pusheen, 2->+ginger, 3->+calico, 4->all)
   const CAT_PRESETS = [
     {
       id: 'pusheen',
       breed: 'tabby',
       px: PX,
-      bodyCols: 26,
-      bodyRows: 16,
+      bodyCols: 22,
+      bodyRows: 15,
+      stepMs: 170,
       xPct: 0.54,
       hue: 0.72,
       speed: 0.30,
       mood: 'cozy',
       poses: PUSHEEN_POSES,
-      pal: { O: '#2D2936', '#': '#B4B8C4', s: '#636776', b: '#F1F3F8', o: '#1A1722', p: '#F472B6', w: '#FFFFFF', u: '#FB7185' },
+      pal: { O: '#2E2B38', '#': '#C4C8D4', s: '#7A8094', b: '#F5F6FA', o: '#1E1B26', p: '#F9A8C9', w: '#FFFFFF', u: '#FDA4AF' },
     },
     {
       id: 'ginger',
@@ -1433,38 +1361,41 @@
       px: PX,
       bodyCols: 18,
       bodyRows: 13,
+      stepMs: 145,
       xPct: 0.12,
       hue: 0.09,
-      speed: 0.56,
+      speed: 0.52,
       mood: 'playful',
       poses: GINGER_POSES,
-      pal: { O: '#3D2618', '#': '#FBB268', s: '#D9772B', b: '#FFF6E8', o: '#23160E', p: '#FF8FAB', w: '#FFFFFF' },
+      pal: { O: '#3D2618', '#': '#FBB268', s: '#DF8234', b: '#FFF7EB', o: '#23160E', p: '#FF9EBB', w: '#FFFFFF' },
     },
     {
       id: 'calico',
       breed: 'calico',
       px: PX,
-      bodyCols: 24,
-      bodyRows: 17,
+      bodyCols: 22,
+      bodyRows: 15,
+      stepMs: 165,
       xPct: 0.34,
       hue: 0.94,
-      speed: 0.42,
+      speed: 0.40,
       mood: 'sweet',
       poses: CALICO_POSES,
-      pal: { O: '#332930', '#': '#FFF9F2', w: '#FFFFFF', a: '#EB8E47', k: '#4D4552', L: '#38BDF8', R: '#F59E0B', o: '#231D24', p: '#F9A8C9' },
+      pal: { O: '#332930', '#': '#FFFBF5', w: '#FFFFFF', a: '#F4A261', k: '#5B5263', L: '#38BDF8', R: '#F59E0B', o: '#231D24', p: '#F9A8C9' },
     },
     {
       id: 'ragdoll',
-      breed: 'siamese',
+      breed: 'ragdoll',
       px: PX,
       bodyCols: 22,
-      bodyRows: 19,
+      bodyRows: 16,
+      stepMs: 185,
       xPct: 0.85,
       hue: 0.56,
-      speed: 0.40,
-      mood: 'regal',
-      poses: SIAMESE_POSES,
-      pal: { O: '#2C2224', '#': '#FAF3E6', b: '#FFFBF2', m: '#5C4033', d: '#7C5846', e: '#38BDF8', o: '#1A1416', r: '#FB7185', c: '#FDA4AF' },
+      speed: 0.38,
+      mood: 'gentle',
+      poses: RAGDOLL_POSES,
+      pal: { O: '#3A313D', '#': '#FFFDF7', w: '#FFFFFF', m: '#9B8393', d: '#C9B5C0', e: '#38BDF8', o: '#1E293B', p: '#F9A8D4', r: '#F472B6', c: '#FBCFE8' },
     },
   ];
 
@@ -1492,13 +1423,11 @@
     '..OOO..',
   ];
 
-  // Occasional 5px pastel pixel butterfly (idle / non-streaming only)
   const BUTTERFLY_FRAMES = [
     ['p...p', 'ppOpp', '.yOy.', '.....'],
     ['.....', 'p.O.p', 'pyOyp', '.p.p.'],
   ];
 
-  // Unified px: 1.5 proportional props (cushion widened to 30 cols = 45px with front-rim tuck layer)
   const SHELF_PROPS = [
     {
       id: 'bowl',
@@ -1718,6 +1647,12 @@
     let lastPlantClickAt = 0;
     const markUserInteraction = (now) => {
       lastInteractionAt = typeof now === 'number' ? now : nowMs();
+    };
+
+    const setCatState = (c, nextState, now, dur) => {
+      c.state = nextState;
+      c.stateBornAt = now;
+      c.until = now + dur;
     };
 
     const propById = {};
@@ -1941,8 +1876,8 @@
     bfCv.className = 'ag-v2-cat-pet';
     bfCv.setAttribute('data-sanctuary-fx', 'butterfly');
     bfCv.setAttribute('aria-hidden', 'true');
-    const bfW = Math.round((5 + 2) * PX); // 11px
-    const bfH = Math.round((4 + 2) * PX); // 9px
+    const bfW = Math.round((5 + 2) * PX);
+    const bfH = Math.round((4 + 2) * PX);
     bfCv.style.width = `${bfW}px`;
     bfCv.style.height = `${bfH}px`;
     bfCv.style.zIndex = '5';
@@ -1962,7 +1897,7 @@
       tint: 0,
       bornAt: 0,
       until: 0,
-      nextSpawnAt: nowMs() + 18000 + Math.random() * 10000,
+      nextSpawnAt: nowMs() + 20000 + Math.random() * 12000,
       hunterId: null,
       drawnKey: '',
     };
@@ -2027,8 +1962,6 @@
     };
 
     const ptr = { active: false, clientX: 0, clientY: 0, lastAt: 0 };
-    let cachedStageRect = null;
-    let stageRectAt = 0;
     const onGlobalMove = (ev) => {
       ptr.active = true;
       ptr.clientX = ev.clientX || 0;
@@ -2061,7 +1994,7 @@
       cv.className = 'ag-v2-cat-pet';
       cv.setAttribute('data-cat-id', pr.id);
       cv.setAttribute('data-cat-breed', pr.breed);
-      cv.setAttribute('aria-hidden', 'true'); // Never place tabindex="0" inside aria-hidden parent
+      cv.setAttribute('aria-hidden', 'true');
       const totalCols = pr.bodyCols + PAD_X * 2;
       const totalRows = pr.bodyRows + HEADROOM_ROWS;
       const cw = Math.round(totalCols * pr.px);
@@ -2071,7 +2004,7 @@
       cv.style.zIndex = '4';
       wrap.appendChild(cv);
       const now0 = nowMs();
-      const initStates = ['loaf', 'sit', 'groom', 'sit'];
+      const initStates = ['loaf', 'sit', 'sit', 'sit'];
       const c = {
         ...pr,
         idx,
@@ -2086,7 +2019,8 @@
         vy: 0,
         dir: idx % 2 === 0 ? -1 : 1,
         state: initStates[idx] || 'sit',
-        until: now0 + 2600 + idx * 1000,
+        stateBornAt: now0,
+        until: now0 + 3400 + idx * 1200,
         targetX: null,
         targetProp: null,
         atProp: null,
@@ -2094,18 +2028,19 @@
         queuedHop: false,
         tsundereUntil: 0,
         squishUntil: 0,
+        landUntil: 0,
         boopOffset: 0,
+        boopBornAt: 0,
         boopUntil: 0,
         blinkUntil: 0,
-        nextBlink: now0 + 1400 + idx * 700,
+        nextBlink: now0 + 1600 + idx * 850,
         twitchUntil: 0,
-        nextTwitch: now0 + 3000 + idx * 1200,
+        nextTwitch: now0 + 3200 + idx * 1350,
         sym: null,
         symBornAt: 0,
         symUntil: 0,
         petCount: 0,
         lastPetAt: 0,
-        gazeDx: 0,
         dragging: false,
         dragStartX: 0,
         dragStartY: 0,
@@ -2137,7 +2072,6 @@
       const onPd = (ev) => {
         if (peekHidden || disposed || !c.visible) return;
         if (ev && ev.button !== undefined && ev.button !== 0) return;
-        // Ignore transparent bubble headroom above cat ears (offsetY < 8 * px)
         if (readLocalY(ev) < HEADROOM_ROWS * c.px) return;
         if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
         if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
@@ -2178,8 +2112,7 @@
             const sw = Math.max(220, readStageWidth());
             c.x = Math.max(18, Math.min(sw - 18 - c.cw, x0 + dx));
             c.y = Math.min(0, Math.max(-40, y0 + dy));
-            c.state = 'dangle';
-            c.until = nowMs() + 900;
+            setCatState(c, 'dangle', nowMs(), 900);
             paintCat(c, nowMs());
           }
         };
@@ -2199,42 +2132,32 @@
             c.lastPetAt = now;
             if (quickTap) {
               spawnYarn(c.x + c.cw * 0.5, now);
-              c.state = 'wave';
-              c.until = now + 900;
+              setCatState(c, 'wave', now, 900);
               setSym(c, 'spark', now, 900);
             } else if (c.breed === 'tabby') {
-              // Chonky tabby: squishy pancake bounce-flatten when petted!
-              c.state = 'happy';
-              c.squishUntil = now + 280;
-              c.until = now + 1500;
+              setCatState(c, 'happy', now, 1500);
+              c.squishUntil = now + 260;
               setSym(c, c.petCount >= 3 ? 'hearts2' : 'heart', now, 1400);
-              c.vy = -3.4;
+              c.vy = -3.2;
               c.y = -1;
             } else if (c.breed === 'kitten') {
-              // Tiny ginger kitten: excited double-hop + sparkles!
-              c.state = 'happy';
+              setCatState(c, 'happy', now, 1500);
               c.queuedHop = true;
-              c.until = now + 1500;
               setSym(c, 'spark', now, 1300);
-              c.vy = -4.6;
+              c.vy = -4.3;
               c.y = -1;
             } else if (c.breed === 'calico') {
-              // Fluffy calico: graceful musical note & plume-tail flourish!
-              c.state = 'happy';
-              c.until = now + 1600;
+              setCatState(c, 'happy', now, 1600);
               setSym(c, c.petCount >= 3 ? 'hearts2' : 'note', now, 1500);
-              c.vy = -3.6;
+              c.vy = -3.4;
               c.y = -1;
             } else {
-              // Slender Siamese: curious head-tilt '?' -> tsundere heart!
-              c.state = 'tilt';
+              setCatState(c, 'tilt', now, 1800);
               c.tsundereUntil = now + 520;
-              c.until = now + 1800;
               setSym(c, 'q', now, 520);
             }
           } else {
-            c.state = 'happy';
-            c.until = now + 1000;
+            setCatState(c, 'happy', now, 1000);
             c.vy = 0;
             setSym(c, 'heart', now, 900);
           }
@@ -2319,25 +2242,21 @@
       c.targetProp = null;
       c.atProp = propId;
       if (propId === 'cushion') {
-        c.state = 'sleep';
+        setCatState(c, 'sleep', now, 7600 + Math.random() * 5200);
         c.y = -2;
         c.vy = 0;
-        c.until = now + 7200 + Math.random() * 5200;
         c.sym = null;
       } else if (propId === 'bowl') {
         c.dir = -1;
-        c.state = 'eat';
-        c.until = now + (c.breed === 'tabby' ? 4400 : 3200) + Math.random() * 2000;
+        setCatState(c, 'eat', now, (c.breed === 'tabby' ? 4200 : 3200) + Math.random() * 1800);
         setSym(c, c.breed === 'tabby' ? 'fish' : 'heart', now, 1600);
       } else if (propId === 'post') {
         c.dir = 1;
-        c.state = c.breed === 'siamese' ? 'scratch' : 'wave';
-        c.until = now + (c.breed === 'siamese' ? 2800 : 2000) + Math.random() * 1400;
+        setCatState(c, c.breed === 'ragdoll' ? 'scratch' : 'wave', now, (c.breed === 'ragdoll' ? 2600 : 2000) + Math.random() * 1200);
         setSym(c, 'spark', now, 1300);
       } else {
         c.dir = -1;
-        c.state = 'happy';
-        c.until = now + 1800;
+        setCatState(c, 'happy', now, 1800);
         setSym(c, 'note', now, 1300);
       }
     };
@@ -2357,9 +2276,8 @@
       } else {
         c.targetX = tx;
         c.targetProp = propId;
-        c.state = 'walk';
+        setCatState(c, 'walk', now, 7000);
         c.dir = tx > c.x ? 1 : -1;
-        c.until = now + 7000;
         if (fromClick) setSym(c, 'spark', now, 750);
       }
     };
@@ -2411,31 +2329,42 @@
     };
 
     const resolvePoseKey = (c, now) => {
-      const fastStep = Math.floor(now / 145) % 2;
-      const medStep = Math.floor(now / 260) % 2;
-      const slowStep = Math.floor(now / 460) % 2;
-      const sleepStep = Math.floor(now / 900) % 2;
+      // Per-cat phase desynchronization so the 4 cats never breathe/sway/walk in robotic lockstep
+      const t = now + c.idx * 370;
+      const elapsed = Math.max(0, now - (c.stateBornAt || 0));
+      const fastStep = Math.floor(t / 150) % 2;
+      const medStep = Math.floor(t / 280) % 2;
+      const slowStep = Math.floor(t / 520) % 2;
+      const sleepStep = Math.floor(t / 1050) % 2;
       const p = c.poses;
+
       if (c.dragging || c.state === 'dangle') return 'dangle';
       if (now < c.squishUntil && p.squish) return 'squish';
+      if (now < c.landUntil) return p.squish ? 'squish' : 'sitA';
       if (c.state === 'pounce' || (c.y < -5 && p.pounce)) return p.pounce ? 'pounce' : 'happy';
       if (c.state === 'wiggle' && p.wiggle1) return fastStep === 0 ? 'wiggle1' : 'wiggle2';
-      if (c.state === 'scratch' && p.scratch1) return Math.floor(now / 120) % 2 === 0 ? 'scratch1' : 'scratch2';
+      if (c.state === 'scratch' && p.scratch1) return Math.floor(t / 160) % 2 === 0 ? 'scratch1' : 'scratch2';
       if (c.state === 'loaf' && p.loaf1) return slowStep === 0 ? 'loaf1' : 'loaf2';
-      if (c.state === 'belly' && p.belly1) return medStep === 0 ? 'belly1' : 'belly2';
-      if (c.state === 'yawn' && p.yawn1) return Math.floor(now / 650) % 2 === 0 ? 'yawn1' : 'yawn2';
+      if ((c.state === 'knead' || c.state === 'belly') && p.knead1) return Math.floor(t / 300) % 2 === 0 ? 'knead1' : 'knead2';
+      if (c.state === 'yawn' && p.yawn1) {
+        // Natural hold: open (0..280ms) -> full cozy yawn (280..1250ms) -> close
+        return elapsed >= 280 && elapsed < 1250 ? 'yawn1' : 'yawn2';
+      }
+      if (c.state === 'stretch' && p.stretch1) {
+        // Natural hold: prep (0..360ms) -> comfy stretch hold (360ms+)
+        return elapsed < 360 ? 'stretch1' : 'stretch2';
+      }
       if (c.state === 'tilt' && p.tilt) return 'tilt';
       if (c.state === 'walk') {
-        if (p.hop1) return fastStep === 0 ? 'hop1' : 'hop2';
-        if (p.strut1) return Math.floor(now / 170) % 2 === 0 ? 'strut1' : 'strut2';
-        return fastStep === 0 ? 'walk1' : 'walk2';
+        // Smooth 4-beat walk cycle: walk1 -> standA -> walk2 -> standA
+        const beat = Math.floor(t / (c.stepMs || 165)) % 4;
+        return beat === 0 ? 'walk1' : beat === 2 ? 'walk2' : 'standA';
       }
       if (c.state === 'eat') return medStep === 0 ? 'eat1' : 'eat2';
       if (c.state === 'sleep') return sleepStep === 0 ? 'sleep1' : 'sleep2';
       if (c.state === 'sit') return slowStep === 0 ? 'sitA' : 'sitB';
-      if (c.state === 'groom' && p.groom1) return medStep === 0 ? 'groom1' : 'groom2';
-      if (c.state === 'stretch' && p.stretch1) return slowStep === 0 ? 'stretch1' : 'stretch2';
-      if (c.state === 'wave') return Math.floor(now / 190) % 2 === 0 ? 'wave1' : 'wave2';
+      if (c.state === 'groom' && p.groom1) return Math.floor(t / 300) % 2 === 0 ? 'groom1' : 'groom2';
+      if (c.state === 'wave') return Math.floor(t / 210) % 2 === 0 ? 'wave1' : 'wave2';
       if (c.state === 'happy') return 'happy';
       if (now < c.twitchUntil && p.earL) return 'earL';
       if (now < c.blinkUntil && p.blink) return 'blink';
@@ -2460,7 +2389,11 @@
         c.lastZ = nextZ;
         c.cv.style.zIndex = nextZ;
       }
-      const boopDx = now < c.boopUntil ? c.boopOffset : 0;
+      let boopDx = 0;
+      if (now < c.boopUntil && c.boopOffset) {
+        const bp = Math.max(0, Math.min(1, (now - c.boopBornAt) / Math.max(1, c.boopUntil - c.boopBornAt)));
+        boopDx = Math.round(Math.sin(bp * Math.PI) * c.boopOffset);
+      }
       const tx = `translate3d(${Math.round(c.x + boopDx)}px,${Math.round(c.y)}px,0)`;
       if (c.lastTx !== tx) {
         c.lastTx = tx;
@@ -2475,22 +2408,22 @@
         const dur = Math.max(400, c.symUntil - c.symBornAt);
         symPhase = Math.min(5, Math.floor(((now - c.symBornAt) / dur) * 6));
       } else if (c.state === 'sleep') {
-        const zCycle = (now % 1800) / 1800;
+        const zCycle = ((now + c.idx * 450) % 2000) / 2000;
         activeSym = zCycle < 0.5 ? 'z1' : 'z2';
         symPhase = Math.min(5, Math.floor(zCycle * 6));
       } else if (thinking && c.idx <= 1 && !focusNap && c.state === 'sit') {
-        const tCycle = (now % 2200) / 2200;
+        const tCycle = ((now + c.idx * 400) % 2200) / 2200;
         activeSym = c.idx === 0 ? 'think' : 'q';
         symPhase = Math.min(5, Math.floor(tCycle * 6));
-      } else if (c.state === 'eat' && Math.floor(now / 1100) % 2 === 0) {
+      } else if (c.state === 'eat' && Math.floor((now + c.idx * 300) / 1100) % 2 === 0) {
         activeSym = c.breed === 'tabby' ? 'fish' : 'note';
-        symPhase = Math.floor((now % 1100) / 220);
-      } else if (c.state === 'groom' && Math.floor(now / 1100) % 2 === 0) {
+        symPhase = Math.floor(((now + c.idx * 300) % 1100) / 220);
+      } else if (c.state === 'groom' && Math.floor((now + c.idx * 300) / 1200) % 2 === 0) {
         activeSym = 'note';
-        symPhase = Math.floor((now % 1100) / 220);
+        symPhase = Math.floor(((now + c.idx * 300) % 1200) / 240);
       }
 
-      const scratchChipPhase = c.state === 'scratch' ? Math.floor(now / 110) % 4 : -1;
+      const scratchChipPhase = c.state === 'scratch' ? Math.floor((now + c.idx * 200) / 160) % 3 : -1;
       const sig = `${poseKey}:${c.dir}:${activeSym || ''}:${symPhase}:${scratchChipPhase}:${curDpr}:${dark ? 1 : 0}`;
       if (c.lastSig === sig) return;
       c.lastSig = sig;
@@ -2513,13 +2446,12 @@
         dark ? DARK_HALO_COLOR : null
       );
 
-      // Tiny pixel woodchip sparks during Siamese scratching-post frenzy
+      // Gentle pastel woodchip sparkles during Ragdoll scratching-post pat
       if (scratchChipPhase >= 0) {
         const step = c.px * curDpr;
         const chips = [
-          [20, HEADROOM_ROWS + 4 - scratchChipPhase, '#E9C89B'],
-          [19 - (scratchChipPhase % 2), HEADROOM_ROWS + 7 - scratchChipPhase, '#FDE68A'],
-          [21, HEADROOM_ROWS + 9 - (scratchChipPhase % 3), '#CFA674'],
+          [21, HEADROOM_ROWS + 6 - scratchChipPhase, '#FDE68A'],
+          [22, HEADROOM_ROWS + 9 - (scratchChipPhase % 2), '#E9C89B'],
         ];
         for (const [gx, gy, col] of chips) {
           const x0 = Math.round(gx * step);
@@ -2535,10 +2467,10 @@
         const sp = Math.max(1.25, c.px * 0.85);
         const sStep = sp * curDpr;
         const rise = symPhase * 0.42 * c.px * curDpr;
-        const driftX = activeSym.startsWith('z') ? symPhase * 0.32 * c.px * curDpr : 0;
+        const driftX = activeSym.startsWith('z') ? symPhase * 0.30 * c.px * curDpr : 0;
         const sx0 = Math.round(pw * 0.32 + driftX);
-        const lowPose = poseKey.startsWith('sleep') || poseKey.startsWith('loaf') || poseKey.startsWith('belly');
-        const sy0 = Math.round((lowPose ? 4.8 : 2.0) * c.px * curDpr - rise);
+        const lowPose = poseKey.startsWith('sleep') || poseKey.startsWith('loaf');
+        const sy0 = Math.round((lowPose ? 4.4 : 2.0) * c.px * curDpr - rise);
         ctx2.save();
         ctx2.globalAlpha = symPhase >= 5 ? 0.25 : symPhase >= 4 ? 0.55 : 0.95;
         for (let sy = 0; sy < sRows.length; sy++) {
@@ -2579,12 +2511,10 @@
         c.targetProp = null;
         c.cuddleTarget = null;
         if (focusNap) {
-          c.state = 'sleep';
-          c.until = now + 15000;
+          setCatState(c, 'sleep', now, 15000);
           setSym(c, 'z1', now, 1200);
         } else {
-          c.state = c.idx % 2 === 0 ? 'sit' : 'stand';
-          c.until = now + 2600 + c.idx * 500;
+          setCatState(c, c.idx % 2 === 0 ? 'sit' : 'stand', now, 2800 + c.idx * 500);
           setSym(c, 'spark', now, 800);
         }
         paintCat(c, now);
@@ -2600,69 +2530,66 @@
       c.atProp = null;
 
       if (isQuietNapActive(now)) {
-        c.state = 'sleep';
-        c.until = now + 8000 + Math.random() * 5000;
+        setCatState(c, 'sleep', now, 8500 + Math.random() * 5000);
         return;
       }
       if (thinking) {
-        c.state = c.idx <= 1 ? 'sit' : 'sleep';
-        c.until = now + 3400 + Math.random() * 2000;
+        setCatState(c, c.idx <= 1 ? 'sit' : 'sleep', now, 3600 + Math.random() * 2000);
         return;
       }
       if (streaming) {
-        c.state = c.breed === 'tabby' ? 'loaf' : c.idx % 2 === 0 ? 'sit' : 'stand';
-        c.until = now + 3200 + Math.random() * 2200;
+        setCatState(c, c.breed === 'tabby' ? 'loaf' : c.idx % 2 === 0 ? 'sit' : 'stand', now, 3400 + Math.random() * 2200);
         return;
       }
 
       if (hasCrowdNear(c, c.x) || overlapsAnyProp(c.x, c.cw)) {
         const tx = pickClearSpot(c, sw);
         c.targetX = tx;
-        c.state = 'walk';
+        setCatState(c, 'walk', now, 4500);
         c.dir = tx >= c.x ? 1 : -1;
-        c.until = now + 4500;
         return;
       }
 
       const r = Math.random();
       const propsOn = sCfg.catProps !== 'off';
 
-      // Species-specific signature behavior tables!
+      // ~75% calm cozy life (sit/loaf/sleep/stand/groom/tilt) + ~25% delightful strolls/treats/tricks
       if (c.breed === 'tabby') {
-        if (propsOn && propById.bowl?.visible && r < 0.16 && !isPropBusy('bowl', c)) {
-          sendCatToProp(c, 'bowl', now, false);
-        } else if (propsOn && propById.cushion?.visible && r < 0.28 && !isPropBusy('cushion', c)) {
-          sendCatToProp(c, 'cushion', now, false);
+        if (r < 0.28) {
+          setCatState(c, 'loaf', now, 5200 + Math.random() * 4200);
         } else if (r < 0.48) {
-          c.state = 'loaf';
-          c.until = now + 4400 + Math.random() * 3800;
-        } else if (r < 0.62) {
-          c.state = 'belly';
-          setSym(c, 'heart', now, 1400);
-          c.until = now + 2800 + Math.random() * 1800;
-        } else if (r < 0.72) {
-          c.state = 'yawn';
-          c.until = now + 1800;
-        } else if (r < 0.84) {
+          setCatState(c, 'sit', now, 4200 + Math.random() * 3200);
+        } else if (r < 0.64) {
+          setCatState(c, 'sleep', now, 6200 + Math.random() * 4600);
+        } else if (r < 0.74) {
+          setCatState(c, 'stand', now, 3600 + Math.random() * 2400);
+        } else if (r < 0.82) {
+          setCatState(c, 'knead', now, 2800 + Math.random() * 1400);
+          setSym(c, 'heart', now, 1300);
+        } else if (r < 0.87) {
+          setCatState(c, 'yawn', now, 1600);
+        } else if (propsOn && propById.bowl?.visible && r < 0.92 && !isPropBusy('bowl', c)) {
+          sendCatToProp(c, 'bowl', now, false);
+        } else if (propsOn && propById.cushion?.visible && r < 0.96 && !isPropBusy('cushion', c)) {
+          sendCatToProp(c, 'cushion', now, false);
+        } else {
           const tx = pickClearSpot(c, sw);
           c.targetX = tx;
-          c.state = 'walk';
+          setCatState(c, 'walk', now, 2600 + Math.random() * 2200);
           c.dir = tx >= c.x ? 1 : -1;
-          c.until = now + 2600 + Math.random() * 2400;
-        } else if (r < 0.93) {
-          c.state = 'sleep';
-          c.until = now + 5200 + Math.random() * 4400;
-        } else {
-          c.state = 'sit';
-          c.until = now + 3000 + Math.random() * 2600;
         }
         return;
       }
 
       if (c.breed === 'kitten') {
-        // Cozy Cuddle: occasionally trot beside sleeping/loafing chonky tabby to sync-nap!
         const chonk = cats[0];
-        if (chonk && chonk !== c && chonk.visible && !chonk.dragging && (chonk.state === 'sleep' || chonk.state === 'loaf') && r < 0.22) {
+        if (r < 0.30) {
+          setCatState(c, 'sit', now, 3600 + Math.random() * 2800);
+        } else if (r < 0.50) {
+          setCatState(c, 'stand', now, 3200 + Math.random() * 2600);
+        } else if (r < 0.68) {
+          setCatState(c, 'sleep', now, 5200 + Math.random() * 3800);
+        } else if (chonk && chonk !== c && chonk.visible && !chonk.dragging && (chonk.state === 'sleep' || chonk.state === 'loaf') && r < 0.78) {
           const sideLeft = chonk.x - c.cw - 3;
           const sideRight = chonk.x + chonk.cw + 3;
           const minX = 18;
@@ -2670,90 +2597,64 @@
           const cand = sideLeft >= minX && !overlapsAnyProp(sideLeft, c.cw) ? sideLeft : Math.min(maxX, sideRight);
           c.targetX = Math.max(minX, Math.min(maxX, Math.round(cand)));
           c.cuddleTarget = chonk.id;
-          c.state = 'walk';
+          setCatState(c, 'walk', now, 5200);
           c.dir = c.targetX >= c.x ? 1 : -1;
-          c.until = now + 5200;
-          return;
-        }
-        if (propsOn && propById.bowl?.visible && r < 0.30 && !isPropBusy('bowl', c)) {
-          sendCatToProp(c, 'bowl', now, false);
-        } else if (propsOn && propById.post?.visible && r < 0.38 && !isPropBusy('post', c)) {
-          sendCatToProp(c, 'post', now, false);
-        } else if (r < 0.66) {
+        } else if (r < 0.90) {
           const tx = pickClearSpot(c, sw);
           c.targetX = tx;
-          c.state = 'walk';
+          setCatState(c, 'walk', now, 2200 + Math.random() * 2000);
           c.dir = tx >= c.x ? 1 : -1;
-          c.until = now + 2200 + Math.random() * 2200;
-        } else if (r < 0.78) {
-          c.state = 'wiggle';
-          c.until = now + 750;
-        } else if (r < 0.88) {
-          c.state = 'sit';
-          c.until = now + 2400 + Math.random() * 2200;
-        } else if (r < 0.94) {
-          c.state = 'sleep';
-          c.until = now + 4200 + Math.random() * 3200;
+        } else if (propsOn && propById.bowl?.visible && r < 0.95 && !isPropBusy('bowl', c)) {
+          sendCatToProp(c, 'bowl', now, false);
         } else {
-          c.state = 'pounce';
-          c.vy = -4.5;
-          c.y = -1;
-          setSym(c, 'spark', now, 900);
-          c.until = now + 850;
+          setCatState(c, 'wiggle', now, 720);
         }
         return;
       }
 
       if (c.breed === 'calico') {
-        if (propsOn && propById.cushion?.visible && r < 0.14 && !isPropBusy('cushion', c)) {
+        if (r < 0.28) {
+          setCatState(c, 'sit', now, 4200 + Math.random() * 3200);
+        } else if (r < 0.50) {
+          setCatState(c, 'groom', now, 3200 + Math.random() * 2400);
+        } else if (r < 0.66) {
+          setCatState(c, 'sleep', now, 5600 + Math.random() * 4000);
+        } else if (r < 0.76) {
+          setCatState(c, 'stand', now, 3400 + Math.random() * 2400);
+        } else if (r < 0.85) {
+          setCatState(c, 'stretch', now, 1950);
+        } else if (propsOn && propById.cushion?.visible && r < 0.91 && !isPropBusy('cushion', c)) {
           sendCatToProp(c, 'cushion', now, false);
-        } else if (propsOn && propById.bowl?.visible && r < 0.22 && !isPropBusy('bowl', c)) {
+        } else if (propsOn && propById.bowl?.visible && r < 0.95 && !isPropBusy('bowl', c)) {
           sendCatToProp(c, 'bowl', now, false);
-        } else if (r < 0.44) {
-          c.state = 'groom';
-          c.until = now + 3000 + Math.random() * 2400;
-        } else if (r < 0.58) {
-          c.state = 'stretch';
-          c.until = now + 2200 + Math.random() * 1200;
-        } else if (r < 0.74) {
+        } else {
           const tx = pickClearSpot(c, sw);
           c.targetX = tx;
-          c.state = 'walk';
+          setCatState(c, 'walk', now, 2600 + Math.random() * 2200);
           c.dir = tx >= c.x ? 1 : -1;
-          c.until = now + 2600 + Math.random() * 2400;
-        } else if (r < 0.86) {
-          c.state = 'sit';
-          c.until = now + 3200 + Math.random() * 2800;
-        } else {
-          c.state = 'sleep';
-          c.until = now + 4800 + Math.random() * 3800;
         }
         return;
       }
 
-      // Slender Siamese
-      if (propsOn && propById.cushion?.visible && r < 0.22 && !isPropBusy('cushion', c)) {
+      // Soft Plush Ragdoll
+      if (r < 0.30) {
+        setCatState(c, 'sit', now, 4400 + Math.random() * 3200);
+      } else if (r < 0.48) {
+        setCatState(c, 'sleep', now, 5800 + Math.random() * 4200);
+      } else if (r < 0.64) {
+        setCatState(c, 'stand', now, 3600 + Math.random() * 2600);
+      } else if (r < 0.76) {
+        setCatState(c, 'tilt', now, 2200 + Math.random() * 1200);
+        setSym(c, 'q', now, 1300);
+      } else if (propsOn && propById.cushion?.visible && r < 0.85 && !isPropBusy('cushion', c)) {
         sendCatToProp(c, 'cushion', now, false);
-      } else if (propsOn && propById.post?.visible && r < 0.40 && !isPropBusy('post', c)) {
+      } else if (propsOn && propById.post?.visible && r < 0.92 && !isPropBusy('post', c)) {
         sendCatToProp(c, 'post', now, false);
-      } else if (propsOn && propById.bowl?.visible && r < 0.47 && !isPropBusy('bowl', c)) {
-        sendCatToProp(c, 'bowl', now, false);
-      } else if (r < 0.68) {
+      } else {
         const tx = pickClearSpot(c, sw);
         c.targetX = tx;
-        c.state = 'walk';
+        setCatState(c, 'walk', now, 2600 + Math.random() * 2200);
         c.dir = tx >= c.x ? 1 : -1;
-        c.until = now + 2600 + Math.random() * 2400;
-      } else if (r < 0.78) {
-        c.state = 'tilt';
-        setSym(c, 'q', now, 1300);
-        c.until = now + 1800 + Math.random() * 1200;
-      } else if (r < 0.90) {
-        c.state = 'sit';
-        c.until = now + 3400 + Math.random() * 2800;
-      } else {
-        c.state = 'sleep';
-        c.until = now + 4800 + Math.random() * 3800;
       }
     };
 
@@ -2805,6 +2706,7 @@
           c.state === 'wiggle' ||
           c.vy !== 0 ||
           now < c.squishUntil ||
+          now < c.landUntil ||
           now < c.boopUntil ||
           (c.y < 0 && c.atProp !== 'cushion')
         ) {
@@ -2878,14 +2780,13 @@
         }
         if (now >= butterfly.until || butterfly.x < 6 || butterfly.x > sw - 16 || butterfly.y < -44) {
           dismissButterfly();
-          butterfly.nextSpawnAt = now + 18000 + Math.random() * 12000;
+          butterfly.nextSpawnAt = now + 20000 + Math.random() * 12000;
         } else {
           drawButterfly(now);
-          // Pick hunter: Tiny Ginger Kitten priority, fallback Siamese
           let hunter = cats.find((c) => c.visible && !c.dragging && c.id === butterfly.hunterId) || null;
           if (!hunter) {
             hunter = cats.find((c) => c.visible && !c.dragging && c.breed === 'kitten') ||
-                     cats.find((c) => c.visible && !c.dragging && c.breed === 'siamese') || null;
+                     cats.find((c) => c.visible && !c.dragging && c.breed === 'ragdoll') || null;
             if (hunter) butterfly.hunterId = hunter.id;
           }
           if (hunter && !butterfly.fleeing && hunter.state !== 'pounce') {
@@ -2896,13 +2797,11 @@
                 hunter.targetX = null;
                 hunter.targetProp = null;
                 hunter.atProp = null;
-                hunter.state = 'wiggle';
-                hunter.until = now + 560;
+                setCatState(hunter, 'wiggle', now, 560);
               } else if (now >= hunter.until - 80) {
-                hunter.state = 'pounce';
-                hunter.vy = -4.6;
+                setCatState(hunter, 'pounce', now, 850);
+                hunter.vy = -4.5;
                 hunter.y = -1;
-                hunter.until = now + 850;
                 setSym(hunter, 'spark', now, 850);
                 butterfly.fleeing = true;
                 butterfly.vx = (dist >= 0 ? 1 : -1) * 1.8;
@@ -2911,14 +2810,13 @@
               hunter.targetX = null;
               hunter.targetProp = null;
               hunter.atProp = null;
-              hunter.state = 'walk';
-              hunter.until = now + 600;
+              setCatState(hunter, 'walk', now, 600);
             }
           }
         }
       }
 
-      // Multi-Cat Yarn Soccer (nearest 1-2 cats actively chase & bat yarn back and forth!)
+      // Multi-Cat Yarn Soccer (nearest 1-2 cats actively chase & bat yarn back and forth)
       let yarnChasers = null;
       if (yarn.active) {
         if (now >= yarn.until) {
@@ -2967,15 +2865,14 @@
           continue;
         }
 
-        // Siamese tsundere pet transition: tilt '?' -> happy heart
         if (c.tsundereUntil > 0 && now >= c.tsundereUntil) {
           c.tsundereUntil = 0;
-          c.state = 'happy';
-          c.until = now + 1300;
+          setCatState(c, 'happy', now, 1300);
           setSym(c, 'heart', now, 1300);
         }
 
         if ((c.y < 0 && c.atProp !== 'cushion') || c.vy !== 0) {
+          const prevVy = c.vy;
           c.y += c.vy * dtScale;
           c.vy += 1.42 * dtScale;
           if (c.y >= 0) {
@@ -2983,26 +2880,28 @@
             c.vy = 0;
             if (c.queuedHop) {
               c.queuedHop = false;
-              c.vy = -3.8;
+              c.vy = -3.6;
               c.y = -1;
               setSym(c, 'heart', now, 1000);
-            } else if (c.state === 'pounce') {
-              c.state = 'happy';
-              c.until = now + 700;
+            } else {
+              // Soft Q-elastic landing cushion
+              if (prevVy > 1.2) c.landUntil = now + 130;
+              if (c.state === 'pounce') {
+                setCatState(c, 'happy', now, 700);
+              }
             }
           }
         }
 
         if (!reduced && now >= c.nextBlink) {
           c.blinkUntil = now + 170;
-          c.nextBlink = now + 2600 + Math.random() * 3400;
+          c.nextBlink = now + 2800 + Math.random() * 3400;
         }
         if (!reduced && now >= c.nextTwitch) {
           c.twitchUntil = now + 220;
-          c.nextTwitch = now + 4200 + Math.random() * 4800;
+          c.nextTwitch = now + 4500 + Math.random() * 4800;
         }
 
-        // Yarn Soccer AI for the active 1-2 chasers
         if (!reduced && yarn.active && yarnChasers && yarnChasers.has(c)) {
           c.targetX = null;
           c.targetProp = null;
@@ -3013,7 +2912,6 @@
           if (Math.abs(dist) < c.cw * 0.52 && (yarn.lastHitCat !== c.id || now - yarn.lastHitAt > 360)) {
             yarn.lastHitCat = c.id;
             yarn.lastHitAt = now;
-            // Bat toward the other chaser if present, else away!
             let batDir = dist >= 0 ? 1 : -1;
             for (const other of yarnChasers) {
               if (other !== c) batDir = other.x >= c.x ? 1 : -1;
@@ -3021,26 +2919,22 @@
             yarn.vx = batDir * (4.4 + Math.random() * 2.0);
             yarn.vy = -3.6;
             c.dir = batDir;
-            c.state = 'wave';
-            c.until = now + 520;
+            setCatState(c, 'wave', now, 520);
             if (c.breed === 'kitten') {
               c.vy = -3.2;
               c.y = -1;
             }
             setSym(c, 'spark', now, 700);
           } else if (c.state !== 'wave' || now >= c.until) {
-            c.state = 'walk';
+            setCatState(c, 'walk', now, 500);
             c.dir = dist < 0 ? -1 : 1;
-            c.until = now + 500;
           }
         } else if (!reduced && now >= c.until) {
-          // Kitten wiggle transitions straight into a playful mini-pounce!
           if (c.breed === 'kitten' && c.state === 'wiggle') {
-            c.state = 'pounce';
-            c.vy = -4.4;
+            setCatState(c, 'pounce', now, 800);
+            c.vy = -4.2;
             c.y = -1;
             setSym(c, 'spark', now, 850);
-            c.until = now + 800;
           } else {
             pickNextBehavior(c, now, sw);
           }
@@ -3048,7 +2942,7 @@
 
         if (!reduced && c.state === 'walk') {
           const boost = yarn.active ? 1.38 : 1;
-          const stepPx = c.speed * 2.2 * boost * dtScale;
+          const stepPx = c.speed * 2.1 * boost * dtScale;
           if (c.targetX !== null) {
             const rem = c.targetX - c.x;
             if (Math.abs(rem) <= stepPx + 1.5) {
@@ -3056,15 +2950,12 @@
               if (c.targetProp) {
                 arriveAtProp(c, c.targetProp, now);
               } else if (c.cuddleTarget) {
-                // Arrived beside chonky tabby -> Cozy Cuddle sync-nap!
                 c.targetX = null;
-                c.state = 'sleep';
-                c.until = now + 6800 + Math.random() * 4000;
+                setCatState(c, 'sleep', now, 7200 + Math.random() * 4000);
                 setSym(c, 'heart', now, 1400);
               } else {
                 c.targetX = null;
-                c.state = c.breed === 'tabby' && Math.random() < 0.5 ? 'loaf' : Math.random() < 0.5 ? 'stand' : 'sit';
-                c.until = now + 2600 + Math.random() * 2600;
+                setCatState(c, c.breed === 'tabby' && Math.random() < 0.55 ? 'loaf' : 'sit', now, 3200 + Math.random() * 2800);
               }
             } else {
               c.dir = rem > 0 ? 1 : -1;
@@ -3085,8 +2976,8 @@
 
       enforceCatSeparation(minX, sw);
 
-      // Nose Boop Greeting (when two walking cats meet face-to-face during calm idle)
-      if (!reduced && !yarn.active && !streaming && !thinking && !quietNapNow && now - lastBoopAt > 8500) {
+      // Nose Boop Greeting with smooth sinusoidal lean easing
+      if (!reduced && !yarn.active && !streaming && !thinking && !quietNapNow && now - lastBoopAt > 9000) {
         for (let i = 0; i < cats.length; i++) {
           for (let j = i + 1; j < cats.length; j++) {
             const a = cats[i];
@@ -3104,14 +2995,14 @@
               b.dir = -a.dir;
               a.boopOffset = aLeft ? 2 : -2;
               b.boopOffset = -a.boopOffset;
-              a.boopUntil = b.boopUntil = now + 360;
-              a.state = 'happy';
-              b.state = 'happy';
-              a.until = b.until = now + 1300;
+              a.boopBornAt = b.boopBornAt = now;
+              a.boopUntil = b.boopUntil = now + 420;
+              setCatState(a, 'happy', now, 1300);
+              setCatState(b, 'happy', now, 1300);
               setSym(a, 'heart', now, 1300);
               setSym(b, 'spark', now, 1200);
               if (b.breed === 'kitten' || Math.random() < 0.45) {
-                b.vy = -3.4;
+                b.vy = -3.2;
                 b.y = -1;
               }
               break;
@@ -3137,9 +3028,8 @@
         c.cuddleTarget = null;
         if (c.atProp === 'cushion' && c.y < 0) c.y = 0;
         c.atProp = null;
-        c.state = 'stand';
+        setCatState(c, 'stand', now, 2400);
         c.twitchUntil = now + 650;
-        c.until = now + 2400;
         setSym(c, alerted === 0 ? 'alert' : 'sweat', now, 2200);
         paintCat(c, now);
         alerted += 1;
@@ -3173,13 +3063,11 @@
               c.targetProp = null;
               c.cuddleTarget = null;
               if (c.state === 'walk' || c.state === 'pounce' || c.state === 'wiggle' || c.state === 'scratch') {
-                c.state = c.breed === 'tabby' ? 'loaf' : c.idx % 2 === 0 ? 'sit' : 'stand';
-                c.until = now + 3200 + c.idx * 400;
+                setCatState(c, c.breed === 'tabby' ? 'loaf' : c.idx % 2 === 0 ? 'sit' : 'stand', now, 3400 + c.idx * 400);
               } else if (c.state === 'sleep' && c.idx === 0) {
                 if (c.atProp === 'cushion' && c.y < 0) c.y = 0;
                 c.atProp = null;
-                c.state = 'loaf';
-                c.until = now + 3400;
+                setCatState(c, 'loaf', now, 3600);
               }
               paintCat(c, now);
             }
@@ -3203,8 +3091,7 @@
               c.cuddleTarget = null;
               if (c.atProp === 'cushion' && c.y < 0) c.y = 0;
               c.atProp = null;
-              c.state = 'sit';
-              c.until = now + 3800;
+              setCatState(c, 'sit', now, 3800);
               setSym(c, i === 0 ? 'think' : 'q', now, 1800);
               paintCat(c, now);
             }
@@ -3238,11 +3125,10 @@
             c.cuddleTarget = null;
             if (c.atProp === 'cushion' && c.y < 0) c.y = 0;
             c.atProp = null;
-            c.state = 'happy';
-            c.until = now + 1200;
+            setCatState(c, 'happy', now, 1200);
             setSym(c, 'heart', now, 1200);
             if (!reduced) {
-              c.vy = c.breed === 'kitten' ? -4.2 : -3.4;
+              c.vy = c.breed === 'kitten' ? -4.0 : -3.2;
               c.y = -1;
             }
             paintCat(c, now);
@@ -3260,8 +3146,7 @@
           if (propById.post && propById.post.visible && !focusNap) {
             sendCatToProp(rightmost, 'post', now, false);
           } else {
-            rightmost.state = rightmost.breed === 'siamese' ? 'scratch' : 'wave';
-            rightmost.until = now + 1800;
+            setCatState(rightmost, rightmost.breed === 'ragdoll' ? 'scratch' : 'wave', now, 1800);
           }
           setSym(rightmost, 'sweat', now, 1800);
           paintCat(rightmost, now);
@@ -3275,8 +3160,7 @@
       if (type === 'send') {
         markUserInteraction(now);
         if (lead) {
-          lead.state = 'wave';
-          lead.until = now + 850;
+          setCatState(lead, 'wave', now, 850);
           setSym(lead, 'spark', now, 850);
           paintCat(lead, now);
           scheduleNext(true);
@@ -3286,16 +3170,15 @@
         const cmd = String(pl.cmd || '').toLowerCase();
         if (lead) {
           if (cmd === 'plan' || cmd === 'grill-me') {
-            lead.state = 'sit';
+            setCatState(lead, 'sit', now, 1500);
             setSym(lead, 'q', now, 1500);
           } else if (cmd === 'compact') {
-            lead.state = lead.poses.loaf1 ? 'loaf' : 'sit';
+            setCatState(lead, lead.poses.loaf1 ? 'loaf' : 'sit', now, 1500);
             setSym(lead, 'spark', now, 1400);
           } else {
-            lead.state = 'wave';
+            setCatState(lead, 'wave', now, 1500);
             setSym(lead, 'spark', now, 1200);
           }
-          lead.until = now + 1500;
           paintCat(lead, now);
           scheduleNext(true);
         }
@@ -3341,7 +3224,6 @@
       if (disposed) return;
       const pw = Math.max(220, Number(prevW) || 720);
       const nw = Math.max(220, Number(newW) || readStageWidth());
-      cachedStageRect = null;
       const minX = 18;
       syncActiveCatTiers(nw);
       drawProps(nw, true);
@@ -3394,8 +3276,7 @@
           c.targetX = null;
           c.targetProp = null;
           c.cuddleTarget = null;
-          c.state = 'sleep';
-          c.until = now + 10000;
+          setCatState(c, 'sleep', now, 10000);
         }
       }
       if (!shouldSuspend()) {
