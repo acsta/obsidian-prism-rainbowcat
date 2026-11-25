@@ -1968,8 +1968,17 @@
       ptr.clientY = ev.clientY || 0;
       ptr.lastAt = nowMs();
     };
+    const onTossYarn = () => {
+      if (shouldSuspend() || streaming || vramReclaimed) return;
+      const now = nowMs();
+      const sw = Math.max(220, readStageWidth());
+      markUserInteraction(now);
+      focusNap = false;
+      spawnYarn(sw - 34, now);
+    };
     if (win && typeof win.addEventListener === 'function') {
       win.addEventListener('pointermove', onGlobalMove, { passive: true });
+      win.addEventListener('ag-prism-toss-yarn', onTossYarn);
     }
 
     const setSym = (c, sym, now, dur) => {
@@ -3386,6 +3395,7 @@
       try { unregisterDragRelease(); } catch (_) {}
       if (win && typeof win.removeEventListener === 'function') {
         win.removeEventListener('pointermove', onGlobalMove);
+        win.removeEventListener('ag-prism-toss-yarn', onTossYarn);
       }
       reclaimVram();
       for (const pr of propNodes) {

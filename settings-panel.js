@@ -50,6 +50,7 @@
     accentTone: mkSp(['follow', 'cobalt', 'iris', 'amber', 'mono', 'rainbow']),
     rainbowStyle: mkSp(['aurora', 'pixel'], 'aurora'),
     rainbowPixelSize: mkSp(['4', '6', '8'], '6'),
+    chatScene: mkSp(['off', 'sky', 'stationery'], 'off'),
     cornerStyle: mkSp(['sharp', 'balanced', 'soft'], 'balanced'),
     ambientIntensity: mkSp(['0', '35', '70', '100'], '100'),
     motionLevel: mkSp(['off', 'subtle', 'standard', 'ultra'], 'ultra'),
@@ -709,6 +710,7 @@
             RS('accentTone', [['follow', U('optToneFollow')], ['cobalt', U('optToneCobalt')], ['iris', U('optToneIris')], ['amber', U('optToneAmber')], ['mono', U('optToneMono')], ['rainbow', U('optToneRainbow')]]),
             RS('rainbowStyle', [['aurora', U('optRainbowAurora', 'Soft Aurora')], ['pixel', U('optRainbowPixel', 'Pixel Bayer')]]),
             RS('rainbowPixelSize', [['4', '4px'], ['6', '6px'], ['8', '8px']]),
+            RS('chatScene', [['off', U('optChatSceneOff', 'Off')], ['sky', U('optChatSceneSky', 'Sky Sanctuary')], ['stationery', U('optChatSceneStationery', 'Pastel Stationery')]]),
             RS('cornerStyle', [['sharp', U('optCornerSharp')], ['balanced', U('optCornerBalanced')], ['soft', U('optCornerSoft')]]),
             RS('ambientIntensity', [['0', U('optAmb0', '0%')], ['35', U('optAmb35', '35%')], ['70', U('optAmb70', '70%')], ['100', U('optAmb100', '100%')]]),
             RS('motionLevel', [['off', U('optMotionOff')], ['subtle', U('optMotionSubtle')], ['standard', U('optMotionStandard')], ['ultra', U('optMotionUltra')]]),
@@ -746,7 +748,7 @@
           ]) rowDefs[r.key] = r;
 
           const groups = [
-            { id: 'appearance', title: U('grpAppearance'), keys: ['palette', 'lightPreset', 'accentTone', 'rainbowStyle', 'rainbowPixelSize', 'cornerStyle', 'ambientIntensity', 'motionLevel', 'targetFps', 'homeLayout', 'homeRipple', 'logoInk', 'language', 'hostLocalization'] },
+            { id: 'appearance', title: U('grpAppearance'), keys: ['palette', 'lightPreset', 'accentTone', 'rainbowStyle', 'rainbowPixelSize', 'chatScene', 'cornerStyle', 'ambientIntensity', 'motionLevel', 'targetFps', 'homeLayout', 'homeRipple', 'logoInk', 'language', 'hostLocalization'] },
             { id: 'interaction', title: U('grpInteraction'), keys: ['composerRestyle', 'placeholderStyle', 'smoothCaret', 'scrollBottomMotion', 'contextMenu', 'codeFont', 'codeLigatures', 'mascot', 'catCount', 'catProps', 'catQuietMode', 'sidebarRestyle', 'sidebarCompact', 'sidebarNavFold'] },
             { id: 'thought', title: U('grpThought'), keys: ['thoughtTranslate', 'thoughtTrigger', 'thoughtView'] },
             { id: 'modules', title: U('groupModules'), keys: ['telemetryModule', 'effortSliderModule', 'effortMemory', 'omniModule', 'linkTarget'] },

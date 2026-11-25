@@ -2086,6 +2086,9 @@ export class PrismDaemon {
     this.effortSliderExpr = '';
     this.effortSliderCodeHash = '';
     this._effortSliderHashSource = '';
+    this.chatSceneExpr = '';
+    this.chatSceneCodeHash = '';
+    this._chatSceneHashSource = '';
     this.codeHash = '';
     this.ownerToken = `${process.pid}-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`;
     this.pidFile = path.join(this.rootDir, '.daemon.pid');
@@ -3170,6 +3173,7 @@ export class PrismDaemon {
     this._buildWallpaperExprForConfig(cfg, cacheOpts);
     this._buildCatSanctuaryExprForConfig(cfg, cacheOpts);
     this._buildEffortSliderExprForConfig(cfg, cacheOpts);
+    this._buildChatSceneExprForConfig(cfg, cacheOpts);
 
     if (bundleCachePath) {
       if (deferDiskCacheWrite) {
@@ -3657,6 +3661,112 @@ export class PrismDaemon {
       entry.effortSliderMounted = false;
       entry.effortSliderSkipped = false;
       entry.lastEffortSliderHash = '';
+    }
+  }
+
+  _hasChatSceneClientFile() {
+    try {
+      return fs.existsSync(path.join(this.rootDir, 'vendor', 'chat-scene', 'chat-scene-client.js'));
+    } catch {
+      return false;
+    }
+  }
+
+  _isChatSceneEnabled(cfgOverride = null) {
+    try {
+      const cfg = cfgOverride || this.cdp?.readConfig?.();
+      if (typeof this.cdp?.shouldEnableChatScene === 'function') {
+        return Boolean(this.cdp.shouldEnableChatScene(cfg));
+      }
+      return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery';
+    } catch {
+      return false;
+    }
+  }
+
+  _extractChatSceneCodeHash(expr) {
+    const str = typeof expr === 'string' ? expr : '';
+    if (!str) return '';
+    const m = /const targetHash = "([^"]+)"/.exec(str);
+    if (m && m[1]) return m[1];
+    return crypto.createHash('sha256').update(str).digest('hex').slice(0, 16);
+  }
+
+  _setChatSceneExpr(expr) {
+    const next = typeof expr === 'string' ? expr : '';
+    this.chatSceneExpr = next;
+    this._chatSceneHashSource = next;
+    this.chatSceneCodeHash = this._extractChatSceneCodeHash(next);
+    return next;
+  }
+
+  _buildChatSceneExprForConfig(cfgOverride = null, cacheOpts = undefined) {
+    const cfg = cfgOverride || (typeof this.cdp?.readConfig === 'function' ? this.cdp.readConfig() : null);
+    if (!this._isChatSceneEnabled(cfg) || typeof this.cdp?.buildChatSceneExpression !== 'function') {
+      return this._setChatSceneExpr('');
+    }
+    const opts = cacheOpts !== undefined ? cacheOpts : this._getChannelCacheOpts(true);
+    const expr = opts
+      ? this.cdp.buildChatSceneExpression(cfg, opts)
+      : this.cdp.buildChatSceneExpression(cfg);
+    if (cacheOpts === undefined && opts && this.running) {
+      this._scheduleBundleCacheFlush();
+    }
+    return this._setChatSceneExpr(expr);
+  }
+
+  _getChatSceneExprHash(expr = this.chatSceneExpr) {
+    const str = typeof expr === 'string' ? expr : '';
+    if (!str) return '';
+    if (str === this._chatSceneHashSource && this.chatSceneCodeHash) {
+      return this.chatSceneCodeHash;
+    }
+    const hash = this._extractChatSceneCodeHash(str);
+    if (str === this.chatSceneExpr) {
+      this._chatSceneHashSource = str;
+      this.chatSceneCodeHash = hash;
+    }
+    return hash;
+  }
+
+  _getChatSceneCfgSig(cfgOverride = null, exprOverride = null) {
+    try {
+      const cfg = cfgOverride || this.cdp?.readConfig?.() || {};
+      if (!this._isChatSceneEnabled(cfg)) return '';
+      const mode = cfg.chatScene === 'stationery' ? 'stationery' : 'sky';
+      const exprHash = this._getChatSceneExprHash(typeof exprOverride === 'string' ? exprOverride : this.chatSceneExpr);
+      return `${mode}:${exprHash}`;
+    } catch {
+      return '';
+    }
+  }
+
+  _getChatSceneCleanupExpression() {
+    return (
+      (typeof this.cdp?.buildChatSceneCleanupExpression === 'function'
+        ? this.cdp.buildChatSceneCleanupExpression()
+        : '') ||
+      this.cdp?.CHAT_SCENE_REMOVE_EXPRESSION ||
+      "(() => { try { (window.__agChatSceneController || globalThis.__agChatSceneController)?.dispose?.(); } catch {} try { document.getElementById?.('ag-prism-chat-scene-root')?.remove?.(); } catch {} try { document.getElementById?.('ag-prism-chat-scene-css')?.remove?.(); } catch {} try { document.documentElement?.removeAttribute?.('data-ag-chat-scene'); } catch {} try { delete window.__agChatSceneController; } catch {} try { delete globalThis.__agChatSceneController; } catch {} return { ok: true, status: 'off' }; })()"
+    );
+  }
+
+  _recordChatSceneEvalOutcome(entry, evalRes, chatSceneSig) {
+    const isSkipped = Boolean(
+      evalRes && typeof evalRes.status === 'string' && evalRes.status.startsWith('skipped-')
+    );
+    if (evalRes && evalRes.ok) {
+      entry.chatSceneMounted = true;
+      entry.chatSceneSkipped = false;
+      entry.lastChatSceneSig = chatSceneSig;
+    } else if (isSkipped) {
+      entry.chatSceneMounted = false;
+      entry.chatSceneSkipped = true;
+      entry.lastChatSceneSig = chatSceneSig;
+    } else {
+      entry.chatSceneMounted = false;
+      entry.chatSceneSkipped = false;
+      entry.lastChatSceneSig = '';
     }
   }
 
@@ -5212,6 +5322,7 @@ export class PrismDaemon {
         let wallpaperSnap = this.wallpaperExpr;
         let catSanctuarySnap = this.catSanctuaryExpr;
         let effortSliderSnap = this.effortSliderExpr;
+        let chatSceneSnap = this.chatSceneExpr;
         const currentCfg = typeof this.cdp.readConfig === 'function' ? this.cdp.readConfig() : {};
         this._syncPollIntervalFromConfig(currentCfg);
         if (currentCfg?.telemetryModule === 'off') {
@@ -5248,6 +5359,11 @@ export class PrismDaemon {
           effortSliderSnap = this._buildEffortSliderExprForConfig(currentCfg);
         }
         const effortSliderHash = effortSliderEnabled && effortSliderSnap ? this._getEffortSliderExprHash(effortSliderSnap) : '';
+        const chatSceneEnabled = this._isChatSceneEnabled(currentCfg);
+        if (chatSceneEnabled && !chatSceneSnap && typeof this.cdp.buildChatSceneExpression === 'function') {
+          chatSceneSnap = this._buildChatSceneExprForConfig(currentCfg);
+        }
+        const chatSceneSig = chatSceneEnabled && chatSceneSnap ? this._getChatSceneCfgSig(currentCfg, chatSceneSnap) : '';
         const canFastRefresh = typeof this.cdp.buildConfigRefreshExpression === 'function';
         const baseRefreshExpr = canFastRefresh ? this.cdp.buildConfigRefreshExpression() : null;
         if (activeItems.length === 0) continue;
@@ -5435,6 +5551,25 @@ export class PrismDaemon {
                 entry.effortSliderMounted = false;
                 entry.effortSliderSkipped = false;
                 entry.lastEffortSliderHash = '';
+              }
+              if (abortIfStale()) return;
+              const hadChatScene = Boolean(entry.chatSceneScriptId || entry.chatSceneMounted);
+              const chatSceneChanged = Boolean(
+                chatSceneEnabled &&
+                  chatSceneSnap &&
+                  !entry.chatSceneSkipped &&
+                  (entry.lastChatSceneSig !== chatSceneSig || !entry.chatSceneScriptId || !entry.chatSceneMounted)
+              );
+              if (chatSceneEnabled && chatSceneSnap) {
+                if (!skippedStale && !entry.session.closed && !entry.chatSceneSkipped && (!refreshedFast || chatSceneChanged)) {
+                  const evalRes = await entry.session.evaluate(chatSceneSnap).catch(() => null);
+                  this._recordChatSceneEvalOutcome(entry, evalRes, chatSceneSig);
+                }
+              } else if (hadChatScene && !skippedStale && !entry.session.closed) {
+                await entry.session.evaluate(this._getChatSceneCleanupExpression()).catch(() => {});
+                entry.chatSceneMounted = false;
+                entry.chatSceneSkipped = false;
+                entry.lastChatSceneSig = '';
               }
 
               // Coalesce persistent NewDocument script replacement if a newer mutation is already queued!
@@ -5628,6 +5763,29 @@ export class PrismDaemon {
                   entry.lastEffortSliderScriptHash = effortSliderHash;
                 }
               }
+              if (!chatSceneEnabled || !chatSceneSnap) {
+                if (entry.chatSceneScriptId) {
+                  await entry.session
+                    .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId })
+                    .catch(() => {});
+                  entry.chatSceneScriptId = null;
+                }
+                entry.lastChatSceneScriptSig = '';
+              } else if ((entry.lastChatSceneScriptSig !== chatSceneSig || !entry.chatSceneScriptId) && !entry.session.closed) {
+                if (entry.chatSceneScriptId) {
+                  await entry.session
+                    .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId })
+                    .catch(() => {});
+                  entry.chatSceneScriptId = null;
+                }
+                const chatSceneAdd = await entry.session
+                  .send('Page.addScriptToEvaluateOnNewDocument', { source: chatSceneSnap })
+                  .catch(() => null);
+                if (chatSceneAdd && chatSceneAdd.identifier) {
+                  entry.chatSceneScriptId = chatSceneAdd.identifier;
+                  entry.lastChatSceneScriptSig = chatSceneSig;
+                }
+              }
             })
           )
         );
@@ -5754,6 +5912,10 @@ export class PrismDaemon {
           this._buildEffortSliderExprForConfig(curCfg, chOpts);
           if (chOpts && this.effortSliderExpr) usedChCache = true;
         }
+        if (!this.chatSceneExpr && this._isChatSceneEnabled(curCfg) && typeof this.cdp.buildChatSceneExpression === 'function') {
+          this._buildChatSceneExprForConfig(curCfg, chOpts);
+          if (chOpts && this.chatSceneExpr) usedChCache = true;
+        }
         if (usedChCache && this.running) {
           this._scheduleBundleCacheFlush();
         }
@@ -5829,6 +5991,12 @@ export class PrismDaemon {
             .catch(() => {});
           entry.effortSliderScriptId = null;
         }
+        if (entry.chatSceneScriptId) {
+          await entry.session
+            .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId })
+            .catch(() => {});
+          entry.chatSceneScriptId = null;
+        }
         await this._removeSidebarBinding(entry);
         await this._removeInlineDiffBinding(entry);
         await this._removeWallpaperBinding(entry);
@@ -5855,6 +6023,10 @@ export class PrismDaemon {
         entry.effortSliderSkipped = true;
         entry.lastEffortSliderHash = '';
         entry.lastEffortSliderScriptHash = '';
+        entry.chatSceneMounted = false;
+        entry.chatSceneSkipped = true;
+        entry.lastChatSceneSig = '';
+        entry.lastChatSceneScriptSig = '';
         return mainRes;
       }
 
@@ -6148,6 +6320,44 @@ export class PrismDaemon {
         entry.effortSliderSkipped = false;
         entry.lastEffortSliderHash = '';
         entry.lastEffortSliderScriptHash = '';
+      }
+      const hadChatSceneBefore = Boolean(entry.chatSceneScriptId || entry.chatSceneMounted);
+      if (entry.chatSceneScriptId) {
+        await entry.session
+          .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId })
+          .catch(() => {});
+        entry.chatSceneScriptId = null;
+      }
+      const chatSceneCfgNow = getCurrentCfg();
+      const chatSceneEnabledNow = this._isChatSceneEnabled(chatSceneCfgNow);
+      if (chatSceneEnabledNow) {
+        if (!this.chatSceneExpr && typeof this.cdp.buildChatSceneExpression === 'function') {
+          this._buildChatSceneExprForConfig(chatSceneCfgNow);
+        }
+        if (this.chatSceneExpr) {
+          const chatSceneAdd = await entry.session
+            .send('Page.addScriptToEvaluateOnNewDocument', { source: this.chatSceneExpr })
+            .catch(() => null);
+          if (chatSceneAdd && chatSceneAdd.identifier) {
+            entry.chatSceneScriptId = chatSceneAdd.identifier;
+          }
+          const evalRes = await entry.session.evaluate(this.chatSceneExpr).catch(() => null);
+          const chatSceneSig = this._getChatSceneCfgSig(chatSceneCfgNow, this.chatSceneExpr);
+          this._recordChatSceneEvalOutcome(entry, evalRes, chatSceneSig);
+          if (chatSceneAdd && chatSceneAdd.identifier) {
+            entry.lastChatSceneScriptSig = chatSceneSig;
+          } else {
+            entry.lastChatSceneScriptSig = '';
+          }
+        }
+      } else {
+        if (hadChatSceneBefore) {
+          await entry.session.evaluate(this._getChatSceneCleanupExpression()).catch(() => null);
+        }
+        entry.chatSceneMounted = false;
+        entry.chatSceneSkipped = false;
+        entry.lastChatSceneSig = '';
+        entry.lastChatSceneScriptSig = '';
       }
       entry.lastVerifyAt = Date.now();
       entry.healthyStreak = 1;
@@ -6814,6 +7024,11 @@ export class PrismDaemon {
       effortSliderSkipped: false,
       lastEffortSliderHash: '',
       lastEffortSliderScriptHash: '',
+      chatSceneScriptId: null,
+      chatSceneMounted: false,
+      chatSceneSkipped: false,
+      lastChatSceneSig: '',
+      lastChatSceneScriptSig: '',
       sidebarHostVerified: false,
       sidebarVerifiedDocument: -1,
       sidebarHostContextId: null,
@@ -6856,6 +7071,7 @@ export class PrismDaemon {
         entry.wallpaperSkipped = false;
         entry.catSanctuarySkipped = false;
         entry.effortSliderSkipped = false;
+        entry.chatSceneSkipped = false;
       };
       session.on('Runtime.executionContextCreated', (params) => {
         const ctx = params?.context;
@@ -7024,6 +7240,13 @@ export class PrismDaemon {
         entry.effortSliderMounted = false;
         entry.lastEffortSliderHash = '';
         entry.lastEffortSliderScriptHash = '';
+        if (entry.chatSceneScriptId) {
+          await session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId });
+          entry.chatSceneScriptId = null;
+        }
+        entry.chatSceneMounted = false;
+        entry.lastChatSceneSig = '';
+        entry.lastChatSceneScriptSig = '';
       } catch {}
       session.close();
       this.sessions.delete(wsUrl);
@@ -7063,6 +7286,11 @@ export class PrismDaemon {
     const effortSliderNeedsSync = effortSliderEnabled
       ? !entry.effortSliderSkipped && (!entry.effortSliderScriptId || !entry.effortSliderMounted)
       : Boolean(entry.effortSliderScriptId || entry.effortSliderMounted);
+    const chatSceneEnabled =
+      this._isChatSceneEnabled(cfg) && Boolean(this.chatSceneExpr || this._hasChatSceneClientFile());
+    const chatSceneNeedsSync = chatSceneEnabled
+      ? !entry.chatSceneSkipped && (!entry.chatSceneScriptId || !entry.chatSceneMounted)
+      : Boolean(entry.chatSceneScriptId || entry.chatSceneMounted);
     const now = Date.now();
     const hashMatches = !this.codeHash || entry.lastVerifiedCodeHash === this.codeHash;
     if (
@@ -7073,6 +7301,7 @@ export class PrismDaemon {
       !wallpaperNeedsSync &&
       !catSanctuaryNeedsSync &&
       !effortSliderNeedsSync &&
+      !chatSceneNeedsSync &&
       !entry.verifyDirty &&
       hashMatches &&
       entry.lastVerifyAt > 0 &&
@@ -7153,6 +7382,7 @@ export class PrismDaemon {
           hasWallpaperUi: Boolean(typeof window.__prismMountWallpaperUi === 'function'),
           hasCatSanctuaryFactory: Boolean(typeof (window.__agCatSanctuaryFactory || globalThis.__agCatSanctuaryFactory) === 'function'),
           hasEffortSlider: Boolean((window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider) && typeof (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider).sync === 'function'),
+          hasChatSceneController: Boolean((window.__agChatSceneController || globalThis.__agChatSceneController) && typeof (window.__agChatSceneController || globalThis.__agChatSceneController).sync === 'function'),
           codeHash: (api && api.codeHash) || '',
           hasLegacyCss: Boolean(document.getElementById('ag-claude-style-css')),
           needsDashboardSync: Boolean(api && telMode !== 'off' && !isHome && hasModelBtn && !hasPulseBar),
@@ -7217,6 +7447,12 @@ export class PrismDaemon {
         (!probe.hasEffortSlider || !entry.effortSliderScriptId || !entry.effortSliderMounted);
       const needsEffortSliderCleanup =
         !effortSliderEnabled && Boolean(probe.hasEffortSlider || entry.effortSliderScriptId || entry.effortSliderMounted);
+      const needsChatSceneHeal =
+        chatSceneEnabled &&
+        !entry.chatSceneSkipped &&
+        (!probe.hasChatSceneController || !entry.chatSceneScriptId || !entry.chatSceneMounted);
+      const needsChatSceneCleanup =
+        !chatSceneEnabled && Boolean(probe.hasChatSceneController || entry.chatSceneScriptId || entry.chatSceneMounted);
       let healed = false;
       if (
         (entry.sidebarHostVerified === false && probe.isHostDom) ||
@@ -7287,6 +7523,10 @@ export class PrismDaemon {
             await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId }).catch(() => {});
             entry.effortSliderScriptId = null;
           }
+          if (entry.chatSceneScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId }).catch(() => {});
+            entry.chatSceneScriptId = null;
+          }
           await this._removeSidebarBinding(entry);
           await this._removeInlineDiffBinding(entry);
           await this._removeWallpaperBinding(entry);
@@ -7313,6 +7553,10 @@ export class PrismDaemon {
           entry.effortSliderSkipped = true;
           entry.lastEffortSliderHash = '';
           entry.lastEffortSliderScriptHash = '';
+          entry.chatSceneMounted = false;
+          entry.chatSceneSkipped = true;
+          entry.lastChatSceneSig = '';
+          entry.lastChatSceneScriptSig = '';
           this._markTargetIgnored({ id: entry.pageId, webSocketDebuggerUrl: entry.wsUrl }, probe.href || entry.url);
           entry.session.close();
           this.sessions.delete(entry.wsUrl);
@@ -7554,6 +7798,35 @@ export class PrismDaemon {
           entry.effortSliderSkipped = false;
           entry.lastEffortSliderHash = '';
           entry.lastEffortSliderScriptHash = '';
+        }
+        if (chatSceneEnabled) {
+          if (!this.chatSceneExpr && typeof this.cdp.buildChatSceneExpression === 'function') {
+            this._buildChatSceneExprForConfig(cfg);
+          }
+          if (this.chatSceneExpr) {
+            const chatSceneSig = this._getChatSceneCfgSig(cfg, this.chatSceneExpr);
+            if (!entry.chatSceneScriptId) {
+              const chatSceneAdd = await entry.session
+                .send('Page.addScriptToEvaluateOnNewDocument', { source: this.chatSceneExpr })
+                .catch(() => null);
+              if (chatSceneAdd && chatSceneAdd.identifier) {
+                entry.chatSceneScriptId = chatSceneAdd.identifier;
+                entry.lastChatSceneScriptSig = chatSceneSig;
+              }
+            }
+            const evalRes = await entry.session.evaluate(this.chatSceneExpr, false, 4500).catch(() => null);
+            this._recordChatSceneEvalOutcome(entry, evalRes, chatSceneSig);
+          }
+        } else if (needsChatSceneCleanup) {
+          if (entry.chatSceneScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId }).catch(() => {});
+            entry.chatSceneScriptId = null;
+          }
+          await entry.session.evaluate(this._getChatSceneCleanupExpression(), false, 3500).catch(() => {});
+          entry.chatSceneMounted = false;
+          entry.chatSceneSkipped = false;
+          entry.lastChatSceneSig = '';
+          entry.lastChatSceneScriptSig = '';
         }
         this.log(`[↻] Hot-healed window to Obsidian Prism v${this.cdp.PLUGIN_VERSION}: ${entry.title}`);
       } else {
@@ -7820,6 +8093,39 @@ export class PrismDaemon {
           entry.lastEffortSliderHash = '';
           entry.lastEffortSliderScriptHash = '';
         }
+        if (needsChatSceneHeal) {
+          healed = true;
+          if (!this.chatSceneExpr && typeof this.cdp.buildChatSceneExpression === 'function') {
+            this._buildChatSceneExprForConfig(cfg);
+          }
+          if (this.chatSceneExpr) {
+            const chatSceneSig = this._getChatSceneCfgSig(cfg, this.chatSceneExpr);
+            if (!entry.chatSceneScriptId) {
+              const chatSceneAdd = await entry.session
+                .send('Page.addScriptToEvaluateOnNewDocument', { source: this.chatSceneExpr })
+                .catch(() => null);
+              if (chatSceneAdd && chatSceneAdd.identifier) {
+                entry.chatSceneScriptId = chatSceneAdd.identifier;
+                entry.lastChatSceneScriptSig = chatSceneSig;
+              }
+            }
+            if (!probe.hasChatSceneController || !entry.chatSceneMounted) {
+              const evalRes = await entry.session.evaluate(this.chatSceneExpr, false, 4500).catch(() => null);
+              this._recordChatSceneEvalOutcome(entry, evalRes, chatSceneSig);
+            }
+          }
+        } else if (needsChatSceneCleanup) {
+          healed = true;
+          if (entry.chatSceneScriptId) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId }).catch(() => {});
+            entry.chatSceneScriptId = null;
+          }
+          await entry.session.evaluate(this._getChatSceneCleanupExpression(), false, 3500).catch(() => {});
+          entry.chatSceneMounted = false;
+          entry.chatSceneSkipped = false;
+          entry.lastChatSceneSig = '';
+          entry.lastChatSceneScriptSig = '';
+        }
         if (probe.needsDashboardSync) {
           healed = true;
           await entry.session
@@ -8001,6 +8307,13 @@ export class PrismDaemon {
           entry.effortSliderMounted = false;
           entry.lastEffortSliderHash = '';
           entry.lastEffortSliderScriptHash = '';
+          if (entry.chatSceneScriptId && !entry.session.closed) {
+            await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId }).catch(() => {});
+          }
+          entry.chatSceneScriptId = null;
+          entry.chatSceneMounted = false;
+          entry.lastChatSceneSig = '';
+          entry.lastChatSceneScriptSig = '';
           if (cleanPageDom && !entry.session.closed) {
             await entry.session.evaluate(this.cdp.REMOVE_EXPRESSION).catch(() => {});
           }
@@ -8418,6 +8731,13 @@ export class PrismDaemon {
             entry.effortSliderMounted = false;
             entry.lastEffortSliderHash = '';
             entry.lastEffortSliderScriptHash = '';
+            if (entry.chatSceneScriptId) {
+              await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId }).catch(() => {});
+              entry.chatSceneScriptId = null;
+            }
+            entry.chatSceneMounted = false;
+            entry.lastChatSceneSig = '';
+            entry.lastChatSceneScriptSig = '';
             await entry.session.evaluate(this.cdp.REMOVE_EXPRESSION).catch(() => {});
           }
           entry.session.close();

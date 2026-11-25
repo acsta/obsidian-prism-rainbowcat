@@ -113,6 +113,7 @@
     out.catCount = pickOf(String(out.catCount ?? '4'), '1|2|4', '4');
     out.catProps = out.catProps === 'off' || out.catProps === false ? 'off' : 'on';
     out.catQuietMode = out.catQuietMode === 'nap' ? 'nap' : 'auto';
+    out.chatScene = pickOf(out.chatScene, 'sky|stationery', 'off');
     out.cornerStyle = pickOf(out.cornerStyle, 'sharp|balanced|soft', 'balanced');
     out.scrollBottomMotion = out.scrollBottomMotion === 'instant' ? 'instant' : 'smooth';
     out.codeFont = pickOf(out.codeFont, 'default|jetbrains|cascadia|sfmono', 'default');
@@ -274,7 +275,7 @@
   const routeConfigDirtyFlags = (prevCfg, nextCfg, patch) => {
     dirtyFlags.g = true;
     const any = (s) => s.split('|').some((k) => prevCfg[k] !== nextCfg[k] || O.hasOwn(patch, k));
-    if (any('palette|lightPreset|accentTone|rainbowStyle|rainbowPixelSize|ambientIntensity|cornerStyle|codeFont|codeLigatures')) dirtyFlags.t = true;
+    if (any('palette|lightPreset|accentTone|rainbowStyle|rainbowPixelSize|chatScene|ambientIntensity|cornerStyle|codeFont|codeLigatures')) dirtyFlags.t = true;
     if (any('accentTone|composerRestyle|placeholderStyle|mascot|catCount|catProps|catQuietMode|smoothCaret|telemetryModule|motionLevel|language')) dirtyFlags.c = true;
     if (any('homeLayout|homeRipple|language')) dirtyFlags.r = true;
     if (any('sidebarRestyle|sidebarCompact|sidebarNavFold')) dirtyFlags.s = true;
@@ -371,6 +372,7 @@
   const getCatCount = () => pickOf(String(cfg.catCount ?? '4'), '1|2|4', '4');
   const getCatProps = () => (cfg.catProps === 'off' || cfg.catProps === false ? 'off' : 'on');
   const getCatQuietMode = () => (cfg.catQuietMode === 'nap' ? 'nap' : 'auto');
+  const getChatScene = () => pickOf(cfg.chatScene, 'sky|stationery', 'off');
   const getCornerStyle = () => pickOf(cfg.cornerStyle, 'sharp|soft', 'balanced');
   const getCodeFont = () => pickOf(cfg.codeFont, 'jetbrains|cascadia|sfmono', 'default');
   const isCodeLigaturesEnabled = () => cfg.codeLigatures === true || cfg.codeLigatures === 'on';
@@ -758,6 +760,7 @@
           catCount: getCatCount(),
           catProps: getCatProps(),
           catQuietMode: getCatQuietMode(),
+          chatScene: getChatScene(),
           cornerStyle: getCornerStyle(),
           scrollBottomMotion: cfg.scrollBottomMotion === 'instant' ? 'instant' : 'smooth',
           sidebarNavFold: cfg.sidebarNavFold === 'on' ? 'on' : 'off',
@@ -1129,6 +1132,10 @@
         if (ha(html, 'data-ag-rainbow-style')) ra(html, 'data-ag-rainbow-style');
         if (ha(html, 'data-ag-rainbow-px')) ra(html, 'data-ag-rainbow-px');
       }
+      const chatScene = getChatScene();
+      if (chatScene !== 'off') setAttrIfChanged(html, 'data-ag-chat-scene', chatScene);
+      else if (ha(html, 'data-ag-chat-scene')) ra(html, 'data-ag-chat-scene');
+      try { W.__agChatSceneController?.sync?.(cfg); } catch {}
       if (cfg.sidebarRestyle === false) {
         if (ha(html, 'data-ag-cs-sidebar-collapsed')) ra(html, 'data-ag-cs-sidebar-collapsed');
         qa(D, '.ag-cs-sidebar-glide-pill').forEach((n) => n.remove());
@@ -1164,7 +1171,7 @@
         lastAppliedLang = lang;
         if (prevLang) refreshOpenUiForLanguage();
       }
-      const themeKey = `${palette}|${lightPreset}|${dark ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
+      const themeKey = `${palette}|${lightPreset}|${dark ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getChatScene()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
       if (themeKey !== lastThemeKey) {
         lastThemeKey = themeKey;
         refreshOptics();
@@ -1921,7 +1928,7 @@
   };
 
   const OWN_PLUGIN_SELECTOR =
-    '.ag-cs-home-panel-seat, .ag-cs-ripple-host, .ag-cs-conv-aura-host, .ag-cs-crab, .ag-cs-prism-rim-cv, .ag-cs-model-glyph, [data-testid="orchestrator-effort-bar"], .ag-cs-thinking-spark, .ag-cs-smooth-caret, .ag-cs-liftoff-veil, .ag-cs-sidebar-glide-pill, .ag-cs-pill-glide, .ag-cs-stream-chunk, .ag-cs-thought-chunk, .ag-anim-icon, .ag-prism-omni-menu, .ag-prism-omni-pane, .ag-cs-ctx-menu, .ag-cs-ctx-toast, [data-ag-prism-omni-owned="1"], [data-ag-prism-sidebar-owned="1"], .ces-ag-section, .ces-set, #ag-codex-effort-slider-styles, #ag-pulse-status-bar, #context-card, #quota-card, #cache-card, #speed-card, #' +
+    '.ag-cs-home-panel-seat, .ag-cs-ripple-host, .ag-cs-conv-aura-host, .ag-cs-crab, .ag-cs-prism-rim-cv, .ag-cs-model-glyph, [data-testid="orchestrator-effort-bar"], .ag-cs-thinking-spark, .ag-cs-smooth-caret, .ag-cs-liftoff-veil, .ag-cs-sidebar-glide-pill, .ag-cs-pill-glide, .ag-cs-stream-chunk, .ag-cs-thought-chunk, .ag-anim-icon, .ag-prism-omni-menu, .ag-prism-omni-pane, .ag-cs-ctx-menu, .ag-cs-ctx-toast, [data-ag-prism-omni-owned="1"], [data-ag-prism-sidebar-owned="1"], .ces-ag-section, .ces-set, #ag-codex-effort-slider-styles, #ag-pulse-status-bar, #context-card, #quota-card, #cache-card, #speed-card, #ag-prism-chat-scene-root, #ag-prism-chat-scene-css, #' +
     SETTINGS_SEC_ID +
     ', #ag-prism-css, #ag-prism-omni-css, #ag-prism-sidebar-studio-css, #ag-claude-style-css, #ag-prism-motion-off-css, #ag-prism-host-alert-css, ' +
     EXT_ZH_UI_SEL;
@@ -3122,7 +3129,7 @@
     activePollMs = nextMs;
     pollTimer = setInterval(() => {
       if (destroyed || D.hidden) return;
-      const expectedThemeKey = `${getEffectivePalette()}|${getLightPreset()}|${isDarkTheme() ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
+      const expectedThemeKey = `${getEffectivePalette()}|${getLightPreset()}|${isDarkTheme() ? 'd' : 'l'}|${getAccentTone()}|${getRainbowStyle()}|${getRainbowPixelSize()}|${getChatScene()}|${getAmbientIntensitySetting()}|${getCornerStyle()}`;
       if (expectedThemeKey !== lastThemeKey || !ha(de(), 'data-ag-prism')) applyRootAttrs();
       ensurePulseCardObserver();
       if (homeStudioCtl.wasHero() && cfg.homeLayout === 'studio') homeStudioCtl.scheduleUsageRollupRefresh(1800);
@@ -3221,6 +3228,7 @@
           catCount: getCatCount(),
           catProps: getCatProps(),
           catQuietMode: getCatQuietMode(),
+          chatScene: getChatScene(),
           cornerStyle: getCornerStyle(),
           scrollBottomMotion: cfg.scrollBottomMotion === 'instant' ? 'instant' : 'smooth',
           sidebarNavFold: cfg.sidebarNavFold === 'on' ? 'on' : 'off',
@@ -3272,6 +3280,9 @@
         } catch {}
       }
       try {
+        W.__agChatSceneController?.dispose?.();
+      } catch {}
+      try {
         W.__agPrismInlineDiff?.unbindHooks?.();
       } catch {}
       const targetCtxMenu = ownedCtxMenu || W.__agPrismContextMenu || GT.__agPrismContextMenu;
@@ -3305,7 +3316,7 @@
         for (const s of '|thought-view|omni|link-target|sidebar-studio|sidebar-host-sync'.split('|')) {
           ra(html, s ? 'data-ag-prism-' + s : 'data-ag-prism');
         }
-        for (const a of ['data-ag-rainbow-style', 'data-ag-rainbow-px', 'data-ag-cat-peek']) ra(html, a);
+        for (const a of ['data-ag-rainbow-style', 'data-ag-rainbow-px', 'data-ag-cat-peek', 'data-ag-chat-scene']) ra(html, a);
         rp(html, '--ag-spring-sidebar-ease');
         rp(html, '--ag-spring-sidebar-dur');
       }

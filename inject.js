@@ -44,6 +44,10 @@ const {
   buildEffortSliderExpression,
   buildEffortSliderCleanupExpression,
   EFFORT_SLIDER_REMOVE_EXPRESSION,
+  shouldEnableChatScene,
+  buildChatSceneExpression,
+  buildChatSceneCleanupExpression,
+  CHAT_SCENE_REMOVE_EXPRESSION,
 } = require('./cdp');
 
 const FALLBACK_THOUGHT_REMOVE_EXPRESSION =
@@ -54,6 +58,8 @@ const FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION =
   "(() => { try { (window.__agCatSanctuaryBridge || globalThis.__agCatSanctuaryBridge)?.dispose?.(); } catch {} try { document.querySelectorAll?.('.ag-v2-cat-sanctuary')?.forEach?.((el) => el.remove()); } catch {} try { document.querySelectorAll?.('[data-cat-sanctuary=\"1\"]')?.forEach?.((el) => el.removeAttribute('data-cat-sanctuary')); } catch {} try { document.documentElement?.removeAttribute?.('data-ag-cat-peek'); } catch {} try { delete window.__agCatSanctuaryFactory; } catch {} try { delete globalThis.__agCatSanctuaryFactory; } catch {} try { delete window.__agPrismCatRimState; } catch {} try { delete globalThis.__agPrismCatRimState; } catch {} return { ok: true, status: 'off' }; })()";
 const FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION =
   "(() => { try { (window.__agPrismEffortSlider || globalThis.__agPrismEffortSlider)?.destroy?.(); } catch {} try { document.querySelector?.('#ag-codex-effort-slider-styles[data-ag-prism-slider=\"1\"]')?.remove?.(); } catch {} try { document.getElementById?.('ag-prism-effort-slider-hide')?.remove?.(); } catch {} try { delete window.__agPrismEffortSlider; } catch {} try { delete globalThis.__agPrismEffortSlider; } catch {} try { delete window.AntigravityCodexEffortSlider; } catch {} try { delete globalThis.AntigravityCodexEffortSlider; } catch {} return { ok: true, status: 'off' }; })()";
+const FALLBACK_CHAT_SCENE_REMOVE_EXPRESSION =
+  "(() => { try { (window.__agChatSceneController || globalThis.__agChatSceneController)?.dispose?.(); } catch {} try { document.getElementById?.('ag-prism-chat-scene-root')?.remove?.(); } catch {} try { document.getElementById?.('ag-prism-chat-scene-css')?.remove?.(); } catch {} try { document.documentElement?.removeAttribute?.('data-ag-chat-scene'); } catch {} try { delete window.__agChatSceneController; } catch {} try { delete globalThis.__agChatSceneController; } catch {} return { ok: true, status: 'off' }; })()";
 const INLINE_DIFF_MAX_PAYLOAD_BYTES = 16384;
 const INLINE_DIFF_MAX_URI_LENGTH = 2048;
 
@@ -72,6 +78,15 @@ function isEffortSliderEnabledForConfig(cfg, checker = shouldEnableEffortSlider)
     return cfg?.effortSliderModule !== 'off' && cfg?.effortSliderModule !== false;
   } catch {
     return true;
+  }
+}
+
+function isChatSceneEnabledForConfig(cfg, checker = shouldEnableChatScene) {
+  try {
+    if (typeof checker === 'function') return Boolean(checker(cfg));
+    return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery';
+  } catch {
+    return false;
   }
 }
 
@@ -168,6 +183,7 @@ function createFastConfigRefreshBroadcaster({
       FALLBACK_CAT_SANCTUARY_REMOVE_EXPRESSION,
   }),
   getEffortSliderHooks = null,
+  getChatSceneHooks = null,
   getOmniServerInfo = () => null,
   getSidebarServiceReady = () => false,
   sidebarBinding = SIDEBAR_BINDING,
@@ -244,8 +260,30 @@ function createFastConfigRefreshBroadcaster({
     const effortSliderHashMatch = effortSliderExpr ? /const targetHash = "([^"]+)"/.exec(effortSliderExpr) : null;
     const effortSliderHash = effortSliderHashMatch ? effortSliderHashMatch[1] : effortSliderExpr;
     const effortSliderRemoveExpr = effortSliderHooks.removeExpression || FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION;
+    const chatSceneHooks =
+      typeof getChatSceneHooks === 'function'
+        ? getChatSceneHooks() || {}
+        : buildInj === buildInjectExpression
+        ? {
+            shouldEnable: shouldEnableChatScene,
+            buildExpression: buildChatSceneExpression,
+            removeExpression:
+              (typeof buildChatSceneCleanupExpression === 'function' ? buildChatSceneCleanupExpression() : '') ||
+              CHAT_SCENE_REMOVE_EXPRESSION ||
+              FALLBACK_CHAT_SCENE_REMOVE_EXPRESSION,
+          }
+        : { shouldEnable: () => false, buildExpression: () => '', removeExpression: '' };
+    const chatSceneEnabled = isChatSceneEnabledForConfig(cfgNow, chatSceneHooks.shouldEnable);
+    const chatSceneExpr =
+      chatSceneEnabled && typeof chatSceneHooks.buildExpression === 'function'
+        ? chatSceneHooks.buildExpression(cfgNow)
+        : '';
+    const chatSceneHashMatch = chatSceneExpr ? /const targetHash = "([^"]+)"/.exec(chatSceneExpr) : null;
+    const chatSceneHash = chatSceneHashMatch ? chatSceneHashMatch[1] : chatSceneExpr;
+    const chatSceneSig = chatSceneEnabled && chatSceneExpr ? `${cfgNow?.chatScene || ''}:${chatSceneHash}` : '';
+    const chatSceneRemoveExpr = chatSceneHooks.removeExpression || FALLBACK_CHAT_SCENE_REMOVE_EXPRESSION;
     if (typeof onExpressionsUpdated === 'function') {
-      onExpressionsUpdated({ expr, omniExpr, sidebarExpr, hostI18nExpr, thoughtExpr, inlineDiffExpr, catSanctuaryExpr, effortSliderExpr });
+      onExpressionsUpdated({ expr, omniExpr, sidebarExpr, hostI18nExpr, thoughtExpr, inlineDiffExpr, catSanctuaryExpr, effortSliderExpr, chatSceneExpr });
     }
     const canFastRefresh = typeof buildRefresh === 'function';
     const baseRefreshExpr = canFastRefresh ? buildRefresh() : null;
@@ -337,6 +375,26 @@ function createFastConfigRefreshBroadcaster({
                 entry.effortSliderSkipped = false;
                 entry.lastEffortSliderHash = '';
               }
+              if (chatSceneExpr && chatSceneEnabled) {
+                if (!entry.chatSceneSkipped && (!entry.chatSceneMounted || !entry.chatSceneScriptId || entry.lastChatSceneSig !== chatSceneSig)) {
+                  const scRes = await entry.session.evaluate(chatSceneExpr).catch(() => null);
+                  const scSkipped = Boolean(scRes && typeof scRes.status === 'string' && scRes.status.startsWith('skipped-'));
+                  if (scRes && scRes.ok) {
+                    entry.chatSceneMounted = true;
+                    entry.chatSceneSkipped = false;
+                    entry.lastChatSceneSig = chatSceneSig;
+                  } else if (scSkipped) {
+                    entry.chatSceneMounted = false;
+                    entry.chatSceneSkipped = true;
+                    entry.lastChatSceneSig = chatSceneSig;
+                  }
+                }
+              } else if (entry.chatSceneScriptId || entry.chatSceneMounted) {
+                if (chatSceneRemoveExpr) await entry.session.evaluate(chatSceneRemoveExpr).catch(() => {});
+                entry.chatSceneMounted = false;
+                entry.chatSceneSkipped = false;
+                entry.lastChatSceneSig = '';
+              }
             }
           } else {
             const reRes = await entry.session.evaluate(expr).catch(() => null);
@@ -356,6 +414,8 @@ function createFastConfigRefreshBroadcaster({
               entry.catSanctuarySkipped = true;
               entry.effortSliderMounted = false;
               entry.effortSliderSkipped = true;
+              entry.chatSceneMounted = false;
+              entry.chatSceneSkipped = true;
               continue;
             }
             if (omniEnabled && omniExpr) await entry.session.evaluate(omniExpr).catch(() => {});
@@ -427,6 +487,24 @@ function createFastConfigRefreshBroadcaster({
               entry.effortSliderSkipped = false;
               entry.lastEffortSliderHash = '';
             }
+            if (chatSceneExpr && chatSceneEnabled) {
+              const scRes = await entry.session.evaluate(chatSceneExpr).catch(() => null);
+              const scSkipped = Boolean(scRes && typeof scRes.status === 'string' && scRes.status.startsWith('skipped-'));
+              if (scRes && scRes.ok) {
+                entry.chatSceneMounted = true;
+                entry.chatSceneSkipped = false;
+                entry.lastChatSceneSig = chatSceneSig;
+              } else if (scSkipped) {
+                entry.chatSceneMounted = false;
+                entry.chatSceneSkipped = true;
+                entry.lastChatSceneSig = chatSceneSig;
+              }
+            } else if (entry.chatSceneScriptId || entry.chatSceneMounted) {
+              if (chatSceneRemoveExpr) await entry.session.evaluate(chatSceneRemoveExpr).catch(() => {});
+              entry.chatSceneMounted = false;
+              entry.chatSceneSkipped = false;
+              entry.lastChatSceneSig = '';
+            }
           }
         }
         if (entry.scriptId) {
@@ -493,6 +571,15 @@ function createFastConfigRefreshBroadcaster({
           entry.effortSliderScriptId = esAdd && esAdd.identifier ? esAdd.identifier : null;
           if (entry.effortSliderScriptId) entry.lastEffortSliderHash = effortSliderHash;
         }
+        if (entry.chatSceneScriptId) {
+          await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId }).catch(() => {});
+          entry.chatSceneScriptId = null;
+        }
+        if (chatSceneExpr && chatSceneEnabled) {
+          const scAdd = await entry.session.send('Page.addScriptToEvaluateOnNewDocument', { source: chatSceneExpr }).catch(() => null);
+          entry.chatSceneScriptId = scAdd && scAdd.identifier ? scAdd.identifier : null;
+          if (entry.chatSceneScriptId) entry.lastChatSceneSig = chatSceneSig;
+        }
       } catch {}
     }
   };
@@ -550,6 +637,14 @@ async function injectOnce() {
     (typeof buildEffortSliderCleanupExpression === 'function' ? buildEffortSliderCleanupExpression() : '') ||
     EFFORT_SLIDER_REMOVE_EXPRESSION ||
     FALLBACK_EFFORT_SLIDER_REMOVE_EXPRESSION;
+  const chatSceneExpr =
+    isChatSceneEnabledForConfig(cfgNow) && typeof buildChatSceneExpression === 'function'
+      ? buildChatSceneExpression(cfgNow)
+      : '';
+  const chatSceneRemoveExpr =
+    (typeof buildChatSceneCleanupExpression === 'function' ? buildChatSceneCleanupExpression() : '') ||
+    CHAT_SCENE_REMOVE_EXPRESSION ||
+    FALLBACK_CHAT_SCENE_REMOVE_EXPRESSION;
   for (const page of targets) {
     let session = null;
     try {
@@ -583,6 +678,11 @@ async function injectOnce() {
         await session.evaluate(effortSliderExpr).catch(() => {});
       } else if (effortSliderRemoveExpr) {
         await session.evaluate(effortSliderRemoveExpr).catch(() => {});
+      }
+      if (chatSceneExpr) {
+        await session.evaluate(chatSceneExpr).catch(() => {});
+      } else if (chatSceneRemoveExpr) {
+        await session.evaluate(chatSceneRemoveExpr).catch(() => {});
       }
       log(`[✓] ${shortTitle(page)} (obsidian-prism ${res.version} · 状态: ${res.status})`);
     } catch (err) {
@@ -736,6 +836,16 @@ async function watch() {
     isEffortSliderEnabledForConfig(initCfg, activeShouldEnableEffortSlider) && typeof activeBuildEffortSliderExpression === 'function'
       ? activeBuildEffortSliderExpression(initCfg)
       : '';
+  let activeShouldEnableChatScene = shouldEnableChatScene;
+  let activeBuildChatSceneExpression = buildChatSceneExpression;
+  let activeChatSceneRemoveExpression =
+    (typeof buildChatSceneCleanupExpression === 'function' ? buildChatSceneCleanupExpression() : '') ||
+    CHAT_SCENE_REMOVE_EXPRESSION ||
+    FALLBACK_CHAT_SCENE_REMOVE_EXPRESSION;
+  let chatSceneExpr =
+    isChatSceneEnabledForConfig(initCfg, activeShouldEnableChatScene) && typeof activeBuildChatSceneExpression === 'function'
+      ? activeBuildChatSceneExpression(initCfg)
+      : '';
   let _lazyReadSafeInlineDiff = null;
   async function loadReadSafeInlineDiff() {
     if (typeof _lazyReadSafeInlineDiff === 'function') return _lazyReadSafeInlineDiff;
@@ -810,6 +920,11 @@ async function watch() {
       buildExpression: activeBuildEffortSliderExpression,
       removeExpression: activeEffortSliderRemoveExpression,
     }),
+    getChatSceneHooks: () => ({
+      shouldEnable: activeShouldEnableChatScene,
+      buildExpression: activeBuildChatSceneExpression,
+      removeExpression: activeChatSceneRemoveExpression,
+    }),
     getOmniServerInfo: () => (omniServer ? omniServer.getServerInfo() : null),
     getSidebarServiceReady: () => Boolean(sidebarService),
     sidebarBinding: SIDEBAR_BINDING,
@@ -823,6 +938,7 @@ async function watch() {
       inlineDiffExpr = next.inlineDiffExpr;
       catSanctuaryExpr = next.catSanctuaryExpr;
       effortSliderExpr = next.effortSliderExpr;
+      chatSceneExpr = next.chatSceneExpr;
     },
   });
 
@@ -840,7 +956,7 @@ async function watch() {
     const res = await entry.session.evaluate(expr);
     entry.sidebarHostVerified = Boolean(res && res.status === 'ok');
     if (res && res.status === 'skipped-non-host') {
-      for (const key of ['scriptId', 'omniScriptId', 'sidebarScriptId', 'hostI18nScriptId', 'thoughtScriptId', 'inlineDiffScriptId', 'catSanctuaryScriptId', 'effortSliderScriptId']) {
+      for (const key of ['scriptId', 'omniScriptId', 'sidebarScriptId', 'hostI18nScriptId', 'thoughtScriptId', 'inlineDiffScriptId', 'catSanctuaryScriptId', 'effortSliderScriptId', 'chatSceneScriptId']) {
         if (entry[key]) {
           await entry.session
             .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry[key] })
@@ -866,6 +982,9 @@ async function watch() {
       entry.effortSliderMounted = false;
       entry.effortSliderSkipped = true;
       entry.lastEffortSliderHash = '';
+      entry.chatSceneMounted = false;
+      entry.chatSceneSkipped = true;
+      entry.lastChatSceneSig = '';
       return res;
     }
 
@@ -1054,6 +1173,45 @@ async function watch() {
       entry.effortSliderSkipped = false;
       entry.lastEffortSliderHash = '';
     }
+    const hadChatScene = Boolean(entry.chatSceneScriptId || entry.chatSceneMounted);
+    if (entry.chatSceneScriptId) {
+      await entry.session
+        .send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId })
+        .catch(() => {});
+      entry.chatSceneScriptId = null;
+    }
+    const chatSceneCfgNow = readConfig();
+    const chatSceneEnabledNow = isChatSceneEnabledForConfig(chatSceneCfgNow, activeShouldEnableChatScene);
+    if (chatSceneExpr && chatSceneEnabledNow) {
+      const scAdd = await entry.session
+        .send('Page.addScriptToEvaluateOnNewDocument', { source: chatSceneExpr })
+        .catch(() => null);
+      if (scAdd && scAdd.identifier) entry.chatSceneScriptId = scAdd.identifier;
+      const scRes = await entry.session.evaluate(chatSceneExpr).catch(() => null);
+      const scHashMatch = /const targetHash = "([^"]+)"/.exec(chatSceneExpr);
+      const scSig = `${chatSceneCfgNow?.chatScene || ''}:${scHashMatch ? scHashMatch[1] : chatSceneExpr}`;
+      const scSkipped = Boolean(scRes && typeof scRes.status === 'string' && scRes.status.startsWith('skipped-'));
+      if (scRes && scRes.ok) {
+        entry.chatSceneMounted = true;
+        entry.chatSceneSkipped = false;
+        entry.lastChatSceneSig = scSig;
+      } else if (scSkipped) {
+        entry.chatSceneMounted = false;
+        entry.chatSceneSkipped = true;
+        entry.lastChatSceneSig = scSig;
+      } else {
+        entry.chatSceneMounted = false;
+        entry.chatSceneSkipped = false;
+        entry.lastChatSceneSig = '';
+      }
+    } else {
+      if (hadChatScene && activeChatSceneRemoveExpression) {
+        await entry.session.evaluate(activeChatSceneRemoveExpression).catch(() => {});
+      }
+      entry.chatSceneMounted = false;
+      entry.chatSceneSkipped = false;
+      entry.lastChatSceneSig = '';
+    }
     return res;
   }
 
@@ -1085,6 +1243,10 @@ async function watch() {
         effortSliderMounted: false,
         effortSliderSkipped: false,
         lastEffortSliderHash: '',
+        chatSceneScriptId: null,
+        chatSceneMounted: false,
+        chatSceneSkipped: false,
+        lastChatSceneSig: '',
         docGen: 0,
         mainFrameId: null,
         hasFrameTree: false,
@@ -1119,6 +1281,7 @@ async function watch() {
         entry.inlineDiffSkipped = false;
         entry.catSanctuarySkipped = false;
         entry.effortSliderSkipped = false;
+        entry.chatSceneSkipped = false;
       });
       session.on('Page.frameNavigated', (params) => {
         const frame = params?.frame;
@@ -1131,6 +1294,7 @@ async function watch() {
           entry.inlineDiffSkipped = false;
           entry.catSanctuarySkipped = false;
           entry.effortSliderSkipped = false;
+          entry.chatSceneSkipped = false;
         }
       });
       await session.send('Page.enable');
@@ -1326,6 +1490,7 @@ async function watch() {
           if (entry.inlineDiffScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.inlineDiffScriptId });
           if (entry.catSanctuaryScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.catSanctuaryScriptId });
           if (entry.effortSliderScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.effortSliderScriptId });
+          if (entry.chatSceneScriptId) await entry.session.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: entry.chatSceneScriptId });
         } catch {}
         entry.session.close();
       }
@@ -1415,6 +1580,16 @@ async function watch() {
         effortSliderExpr =
           isEffortSliderEnabledForConfig(freshCfg, activeShouldEnableEffortSlider) && typeof activeBuildEffortSliderExpression === 'function'
             ? activeBuildEffortSliderExpression(freshCfg)
+            : '';
+        activeShouldEnableChatScene = freshCdp.shouldEnableChatScene;
+        activeBuildChatSceneExpression = freshCdp.buildChatSceneExpression;
+        activeChatSceneRemoveExpression =
+          (typeof freshCdp.buildChatSceneCleanupExpression === 'function' ? freshCdp.buildChatSceneCleanupExpression() : '') ||
+          freshCdp.CHAT_SCENE_REMOVE_EXPRESSION ||
+          FALLBACK_CHAT_SCENE_REMOVE_EXPRESSION;
+        chatSceneExpr =
+          isChatSceneEnabledForConfig(freshCfg, activeShouldEnableChatScene) && typeof activeBuildChatSceneExpression === 'function'
+            ? activeBuildChatSceneExpression(freshCfg)
             : '';
       } catch (err) {
         log(`[!] 读取文件失败: ${err.message}`);

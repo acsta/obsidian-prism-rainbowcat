@@ -362,7 +362,7 @@ test('mountOrSyncSettingsSection mounts all 27 settings (including omniModule, l
     assert.equal(sec.getAttribute('data-agy-no-translate'), 'true');
     assert.equal(sec.getAttribute('data-antigravity-zh-skip'), '1');
     const allRows = sec.querySelectorAll('[data-ag-cs-row]');
-    assert.equal(allRows.length, 39, 'Must render all 39 setting rows');
+    assert.equal(allRows.length, 40, 'Must render all 40 setting rows');
     const interactionGrp = sec.querySelector('[data-ag-cs-group="interaction"]');
     const interactionRowKeys = interactionGrp.querySelectorAll('[data-ag-cs-row]').map((r) => r.getAttribute('data-ag-cs-row'));
     assert.ok(interactionRowKeys.includes('sidebarNavFold'), 'interaction group must include sidebarNavFold');
@@ -433,7 +433,7 @@ test('mountOrSyncSettingsSection mounts all 27 settings (including omniModule, l
     await new Promise((r) => setTimeout(r, 25));
     assert.equal(clipboardWrites.length, 1);
     const exportedObj = JSON.parse(clipboardWrites[0]);
-    assert.equal(Object.keys(exportedObj.settings).length, 39);
+    assert.equal(Object.keys(exportedObj.settings).length, 40);
     assert.equal(exportedObj.settings.effortMemory, 'on');
     assert.equal(exportedObj.settings.sidebarNavFold, 'off');
     assert.equal(exportedObj.settings.scrollBottomMotion, 'smooth');
@@ -682,11 +682,11 @@ test('settings-panel lazy foldBody deferral on collapsed mount, memoized syncRoo
     assert.equal(foldBody.children.length, 0);
     assert.equal(matchCalls, 0);
 
-    // First click on foldHead lazily constructs all 39 rows and 6 groups
+    // First click on foldHead lazily constructs all 40 rows and 6 groups
     foldHead.click();
     assert.equal(sec.getAttribute('data-open'), '1');
     assert.equal(sec.getAttribute('data-body-built'), '1');
-    assert.equal(sec.querySelectorAll('[data-ag-cs-row]').length, 39);
+    assert.equal(sec.querySelectorAll('[data-ag-cs-row]').length, 40);
     assert.equal(sec.querySelectorAll('.ag-cs-settings-group').length, 6);
     const callsAfterExpand = matchCalls;
     assert.ok(callsAfterExpand > 0);

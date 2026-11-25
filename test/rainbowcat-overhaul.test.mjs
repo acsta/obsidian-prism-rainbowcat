@@ -849,3 +849,61 @@ test('9. inline-fallback.js dual Weekly+5h rainbow quota pill, hover-to-open (#q
     ctl.destroy();
   }
 });
+
+test('10. chatScene defaults to off across schema/config/cdp, Channel 10 fails closed when off and compiles cleanly for sky/stationery, and CHAT_SCENE_REMOVE_EXPRESSION cleans up DOM', () => {
+  const { PRISM_SETTINGS_SCHEMA } = settingsPanel;
+  const exampleCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.example.json'), 'utf8'));
+
+  assert.deepEqual(PRISM_SETTINGS_SCHEMA.chatScene.allowed, ['off', 'sky', 'stationery']);
+  assert.equal(PRISM_SETTINGS_SCHEMA.chatScene.default, 'off');
+  assert.equal(exampleCfg.chatScene, 'off');
+  assert.equal(cdp.DEFAULT_CONFIG.chatScene, 'off');
+
+  assert.equal(typeof cdp.shouldEnableChatScene, 'function', 'cdp.js must export shouldEnableChatScene');
+  assert.equal(typeof cdp.buildChatSceneExpression, 'function', 'cdp.js must export buildChatSceneExpression');
+  assert.equal(typeof cdp.CHAT_SCENE_REMOVE_EXPRESSION, 'string', 'cdp.js must export CHAT_SCENE_REMOVE_EXPRESSION');
+
+  assert.equal(cdp.shouldEnableChatScene({ chatScene: 'off' }), false);
+  assert.equal(cdp.shouldEnableChatScene({}), false);
+  assert.equal(cdp.buildChatSceneExpression({ chatScene: 'off' }), '', 'Channel 10 must fail-closed to empty string (0 B) when chatScene="off"');
+
+  for (const mode of ['sky', 'stationery']) {
+    assert.equal(cdp.shouldEnableChatScene({ chatScene: mode }), true);
+    const expr = cdp.buildChatSceneExpression({ chatScene: mode }, { useCache: false });
+    assert.ok(expr.length > 1000, `Channel 10 compiled payload must be non-empty for chatScene="${mode}"`);
+    assert.doesNotThrow(() => new vm.Script(expr), `Channel 10 compiled expression for "${mode}" must be valid JS`);
+  }
+
+  // Verify CHAT_SCENE_REMOVE_EXPRESSION cleans up controller, root, style, and html data-ag-chat-scene attr
+  const html = makeMiniEl('html', { 'data-ag-chat-scene': 'sky' });
+  const head = makeMiniEl('head');
+  const body = makeMiniEl('body');
+  html.appendChild(head);
+  html.appendChild(body);
+  const sceneStyle = makeMiniEl('style', { id: 'ag-prism-chat-scene-css' });
+  const sceneRoot = makeMiniEl('div', { id: 'ag-prism-chat-scene-root' });
+  head.appendChild(sceneStyle);
+  body.appendChild(sceneRoot);
+
+  let disposed = 0;
+  const sandbox = {
+    window: {},
+    globalThis: {},
+    document: {
+      documentElement: html,
+      getElementById: (id) => html.getElementById(id),
+      querySelector: (sel) => html.querySelector(sel),
+      querySelectorAll: (sel) => html.querySelectorAll(sel),
+    },
+  };
+  sandbox.window = sandbox;
+  sandbox.globalThis = sandbox;
+  sandbox.__agChatSceneController = { dispose() { disposed += 1; } };
+
+  vm.runInNewContext(cdp.CHAT_SCENE_REMOVE_EXPRESSION, sandbox);
+
+  assert.equal(disposed, 1, 'CHAT_SCENE_REMOVE_EXPRESSION must invoke __agChatSceneController.dispose()');
+  assert.equal(sceneRoot.removed, true, 'must remove #ag-prism-chat-scene-root');
+  assert.equal(sceneStyle.removed, true, 'must remove #ag-prism-chat-scene-css');
+  assert.equal(html.hasAttribute('data-ag-chat-scene'), false, 'must strip data-ag-chat-scene attribute from <html>');
+});

@@ -520,13 +520,14 @@ test('inject expression mounts cleanly without model-button or telemetry conflic
         .map((b) => b.getAttribute('data-ag-cs-key'))
         .filter(Boolean)
     );
-    assert.equal(settingKeys.size, 39);
+    assert.equal(settingKeys.size, 40);
     for (const expectedKey of [
       'palette',
       'lightPreset',
       'accentTone',
       'rainbowStyle',
       'rainbowPixelSize',
+      'chatScene',
       'motionLevel',
       'scrollBottomMotion',
       'targetFps',

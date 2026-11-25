@@ -30,6 +30,7 @@
   "accentTone": "follow",
   "rainbowStyle": "aurora",
   "rainbowPixelSize": "6",
+  "chatScene": "off",
   "cornerStyle": "balanced",
   "codeFont": "default",
   "codeLigatures": false,

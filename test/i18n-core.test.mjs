@@ -388,11 +388,13 @@ test('settings-panel schema, scene presets, strict apiKey-stripping JSON export,
   // Verify all 39 global config keys (including rainbow/cat sanctuary controls, effortMemory, contextMenu, sidebarNavFold, scrollBottomMotion, hostLocalization, omniModule, linkTarget, sidebarStudio, autoUpdate & updateChannel) match exact contract
   const { PRISM_SETTINGS_SCHEMA, SCENE_PRESETS, buildSanitizedConfigExport, validateImportedConfigJson, getDefaultSettingsPatch } =
     settingsPanel;
-  assert.equal(Object.keys(PRISM_SETTINGS_SCHEMA).length, 39);
+  assert.equal(Object.keys(PRISM_SETTINGS_SCHEMA).length, 40);
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.rainbowStyle.allowed, ['aurora', 'pixel']);
   assert.equal(PRISM_SETTINGS_SCHEMA.rainbowStyle.default, 'aurora');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.rainbowPixelSize.allowed, ['4', '6', '8']);
   assert.equal(PRISM_SETTINGS_SCHEMA.rainbowPixelSize.default, '6');
+  assert.deepEqual(PRISM_SETTINGS_SCHEMA.chatScene.allowed, ['off', 'sky', 'stationery']);
+  assert.equal(PRISM_SETTINGS_SCHEMA.chatScene.default, 'off');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.catCount.allowed, ['1', '2', '4']);
   assert.equal(PRISM_SETTINGS_SCHEMA.catCount.default, '4');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.catProps.allowed, ['on', 'off']);
@@ -502,12 +504,13 @@ test('settings-panel schema, scene presets, strict apiKey-stripping JSON export,
   assert.equal(validateImportedConfigJson('not-json').ok, false);
   assert.equal(validateImportedConfigJson('{"unknownOnly": 1}').ok, false);
   const defaultPatch = getDefaultSettingsPatch();
-  assert.equal(Object.keys(defaultPatch).length, 39);
+  assert.equal(Object.keys(defaultPatch).length, 40);
   assert.equal(defaultPatch.effortMemory, 'on');
   assert.equal(defaultPatch.sidebarNavFold, 'off');
   assert.equal(defaultPatch.scrollBottomMotion, 'smooth');
   assert.equal(defaultPatch.rainbowStyle, 'aurora');
   assert.equal(defaultPatch.rainbowPixelSize, '6');
+  assert.equal(defaultPatch.chatScene, 'off');
   assert.equal(defaultPatch.catCount, '4');
   assert.equal(defaultPatch.catProps, 'on');
   assert.equal(defaultPatch.catQuietMode, 'auto');

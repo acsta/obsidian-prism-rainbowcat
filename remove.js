@@ -10,6 +10,8 @@ const {
   buildCatSanctuaryCleanupExpression,
   EFFORT_SLIDER_REMOVE_EXPRESSION,
   buildEffortSliderCleanupExpression,
+  CHAT_SCENE_REMOVE_EXPRESSION,
+  buildChatSceneCleanupExpression,
   readPort,
   listPages,
   CdpSession,
@@ -325,6 +327,10 @@ async function main(argv = process.argv.slice(2), opts = {}) {
         typeof buildEffortSliderCleanupExpression === 'function'
           ? buildEffortSliderCleanupExpression()
           : EFFORT_SLIDER_REMOVE_EXPRESSION;
+      const chatSceneCleanupExpr =
+        typeof buildChatSceneCleanupExpression === 'function'
+          ? buildChatSceneCleanupExpression()
+          : CHAT_SCENE_REMOVE_EXPRESSION;
       for (const page of pages) {
         const session = await CdpSession.connect(page.webSocketDebuggerUrl);
         try {
@@ -333,6 +339,9 @@ async function main(argv = process.argv.slice(2), opts = {}) {
           }
           if (effortCleanupExpr) {
             await session.evaluate(effortCleanupExpr).catch(() => {});
+          }
+          if (chatSceneCleanupExpr) {
+            await session.evaluate(chatSceneCleanupExpr).catch(() => {});
           }
           const res = await session.evaluate(REMOVE_EXPRESSION);
           console.log(`[✓] 已恢复原生界面: ${page.title || page.url} (清理节点 ${res?.removed ?? 0})`);
