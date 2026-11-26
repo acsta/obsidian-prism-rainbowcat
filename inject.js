@@ -84,7 +84,7 @@ function isEffortSliderEnabledForConfig(cfg, checker = shouldEnableEffortSlider)
 function isChatSceneEnabledForConfig(cfg, checker = shouldEnableChatScene) {
   try {
     if (typeof checker === 'function') return Boolean(checker(cfg));
-    return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery';
+    return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery' || cfg?.chatScene === 'water';
   } catch {
     return false;
   }

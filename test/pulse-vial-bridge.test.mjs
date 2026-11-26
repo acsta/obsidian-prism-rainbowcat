@@ -85,10 +85,20 @@ function createPulseMockEnv({ cascadeId = '11111111-2222-4333-8444-555555555555'
       }
     }
 
-    const attrMatches = [...rest.matchAll(/\[([a-zA-Z0-9_-]+)(?:=["']?([^"'\]\s]+)["']?)?\]/g)];
+    const attrMatches = [...rest.matchAll(/\[([a-zA-Z0-9_-]+)(?:([~|^$*]?=)["']?([^"'\]\s]+)["']?)?\]/g)];
     for (const m of attrMatches) {
       if (!el.hasAttribute(m[1])) return false;
-      if (m[2] !== undefined && el.getAttribute(m[1]) !== m[2]) return false;
+      const op = m[2];
+      const want = m[3];
+      if (op && want !== undefined) {
+        const actual = el.getAttribute(m[1]) || '';
+        if (op === '=' && actual !== want) return false;
+        if (op === '^=' && !actual.startsWith(want)) return false;
+        if (op === '$=' && !actual.endsWith(want)) return false;
+        if (op === '*=' && !actual.includes(want)) return false;
+        if (op === '~=' && !actual.split(/\s+/).includes(want)) return false;
+        if (op === '|=' && actual !== want && !actual.startsWith(want + '-')) return false;
+      }
     }
 
     return true;
@@ -1540,6 +1550,104 @@ test('inline-fallback mounts isolated #ag-prism-pulse-bar invisible to external 
     await new Promise((r) => setTimeout(r, 80));
     assert.equal(ctrl.getState().mountedFallback, true, 'Must auto-restore #ag-prism-pulse-bar when entering /c/<uuid> conversation');
     assert.ok(env.doc.getElementById('ag-prism-pulse-bar'));
+  } finally {
+    ctrl.destroy();
+  }
+});
+
+test('inline-fallback mounts quota-only #ag-prism-pulse-bar[data-home-quota="1"] inside Home (.agy-home) composer footer', async () => {
+  const inlineMod = require('../vendor/pulse-dashboard/inline-fallback.js');
+  const env = createPulseMockEnv();
+  const homeEl = env.doc.createElement('div');
+  homeEl.className = 'agy-home';
+  // Top workspace/host bar ("This Computer / No Project") appears BEFORE the composer card in Antigravity Home DOM
+  const topHostBar = env.doc.createElement('div');
+  topHostBar.setAttribute('data-testid', 'input-box-bottom-toolbar');
+  const hostBtn = env.doc.createElement('button');
+  hostBtn.textContent = 'This Computer';
+  const projBtn = env.doc.createElement('button');
+  projBtn.textContent = 'No Project';
+  topHostBar.appendChild(hostBtn);
+  topHostBar.appendChild(projBtn);
+  homeEl.appendChild(topHostBar);
+
+  const composerCard = env.doc.createElement('div');
+  composerCard.className = 'surface-composer-card';
+  const homeFooter = env.doc.createElement('div');
+  homeFooter.className = 'agy-composer-footer flex items-center';
+  const modelBtn = env.doc.createElement('button');
+  modelBtn.setAttribute('data-testid', 'model-selector-trigger');
+  modelBtn.textContent = 'Gemini 4 Neon Medium';
+  const rightSlot = env.doc.createElement('div');
+  homeFooter.appendChild(modelBtn);
+  homeFooter.appendChild(rightSlot);
+  composerCard.appendChild(homeFooter);
+  homeEl.appendChild(composerCard);
+  env.doc.body.appendChild(homeEl);
+  env.win.location.pathname = '/';
+
+  env.win.__agPrismMetricsCall = (raw) => {
+    const req = JSON.parse(raw);
+    queueMicrotask(() => {
+      env.win.__agPrismMetricsResolve?.(req.id, {
+        connection: 'live',
+        groups: [
+          {
+            id: 'gemini-pro',
+            name: 'Gemini Pro',
+            description: 'Models: Gemini 4 Neon, Gemini 4 Hydrogen',
+            windows: {
+              weekly: { remainingFraction: 0.72, available: true },
+              '5h': { remainingFraction: 0.94, available: true },
+            },
+          },
+        ],
+      });
+    });
+  };
+
+  const ctrl = inlineMod.createTelemetryController({ window: env.win, document: env.doc });
+  try {
+    const st = ctrl.sync({ telemetryModule: 'auto', language: 'zh-CN' });
+    assert.equal(st.mountedFallback, true, 'Must mount #ag-prism-pulse-bar on Home when composer footer exists');
+    const bar = env.doc.getElementById('ag-prism-pulse-bar');
+    assert.ok(bar, 'Home composer must host #ag-prism-pulse-bar');
+    assert.equal(bar.parentElement, homeFooter, 'Must seat inside Home .agy-composer-footer');
+    assert.equal(bar.getAttribute('data-home-quota'), '1', 'Home bar must carry data-home-quota="1"');
+    const sr = bar.shadowRoot;
+    const shadowCss = sr.querySelector('style')?.textContent || '';
+    assert.ok(shadowCss.includes(':host([data-home-quota="1"]) .bar>:is([data-card="speed"],[data-card="cache"],[data-card="context"],.dot){display:none!important}'), 'Home quota mode must hide speed/cache/context chips');
+    assert.ok(shadowCss.includes(':host([data-home-quota="1"]) .bar>[data-card="quota"]:not([hidden]){display:inline-flex!important;max-width:none!important'), 'Home quota mode must keep quota pill immune to narrow tier hiding');
+
+    await new Promise((r) => setTimeout(r, 30));
+    const qChip = sr.querySelector('[data-card="quota"]');
+    assert.equal(qChip.hidden, false, 'Home remaining quota chip must become visible once quota groups arrive');
+    assert.equal(sr.getElementById('quota-w-num')?.textContent, '72%', 'Home quota chip must show weekly remaining percentage');
+    assert.equal(sr.getElementById('quota-5-txt')?.textContent, '5h 94%', 'Home quota chip must show 5h remaining percentage');
+    assert.equal(homeFooter.children.indexOf(bar), 1, 'Home quota bar must seat directly before the right control slot');
+    assert.equal(topHostBar.children.includes(bar), false, 'Must NOT mount inside the top "This Computer / No Project" toolbar above the composer card');
+
+    // Verify flat-sibling toolbar (without .agy-composer-footer wrapper) still seats right before Turbo/permissions button
+    composerCard.remove();
+    const flatRow = env.doc.createElement('div');
+    flatRow.setAttribute('data-testid', 'input-box-bottom-toolbar');
+    const leftGroup = env.doc.createElement('div');
+    const flatModel = env.doc.createElement('button');
+    flatModel.setAttribute('data-testid', 'model-selector-trigger');
+    flatModel.textContent = 'Gemini 4 Neon High';
+    leftGroup.appendChild(flatModel);
+    const permBtn = env.doc.createElement('button');
+    permBtn.setAttribute('data-testid', 'permissions-selector-trigger');
+    const sendBtn = env.doc.createElement('button');
+    sendBtn.setAttribute('data-testid', 'send-button');
+    flatRow.appendChild(leftGroup);
+    flatRow.appendChild(permBtn);
+    flatRow.appendChild(sendBtn);
+    homeEl.appendChild(flatRow);
+    ctrl.sync({ telemetryModule: 'auto', language: 'zh-CN' });
+    const flatBar = env.doc.getElementById('ag-prism-pulse-bar');
+    assert.equal(flatBar.parentElement, flatRow, 'Must re-seat into flat Home toolbar row');
+    assert.equal(flatRow.children.indexOf(flatBar), flatRow.children.indexOf(permBtn) - 1, 'Must seat immediately before permissions/Turbo trigger');
   } finally {
     ctrl.destroy();
   }

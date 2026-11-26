@@ -113,7 +113,7 @@
     out.catCount = pickOf(String(out.catCount ?? '4'), '1|2|4', '4');
     out.catProps = out.catProps === 'off' || out.catProps === false ? 'off' : 'on';
     out.catQuietMode = out.catQuietMode === 'nap' ? 'nap' : 'auto';
-    out.chatScene = pickOf(out.chatScene, 'sky|stationery', 'off');
+    out.chatScene = pickOf(out.chatScene, 'sky|stationery|water', 'off');
     out.cornerStyle = pickOf(out.cornerStyle, 'sharp|balanced|soft', 'balanced');
     out.scrollBottomMotion = out.scrollBottomMotion === 'instant' ? 'instant' : 'smooth';
     out.codeFont = pickOf(out.codeFont, 'default|jetbrains|cascadia|sfmono', 'default');
@@ -372,7 +372,7 @@
   const getCatCount = () => pickOf(String(cfg.catCount ?? '4'), '1|2|4', '4');
   const getCatProps = () => (cfg.catProps === 'off' || cfg.catProps === false ? 'off' : 'on');
   const getCatQuietMode = () => (cfg.catQuietMode === 'nap' ? 'nap' : 'auto');
-  const getChatScene = () => pickOf(cfg.chatScene, 'sky|stationery', 'off');
+  const getChatScene = () => pickOf(cfg.chatScene, 'sky|stationery|water', 'off');
   const getCornerStyle = () => pickOf(cfg.cornerStyle, 'sharp|soft', 'balanced');
   const getCodeFont = () => pickOf(cfg.codeFont, 'jetbrains|cascadia|sfmono', 'default');
   const isCodeLigaturesEnabled = () => cfg.codeLigatures === true || cfg.codeLigatures === 'on';

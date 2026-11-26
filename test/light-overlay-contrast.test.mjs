@@ -93,7 +93,15 @@ test('light-theme overlays avoid specificity inversion and dark fallback leaks a
     'inner [role="menu"] reset rule must exclude :not(.agy-overlay) so nested floating submenus keep their surface'
   );
 
-  // 6. CSS hygiene & Channel 1 budget check
+  // 6. Plan 1 Frosted Optical Film Grain + seamless rainbow horizon & opaque --sidebar sticky headers (no white blocks, no scroll bleed-through)
+  assert.ok(baseSection.includes('--ag-grain-svg:url("data:image/svg+xml,'), 'base rainbow scope must define frosted optical film grain texture');
+  assert.ok(baseSection.includes('height:280px;pointer-events:none;z-index:2;background:linear-gradient(108deg,'), 'sidebar top rainbow mist must fade smoothly over 280px without a hard edge');
+  assert.ok(baseSection.includes('& .bg-sidebar{background-color:#0E1118 !important;}'), 'sidebar sticky headers must use explicit opaque dark color to prevent scroll overlap and white blocks');
+  assert.ok(baseSection.includes(':is(.ag-cs-conv-aura-host,.ag-cs-ripple-host)::after'), 'bottom colorful WebGL2 horizon must layer matching frosted film grain');
+  assert.ok(baseSection.includes('[data-testid="section-header"] :is([data-testid="pinned-section-header"],[data-testid="coordinator-section-header"]){border-top:0 !important;'), 'nested pinned/coordinator section headers must not draw duplicate stacked top borders');
+  assert.ok(lightSection.includes('& .bg-sidebar{background-color:#F4F6FA !important;}'), 'light rainbow sticky headers must use explicit opaque #F4F6FA matching cool porcelain sidebar');
+
+  // 7. CSS hygiene & Channel 1 budget check
   assert.equal(/:has\(/.test(css), false, 'style.css must have 0 :has() selectors');
   assert.equal(/[^\x00-\x7F]/.test(css), false, 'style.css must remain pure ASCII');
   const expr = cdp.buildInjectExpression({});

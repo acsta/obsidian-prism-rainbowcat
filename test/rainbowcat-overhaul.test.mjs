@@ -850,11 +850,11 @@ test('9. inline-fallback.js dual Weekly+5h rainbow quota pill, hover-to-open (#q
   }
 });
 
-test('10. chatScene defaults to off across schema/config/cdp, Channel 10 fails closed when off and compiles cleanly for sky/stationery, and CHAT_SCENE_REMOVE_EXPRESSION cleans up DOM', () => {
+test('10. chatScene defaults to off across schema/config/cdp, Channel 10 fails closed when off and compiles cleanly for sky/stationery/water, and CHAT_SCENE_REMOVE_EXPRESSION cleans up DOM', () => {
   const { PRISM_SETTINGS_SCHEMA } = settingsPanel;
   const exampleCfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'config.example.json'), 'utf8'));
 
-  assert.deepEqual(PRISM_SETTINGS_SCHEMA.chatScene.allowed, ['off', 'sky', 'stationery']);
+  assert.deepEqual(PRISM_SETTINGS_SCHEMA.chatScene.allowed, ['off', 'sky', 'stationery', 'water']);
   assert.equal(PRISM_SETTINGS_SCHEMA.chatScene.default, 'off');
   assert.equal(exampleCfg.chatScene, 'off');
   assert.equal(cdp.DEFAULT_CONFIG.chatScene, 'off');
@@ -867,15 +867,21 @@ test('10. chatScene defaults to off across schema/config/cdp, Channel 10 fails c
   assert.equal(cdp.shouldEnableChatScene({}), false);
   assert.equal(cdp.buildChatSceneExpression({ chatScene: 'off' }), '', 'Channel 10 must fail-closed to empty string (0 B) when chatScene="off"');
 
-  for (const mode of ['sky', 'stationery']) {
+  for (const mode of ['sky', 'stationery', 'water']) {
     assert.equal(cdp.shouldEnableChatScene({ chatScene: mode }), true);
     const expr = cdp.buildChatSceneExpression({ chatScene: mode }, { useCache: false });
     assert.ok(expr.length > 1000, `Channel 10 compiled payload must be non-empty for chatScene="${mode}"`);
     assert.doesNotThrow(() => new vm.Script(expr), `Channel 10 compiled expression for "${mode}" must be valid JS`);
   }
 
+  // Verify Skylight Gallery water scene CSS invariants (pure ASCII, zero :has(), dry card protection & browser-hole guard)
+  const chatSceneSrc = fs.readFileSync(path.join(ROOT, 'vendor', 'chat-scene', 'chat-scene-client.js'), 'utf8');
+  assert.ok(chatSceneSrc.includes('html[data-ag-chat-scene="water"]:not(#_) [data-testid="agent-response"]'), 'water mode must protect assistant prose inside matte dry cards');
+  assert.ok(chatSceneSrc.includes('body[data-has-browser-hole="true"] #ag-prism-chat-scene-root[data-scene="water"]'), 'water mode must auto-hide when browser hole is active');
+  assert.ok(!chatSceneSrc.includes(':has('), 'chat-scene-client.js CSS must not contain :has() selectors');
+
   // Verify CHAT_SCENE_REMOVE_EXPRESSION cleans up controller, root, style, and html data-ag-chat-scene attr
-  const html = makeMiniEl('html', { 'data-ag-chat-scene': 'sky' });
+  const html = makeMiniEl('html', { 'data-ag-chat-scene': 'water' });
   const head = makeMiniEl('head');
   const body = makeMiniEl('body');
   html.appendChild(head);

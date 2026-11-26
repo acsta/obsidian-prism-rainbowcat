@@ -393,7 +393,7 @@ test('settings-panel schema, scene presets, strict apiKey-stripping JSON export,
   assert.equal(PRISM_SETTINGS_SCHEMA.rainbowStyle.default, 'aurora');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.rainbowPixelSize.allowed, ['4', '6', '8']);
   assert.equal(PRISM_SETTINGS_SCHEMA.rainbowPixelSize.default, '6');
-  assert.deepEqual(PRISM_SETTINGS_SCHEMA.chatScene.allowed, ['off', 'sky', 'stationery']);
+  assert.deepEqual(PRISM_SETTINGS_SCHEMA.chatScene.allowed, ['off', 'sky', 'stationery', 'water']);
   assert.equal(PRISM_SETTINGS_SCHEMA.chatScene.default, 'off');
   assert.deepEqual(PRISM_SETTINGS_SCHEMA.catCount.allowed, ['1', '2', '4']);
   assert.equal(PRISM_SETTINGS_SCHEMA.catCount.default, '4');

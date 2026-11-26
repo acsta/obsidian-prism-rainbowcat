@@ -647,6 +647,7 @@
     optChatSceneOff: ['关闭', '關閉', '關閉', 'Off', 'オフ'],
     optChatSceneSky: ['云端猫舍', '雲端貓舍', '雲端貓舍', 'Sky Sanctuary', '雲の猫カフェ'],
     optChatSceneStationery: ['和纸手账', '和紙手帳', '和紙手帳', 'Pastel Stationery', '和紙ノート'],
+    optChatSceneWater: ['天窗水幕', '天窗水幕', '天窗水幕', 'Skylight Water', '天窓の水面'],
     setCatCountTitle: ['猫窝猫咪数量', '貓窩貓咪數量', '貓窩貓咪數量', 'Cat Sanctuary Count', '猫の数'],
     setCatCountDesc: ['设置输入框上方活跃的像素猫咪数量。', '設定輸入框上方活躍的像素貓咪數量。', '設定輸入框上面活躍嘅像素貓咪數量。', 'Number of pixel cats lounging above the composer.', '入力欄上に表示するドット猫の匹数。'],
     optCatCount1: ['1 只', '1 隻', '1 隻', '1 Cat', '1匹'],

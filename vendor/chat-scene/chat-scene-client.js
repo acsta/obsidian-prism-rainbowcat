@@ -22,6 +22,7 @@
     off: 'off',
     sky: 'sky',
     stationery: 'stationery',
+    water: 'water',
   });
 
   const NO_TR_ATTRS = Object.freeze([
@@ -585,6 +586,311 @@
     '  16% { opacity: 0.78; }',
     '  76% { opacity: 0.62; }',
     '  100% { opacity: 0; transform: translate3d(var(--ag-sx, 6px), var(--ag-sy, -72px), 0) scale(1); }',
+    '}',
+    /* --- Skylight Gallery Water Scene (Scheme 3: Real 2D Shallow-Water Pool + Dry Matte Reading Cards) --- */
+    '#ag-prism-chat-scene-root[data-scene="water"] {',
+    '  position: absolute;',
+    '  inset: 0;',
+    '  z-index: 0;',
+    '  pointer-events: none;',
+    '  overflow: hidden;',
+    '}',
+    '#ag-prism-chat-scene-root[data-scene="water"] .ag-scene-water-cv {',
+    '  position: absolute;',
+    '  inset: 0;',
+    '  width: 100%;',
+    '  height: 100%;',
+    '  display: block;',
+    '  pointer-events: none;',
+    '}',
+    'body[data-has-browser-hole="true"] #ag-prism-chat-scene-root[data-scene="water"],',
+    '.agy-inset-shell[data-has-browser-hole="true"] #ag-prism-chat-scene-root[data-scene="water"] {',
+    '  display: none !important;',
+    '}',
+    /* Structural transparency for water visibility (excludes browser-hole & right aux pane) */
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) {',
+    '  isolation: isolate !important;',
+    '  background-color: transparent !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) > div.absolute.right-0 > div {',
+    '  background: transparent !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) [data-testid="sidebar-split"] {',
+    '  position: relative !important;',
+    '  z-index: 1 !important;',
+    '  background-color: transparent !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) [data-testid="sidebar-split"] > div:first-child,',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) [data-testid="sidebar-split"] > div:nth-child(3) {',
+    '  background-color: transparent !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) [data-testid="aux-pane-split"] > div:first-child .flex-1.min-h-0.flex.flex-col,',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) [data-testid="conversation-view"],',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-inset-shell:not([data-has-browser-hole="true"]) .agy-home {',
+    '  background-color: transparent !important;',
+    '  background-image: none !important;',
+    '}',
+    /* Suppress competing rainbow/horizon clouds when Skylight Water is active */
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-conv-aura-host,',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-ripple-host {',
+    '  opacity: 0 !important;',
+    '  pointer-events: none !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"]::before,',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"]::after {',
+    '  display: none !important;',
+    '  content: none !important;',
+    '}',
+    /* Light Theme: Limestone Skylight Gallery + Jade-Teal Accent + 95% Matte Stone-Porcelain Dry Cards */
+    'html[data-ag-chat-scene="water"]:not(#_),',
+    'html[data-ag-chat-scene="water"]:not(#_) > body {',
+    '  --primary: #0F766E !important;',
+    '  --primary-foreground: #FFFFFF !important;',
+    '  --link: #0F766E !important;',
+    '  --ag-cs-accent: #0F766E;',
+    '  --_sb: linear-gradient(180deg, #14B8A6 0%, #0F766E 100%);',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="aux-pane-split"] > div:nth-child(3) {',
+    '  background-color: rgba(248, 251, 250, 0.96) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-split"] > div:nth-child(2):not([data-sash-handle]) {',
+    '  background-color: rgba(19, 32, 36, 0.11) !important;',
+    '  opacity: 1 !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"] {',
+    '  background-color: rgba(226, 235, 236, 0.34) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(2) {',
+    '  margin: 2px 8px 6px !important;',
+    '  padding: 6px !important;',
+    '  border-radius: 12px !important;',
+    '  background-color: rgba(252, 253, 252, 0.94) !important;',
+    '  border: 1px solid rgba(19, 32, 36, 0.09) !important;',
+    '  box-shadow: 0 6px 18px -10px rgba(19, 32, 36, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(2) + div.h-px {',
+    '  opacity: 0 !important;',
+    '  margin: 0 !important;',
+    '  height: 2px !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(4) {',
+    '  margin: 2px 8px 6px !important;',
+    '  padding-top: 0 !important;',
+    '  border-radius: 12px !important;',
+    '  background-color: rgba(252, 253, 252, 0.92) !important;',
+    '  border: 1px solid rgba(19, 32, 36, 0.085) !important;',
+    '  box-shadow: 0 6px 18px -10px rgba(19, 32, 36, 0.14) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"] .bg-sidebar {',
+    '  background-color: #F7FAFA !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:last-child {',
+    '  margin: 0 8px 8px !important;',
+    '  border-radius: 10px !important;',
+    '  background-color: rgba(252, 253, 252, 0.92) !important;',
+    '  border: 1px solid rgba(19, 32, 36, 0.085) !important;',
+    '  border-top: 1px solid rgba(19, 32, 36, 0.085) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"] {',
+    '  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 249, 248, 0.96)) !important;',
+    '  border: 1px solid rgba(15, 118, 110, 0.24) !important;',
+    '  box-shadow: 0 2px 8px -4px rgba(15, 118, 110, 0.16), inset 0 1px 0 #FFFFFF !important;',
+    '  color: #132024 !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"]:hover {',
+    '  background: linear-gradient(180deg, #FFFFFF, #EFF7F6) !important;',
+    '  border-color: rgba(15, 118, 110, 0.44) !important;',
+    '  box-shadow: 0 5px 14px -5px rgba(15, 118, 110, 0.24), inset 0 1px 0 #FFFFFF !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"] svg {',
+    '  color: #0F766E !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) :is([data-testid="conversation-row-sidebar"], .agy-sidebar-row)[data-selected="true"] {',
+    '  background-color: #E6F2F1 !important;',
+    '  box-shadow: 0 1px 3px rgba(19, 32, 36, 0.06), 0 0 0 1px rgba(15, 118, 110, 0.16) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [class*="@container/titlebar"] {',
+    '  background-color: rgba(250, 252, 251, 0.84) !important;',
+    '  backdrop-filter: blur(14px) saturate(125%) !important;',
+    '  border-bottom: 1px solid rgba(19, 32, 36, 0.085) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) :is([data-testid="user-message-bubble"], .agy-user-bubble) {',
+    '  background-color: rgba(244, 249, 248, 0.96) !important;',
+    '  border: 1px solid rgba(15, 118, 110, 0.16) !important;',
+    '  box-shadow: 0 8px 22px -10px rgba(19, 32, 36, 0.18), inset 0 1px 0 #FFFFFF !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="agent-response"] {',
+    '  background-color: rgba(255, 255, 255, 0.95) !important;',
+    '  border: 1px solid rgba(19, 32, 36, 0.095) !important;',
+    '  border-radius: 16px !important;',
+    '  padding: 14px 18px !important;',
+    '  margin-top: 6px !important;',
+    '  box-shadow: 0 10px 28px -12px rgba(19, 32, 36, 0.16), 0 1px 2px rgba(19, 32, 36, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.96) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) [data-testid="cascade-system-message-toolbar"] {',
+    '  background-color: rgba(250, 252, 251, 0.88) !important;',
+    '  border: 1px solid rgba(19, 32, 36, 0.08) !important;',
+    '  border-radius: 10px !important;',
+    '  padding: 3px 10px !important;',
+    '  margin-top: 5px !important;',
+    '  width: fit-content !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .surface-composer-card {',
+    '  background-color: rgba(255, 255, 255, 0.95) !important;',
+    '  border: 1px solid rgba(15, 118, 110, 0.26) !important;',
+    '  box-shadow: 0 14px 32px -10px rgba(19, 32, 36, 0.22), inset 0 1px 0 #FFFFFF !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .surface-composer-card:focus-within {',
+    '  border-color: rgba(15, 118, 110, 0.48) !important;',
+    '  box-shadow: 0 16px 36px -10px rgba(15, 118, 110, 0.24), 0 0 0 3px rgba(15, 118, 110, 0.09), inset 0 1px 0 #FFFFFF !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .surface-composer-card::after {',
+    '  opacity: 0 !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .agy-home [data-testid="home-greeting"] {',
+    '  background-color: rgba(255, 255, 255, 0.88) !important;',
+    '  border: 1px solid rgba(19, 32, 36, 0.085) !important;',
+    '  border-radius: 14px !important;',
+    '  padding: 6px 16px !important;',
+    '  box-shadow: 0 8px 24px -12px rgba(19, 32, 36, 0.16) !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) :is(.ag-cs-home-studio-card, #ag-prism-home-studio) {',
+    '  background-color: rgba(255, 255, 255, 0.95) !important;',
+    '  border-color: rgba(19, 32, 36, 0.10) !important;',
+    '  box-shadow: 0 14px 34px -12px rgba(19, 32, 36, 0.18), inset 0 1px 0 #FFFFFF !important;',
+    '}',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="1"] { background: #E2EFEF !important; }',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="2"] { background: #B8DFDC !important; }',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="3"] { background: #6FC7C0 !important; }',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="4"] { background: #14B8A6 !important; }',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="5"] { background: #0F766E !important; }',
+    'html[data-ag-chat-scene="water"]:not(#_) .ag-cs-smooth-caret {',
+    '  background: linear-gradient(180deg, #14B8A6 0%, #0F766E 100%) !important;',
+    '}',
+    /* Dark Theme: Dark Basalt Skylight Gallery + Ice-Mint Accent + 95% Matte Basalt Dry Cards */
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_),',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) > body,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) > body {',
+    '  --primary: #5EEAD4 !important;',
+    '  --primary-foreground: #071516 !important;',
+    '  --link: #5EEAD4 !important;',
+    '  --ag-cs-accent: #5EEAD4;',
+    '  --_sb: linear-gradient(180deg, #99F6E4 0%, #2DD4BF 100%);',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="aux-pane-split"] > div:nth-child(3),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="aux-pane-split"] > div:nth-child(3) {',
+    '  background-color: rgba(13, 19, 21, 0.96) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-split"] > div:nth-child(2):not([data-sash-handle]),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-split"] > div:nth-child(2):not([data-sash-handle]) {',
+    '  background-color: rgba(148, 184, 184, 0.14) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [role="navigation"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [role="navigation"] {',
+    '  background-color: rgba(9, 15, 17, 0.40) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(2),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(2) {',
+    '  background-color: rgba(15, 22, 25, 0.94) !important;',
+    '  border-color: rgba(148, 184, 184, 0.14) !important;',
+    '  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.56), inset 0 1px 0 rgba(204, 251, 241, 0.06) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(4),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:nth-child(4) {',
+    '  background-color: rgba(15, 22, 25, 0.92) !important;',
+    '  border-color: rgba(148, 184, 184, 0.13) !important;',
+    '  box-shadow: 0 8px 22px -10px rgba(0, 0, 0, 0.52) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [role="navigation"] .bg-sidebar,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [role="navigation"] .bg-sidebar {',
+    '  background-color: #0F1619 !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:last-child,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [role="navigation"] > div:last-child {',
+    '  background-color: rgba(15, 22, 25, 0.92) !important;',
+    '  border-color: rgba(148, 184, 184, 0.13) !important;',
+    '  border-top-color: rgba(148, 184, 184, 0.13) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"] {',
+    '  background: linear-gradient(180deg, rgba(22, 34, 38, 0.95), rgba(16, 25, 28, 0.95)) !important;',
+    '  border-color: rgba(94, 234, 212, 0.28) !important;',
+    '  box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.54), inset 0 1px 0 rgba(204, 251, 241, 0.08) !important;',
+    '  color: #E6F0F0 !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"]:hover,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"]:hover {',
+    '  background: linear-gradient(180deg, rgba(26, 42, 46, 0.98), rgba(19, 31, 35, 0.98)) !important;',
+    '  border-color: rgba(94, 234, 212, 0.50) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"] svg,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="sidebar-navigation-items"] [data-testid="new-conversation-button"] svg {',
+    '  color: #5EEAD4 !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) :is([data-testid="conversation-row-sidebar"], .agy-sidebar-row)[data-selected="true"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) :is([data-testid="conversation-row-sidebar"], .agy-sidebar-row)[data-selected="true"] {',
+    '  background-color: rgba(94, 234, 212, 0.13) !important;',
+    '  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(94, 234, 212, 0.20) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [class*="@container/titlebar"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [class*="@container/titlebar"] {',
+    '  background-color: rgba(13, 19, 21, 0.84) !important;',
+    '  border-bottom-color: rgba(148, 184, 184, 0.12) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) :is([data-testid="user-message-bubble"], .agy-user-bubble),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) :is([data-testid="user-message-bubble"], .agy-user-bubble) {',
+    '  background-color: rgba(21, 38, 41, 0.95) !important;',
+    '  border-color: rgba(94, 234, 212, 0.18) !important;',
+    '  box-shadow: 0 10px 26px -10px rgba(0, 0, 0, 0.58), inset 0 1px 0 rgba(204, 251, 241, 0.08) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="agent-response"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="agent-response"] {',
+    '  background-color: rgba(15, 22, 25, 0.95) !important;',
+    '  border-color: rgba(148, 184, 184, 0.14) !important;',
+    '  box-shadow: 0 12px 30px -12px rgba(0, 0, 0, 0.64), inset 0 1px 0 rgba(204, 251, 241, 0.07) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) [data-testid="cascade-system-message-toolbar"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) [data-testid="cascade-system-message-toolbar"] {',
+    '  background-color: rgba(15, 22, 25, 0.88) !important;',
+    '  border-color: rgba(148, 184, 184, 0.12) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .surface-composer-card,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .surface-composer-card {',
+    '  background-color: rgba(16, 24, 27, 0.94) !important;',
+    '  border-color: rgba(94, 234, 212, 0.28) !important;',
+    '  box-shadow: 0 16px 34px -10px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(204, 251, 241, 0.12) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .surface-composer-card:focus-within,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .surface-composer-card:focus-within {',
+    '  border-color: rgba(94, 234, 212, 0.52) !important;',
+    '  box-shadow: 0 18px 38px -10px rgba(0, 0, 0, 0.72), 0 0 0 3px rgba(94, 234, 212, 0.12), inset 0 1px 0 rgba(204, 251, 241, 0.16) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .agy-home [data-testid="home-greeting"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .agy-home [data-testid="home-greeting"] {',
+    '  background-color: rgba(15, 22, 25, 0.88) !important;',
+    '  border-color: rgba(148, 184, 184, 0.14) !important;',
+    '  box-shadow: 0 10px 26px -12px rgba(0, 0, 0, 0.62) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) :is(.ag-cs-home-studio-card, #ag-prism-home-studio),',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) :is(.ag-cs-home-studio-card, #ag-prism-home-studio) {',
+    '  background-color: rgba(15, 22, 25, 0.95) !important;',
+    '  border-color: rgba(148, 184, 184, 0.14) !important;',
+    '  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.68), inset 0 1px 0 rgba(204, 251, 241, 0.08) !important;',
+    '}',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="1"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="1"] { background: #132528 !important; }',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="2"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="2"] { background: #1A3C41 !important; }',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="3"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="3"] { background: #0F766E !important; }',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="4"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="4"] { background: #2DD4BF !important; }',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="5"],',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .ag-cs-home-heat-cell[data-level="5"] { background: #99F6E4 !important; }',
+    'html[data-ag-cs-theme="dark"][data-ag-chat-scene="water"]:not(#_) .ag-cs-smooth-caret,',
+    'html.dark[data-ag-chat-scene="water"]:not(#_) .ag-cs-smooth-caret {',
+    '  background: linear-gradient(180deg, #99F6E4 0%, #2DD4BF 100%) !important;',
     '}',
   ].join('\n');
 
@@ -1447,6 +1753,7 @@
     let prefersReducedMotion = false;
     let paused = false;
     let sparkleCount = 0;
+    let waterEngine = null;
 
     let domObserver = null;
     let htmlObserver = null;
@@ -1541,6 +1848,11 @@
       if (seat && typeof seat.getAttribute === 'function' && seat.getAttribute('data-has-browser-hole') === 'true') {
         return true;
       }
+      if (mode === 'water' && typeof doc.querySelector === 'function') {
+        if (doc.querySelector('.agy-inset-shell[data-has-browser-hole="true"]')) {
+          return true;
+        }
+      }
       return false;
     }
 
@@ -1557,6 +1869,24 @@
     }
 
     function findActiveSeatParent() {
+      if (mode === 'water') {
+        hiddenByHome = false;
+        if (typeof doc.querySelector === 'function') {
+          const shell = doc.querySelector('.agy-inset-shell');
+          if (shell && isNodeVisible(shell)) return shell;
+          const split = doc.querySelector('[data-testid="sidebar-split"]');
+          if (split && isNodeVisible(split)) return split;
+        }
+        if (typeof doc.querySelectorAll === 'function') {
+          const views = doc.querySelectorAll('[data-testid="conversation-view"]');
+          for (let i = 0; i < views.length; i++) {
+            const cv = views[i];
+            if (typeof cv.closest === 'function' && cv.closest(SUBAGENT_SEL)) continue;
+            if (isNodeVisible(cv)) return cv.parentElement || cv;
+          }
+        }
+        return doc.body || null;
+      }
       if (readHomeVisible()) {
         hiddenByHome = true;
         return null;
@@ -1688,7 +2018,511 @@
       } catch {}
     }
 
+    function createSkylightWaterEngine(canvas) {
+      let ctx = null;
+      try {
+        ctx = canvas && typeof canvas.getContext === 'function' ? canvas.getContext('2d', { alpha: false }) : null;
+      } catch {
+        ctx = null;
+      }
+      if (!ctx || typeof doc.createElement !== 'function') {
+        return {
+          resize() {},
+          setTheme() {},
+          setPaused() {},
+          drop() {},
+          dispose() {},
+        };
+      }
+
+      const simCanvas = doc.createElement('canvas');
+      let simCtx = null;
+      try {
+        simCtx = simCanvas && typeof simCanvas.getContext === 'function' ? simCanvas.getContext('2d', { alpha: false }) : null;
+      } catch {
+        simCtx = null;
+      }
+      if (!simCtx || typeof simCtx.createImageData !== 'function') {
+        return {
+          resize() {},
+          setTheme() {},
+          setPaused() {},
+          drop() {},
+          dispose() {},
+        };
+      }
+
+      let disposed = false;
+      let isDark = dark;
+      let isPaused = paused;
+      let rafId = 0;
+      let cw = 960;
+      let ch = 640;
+      let GW = 240;
+      let GH = 156;
+      let hPrev = null;
+      let hCur = null;
+      let hNext = null;
+      let envR = null;
+      let envG = null;
+      let envB = null;
+      let imgData = null;
+      let pixels = null;
+      let waveEnergy = 0;
+      let lastTime = 0;
+      let accum = 0;
+      let lastIdlePaint = 0;
+      let dragging = false;
+      let lastDragAt = 0;
+      const STEP_MS = 1000 / 60;
+      const IDLE_FRAME_MS = 62;
+
+      function getNow() {
+        return typeof performance !== 'undefined' && typeof performance.now === 'function' ? performance.now() : Date.now();
+      }
+
+      function getPalette() {
+        if (isDark) {
+          return {
+            waterBase: [13, 24, 28],
+            waterDeep: [6, 12, 15],
+            waterHighlight: [228, 250, 248],
+            causticTint: [94, 214, 200],
+            troughTint: [2, 5, 7],
+            refractPx: 18,
+            slopeScale: 5.4,
+            specStrength: 192,
+            specPow: 30,
+            causticStrength: 38,
+            shadeStrength: 58,
+          };
+        }
+        return {
+          waterBase: [212, 224, 226],
+          waterDeep: [184, 202, 206],
+          waterHighlight: [255, 255, 255],
+          causticTint: [240, 252, 250],
+          troughTint: [112, 138, 144],
+          refractPx: 16,
+          slopeScale: 5.0,
+          specStrength: 175,
+          specPow: 28,
+          causticStrength: 34,
+          shadeStrength: 62,
+        };
+      }
+
+      function bakeEnv() {
+        if (!envR || !GW || !GH) return;
+        const p = getPalette();
+        const br = p.waterBase[0], bg = p.waterBase[1], bb = p.waterBase[2];
+        const dr = p.waterDeep[0], dg = p.waterDeep[1], db = p.waterDeep[2];
+        const hr = p.waterHighlight[0], hg = p.waterHighlight[1], hb = p.waterHighlight[2];
+        const skyMul = isDark ? 0.31 : 0.50;
+        const grainMul = isDark ? 2.2 : 3.4;
+
+        for (let y = 0; y < GH; y++) {
+          const ny = y / (GH - 1);
+          const row = y * GW;
+          for (let x = 0; x < GW; x++) {
+            const nx = x / (GW - 1);
+            const idx = row + x;
+            const depth = Math.min(1, Math.max(0, 0.24 + ny * 0.64 + (1 - nx) * 0.14));
+            let r = br + (dr - br) * depth;
+            let g = bg + (dg - bg) * depth;
+            let b = bb + (db - bb) * depth;
+
+            // Gallery architectural skylight louvers reflected cleanly across limestone/basalt water
+            const diag = nx * 1.08 - ny * 0.52;
+            const bar1 = Math.exp(-Math.pow((diag - 0.04) * 7.4, 2));
+            const bar2 = Math.exp(-Math.pow((diag - 0.36) * 7.9, 2)) * 0.85;
+            const bar3 = Math.exp(-Math.pow((diag - 0.68) * 7.1, 2)) * 0.78;
+            const bar4 = Math.exp(-Math.pow((diag - 0.96) * 8.4, 2)) * 0.55;
+            const skylight = Math.min(1, bar1 + bar2 + bar3 + bar4) * skyMul;
+
+            // Fine underwater stone grain for realistic Snell refraction
+            const grain = Math.sin(nx * 64 + ny * 12) * Math.cos(ny * 48 - nx * 18) * grainMul;
+            r = r + (hr - r) * skylight + grain;
+            g = g + (hg - g) * skylight + grain;
+            b = b + (hb - b) * skylight + grain;
+
+            envR[idx] = r < 0 ? 0 : r > 255 ? 255 : r;
+            envG[idx] = g < 0 ? 0 : g > 255 ? 255 : g;
+            envB[idx] = b < 0 ? 0 : b > 255 ? 255 : b;
+          }
+        }
+      }
+
+      function initBuffers() {
+        let w = 0;
+        let h = 0;
+        if (seatParent && typeof seatParent.getBoundingClientRect === 'function') {
+          try {
+            const r = seatParent.getBoundingClientRect();
+            w = Math.round(r.width || 0);
+            h = Math.round(r.height || 0);
+          } catch {}
+        }
+        if (!w || !h) {
+          w = Math.max(320, (win && win.innerWidth) || 960);
+          h = Math.max(240, (win && win.innerHeight) || 640);
+        }
+        cw = Math.max(320, w);
+        ch = Math.max(240, h);
+
+        const dpr = Math.min((win && win.devicePixelRatio) || 1, 1.25);
+        canvas.width = Math.max(1, Math.round(cw * dpr));
+        canvas.height = Math.max(1, Math.round(ch * dpr));
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        try {
+          ctx.imageSmoothingQuality = 'high';
+        } catch {}
+
+        const nextGH = 156;
+        const nextGW = Math.max(168, Math.min(320, Math.round(nextGH * (cw / ch))));
+        if (nextGW !== GW || nextGH !== GH || !hCur) {
+          GW = nextGW;
+          GH = nextGH;
+          simCanvas.width = GW;
+          simCanvas.height = GH;
+          const N = GW * GH;
+          hPrev = new Float32Array(N);
+          hCur = new Float32Array(N);
+          hNext = new Float32Array(N);
+          envR = new Float32Array(N);
+          envG = new Float32Array(N);
+          envB = new Float32Array(N);
+          imgData = simCtx.createImageData(GW, GH);
+          pixels = imgData.data;
+          bakeEnv();
+        }
+        renderFrame(getNow());
+      }
+
+      function drop(nx, ny, strength) {
+        if (disposed || !hCur || !GW || !GH) return;
+        if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
+        const cx = Math.round(Math.max(0.01, Math.min(0.99, nx)) * (GW - 1));
+        const cy = Math.round(Math.max(0.01, Math.min(0.99, ny)) * (GH - 1));
+        const rad = 6;
+        const sigma2 = 5.4;
+        const amp = 1.48 * (strength || 1.0);
+
+        for (let dy = -rad; dy <= rad; dy++) {
+          const y = cy + dy;
+          if (y <= 1 || y >= GH - 2) continue;
+          const row = y * GW;
+          for (let dx = -rad; dx <= rad; dx++) {
+            const x = cx + dx;
+            if (x <= 1 || x >= GW - 2) continue;
+            const d2 = (dx * dx + dy * dy) / sigma2;
+            if (d2 > 6.5) continue;
+            const v = -amp * Math.exp(-d2) * (1.0 - 0.34 * d2);
+            const idx = row + x;
+            const nv = hCur[idx] + v;
+            hCur[idx] = nv < -2.6 ? -2.6 : nv > 2.6 ? 2.6 : nv;
+          }
+        }
+        waveEnergy = Math.max(waveEnergy, Math.abs(amp));
+        if (!isPaused && !rafId) scheduleLoop();
+      }
+
+      function stepPhysics() {
+        const c2 = 0.34;
+        const damp = 0.988;
+        const w = GW;
+        const h = GH;
+        let maxAbs = 0;
+
+        for (let y = 1; y < h - 1; y++) {
+          const row = y * w;
+          const up = row - w;
+          const dn = row + w;
+          for (let x = 1; x < w - 1; x++) {
+            const i = row + x;
+            const hc = hCur[i];
+            const orth = hCur[i - 1] + hCur[i + 1] + hCur[up + x] + hCur[dn + x];
+            const diag = hCur[up + x - 1] + hCur[up + x + 1] + hCur[dn + x - 1] + hCur[dn + x + 1];
+            const lap = orth * 0.8 + diag * 0.2 - 4.0 * hc;
+
+            let next = (2.0 * hc - hPrev[i] + c2 * lap) * damp;
+            if (x < 4 || x > w - 5 || y < 4 || y > h - 5) next *= 0.95;
+            hNext[i] = next;
+            const a = next < 0 ? -next : next;
+            if (a > maxAbs) maxAbs = a;
+          }
+        }
+
+        const tmp = hPrev;
+        hPrev = hCur;
+        hCur = hNext;
+        hNext = tmp;
+        waveEnergy = maxAbs;
+      }
+
+      function renderFrame(now) {
+        if (disposed || !pixels || !hCur) return;
+        const p = getPalette();
+        const w = GW;
+        const h = GH;
+        const wm1 = w - 1;
+        const hm1 = h - 1;
+        const sec = now * 0.001;
+
+        const refractPx = p.refractPx;
+        const slopeScale = p.slopeScale;
+        const specStr = p.specStrength;
+        const specExp = p.specPow * 0.16;
+        const caustStr = p.causticStrength;
+        const shadeStr = p.shadeStrength;
+
+        const hr = p.waterHighlight[0] / 255;
+        const hg = p.waterHighlight[1] / 255;
+        const hb = p.waterHighlight[2] / 255;
+        const cr = p.causticTint[0] / 255;
+        const cg = p.causticTint[1] / 255;
+        const cb = p.causticTint[2] / 255;
+        const tr = p.troughTint[0];
+        const tg = p.troughTint[1];
+        const tb = p.troughTint[2];
+
+        const Lx = -0.46, Ly = -0.64, Lz = 0.61;
+        const Hx = -0.45, Hy = -0.60, Hz = 0.66;
+
+        for (let y = 0; y < h; y++) {
+          const yUp = y > 0 ? y - 1 : 0;
+          const yDn = y < hm1 ? y + 1 : hm1;
+          const row = y * w;
+          const rowUp = yUp * w;
+          const rowDn = yDn * w;
+
+          const sy1 = Math.sin(y * 0.085 - sec * 0.72);
+          const cy2 = Math.cos(y * 0.14 + sec * 0.50);
+
+          for (let x = 0; x < w; x++) {
+            const xL = x > 0 ? x - 1 : 0;
+            const xR = x < wm1 ? x + 1 : wm1;
+            const i = row + x;
+
+            const ambNx = Math.cos(x * 0.065 + sec * 0.60) * sy1 * 0.042;
+            const ambNy = Math.sin(x * 0.048 - sec * 0.42) * cy2 * 0.042;
+
+            const dhx = hCur[row + xL] - hCur[row + xR];
+            const dhy = hCur[rowUp + x] - hCur[rowDn + x];
+            const nx = dhx * slopeScale + ambNx;
+            const ny = dhy * slopeScale + ambNy;
+
+            const rfx = x + nx * refractPx;
+            const rfy = y + ny * refractPx;
+            const sx = rfx < 0 ? 0 : rfx > wm1 ? wm1 : (rfx | 0);
+            const sy = rfy < 0 ? 0 : rfy > hm1 ? hm1 : (rfy | 0);
+            const sRow = sy * w;
+
+            const disp = (nx * 1.3) | 0;
+            const sxR = sx + disp < 0 ? 0 : sx + disp > wm1 ? wm1 : sx + disp;
+            const sxB = sx - disp < 0 ? 0 : sx - disp > wm1 ? wm1 : sx - disp;
+
+            let r = envR[sRow + sxR];
+            let g = envG[sRow + sx];
+            let b = envB[sRow + sxB];
+
+            const invLen = 1.0 / Math.sqrt(nx * nx + ny * ny + 1.0);
+            const Nx = nx * invLen;
+            const Ny = ny * invLen;
+            const Nz = invLen;
+
+            const ndotl = Nx * Lx + Ny * Ly + Nz * Lz;
+            const slopeDelta = ndotl - Lz;
+            if (slopeDelta > 0) {
+              const lift = slopeDelta * shadeStr;
+              r += lift * hr;
+              g += lift * hg;
+              b += lift * hb;
+            } else {
+              const dip = Math.min(0.45, -slopeDelta * (shadeStr * 0.011));
+              r = r * (1 - dip) + tr * dip;
+              g = g * (1 - dip) + tg * dip;
+              b = b * (1 - dip) + tb * dip;
+            }
+
+            const curv = (hCur[row + xL] + hCur[row + xR] + hCur[rowUp + x] + hCur[rowDn + x]) - 4.0 * hCur[i];
+            if (curv < -0.008) {
+              const cAmt = Math.min(1.0, -curv * 3.8) * caustStr;
+              r += cAmt * cr;
+              g += cAmt * cg;
+              b += cAmt * cb;
+            }
+
+            const ndoth = Nx * Hx + Ny * Hy + Nz * Hz;
+            if (ndoth > 0.76) {
+              const base = (ndoth - 0.76) / 0.24;
+              const spec = Math.pow(base, specExp) * specStr;
+              r += spec * hr;
+              g += spec * hg;
+              b += spec * hb;
+            }
+
+            const idx4 = i * 4;
+            pixels[idx4] = r < 0 ? 0 : r > 255 ? 255 : r;
+            pixels[idx4 + 1] = g < 0 ? 0 : g > 255 ? 255 : g;
+            pixels[idx4 + 2] = b < 0 ? 0 : b > 255 ? 255 : b;
+            pixels[idx4 + 3] = 255;
+          }
+        }
+
+        simCtx.putImageData(imgData, 0, 0);
+        ctx.drawImage(simCanvas, 0, 0, cw, ch);
+      }
+
+      function tick(now) {
+        rafId = 0;
+        if (disposed || isPaused) return;
+
+        if (!lastTime) lastTime = now;
+        const dt = Math.min(48, Math.max(0, now - lastTime));
+        lastTime = now;
+
+        if (waveEnergy > 0.0012) {
+          accum += dt;
+          let steps = 0;
+          while (accum >= STEP_MS && steps < 2) {
+            stepPhysics();
+            accum -= STEP_MS;
+            steps++;
+          }
+          renderFrame(now);
+        } else {
+          accum = 0;
+          if (now - lastIdlePaint >= IDLE_FRAME_MS) {
+            lastIdlePaint = now;
+            renderFrame(now);
+          }
+        }
+
+        scheduleLoop();
+      }
+
+      function scheduleLoop() {
+        if (disposed || isPaused || rafId) return;
+        if (typeof win.requestAnimationFrame === 'function') {
+          rafId = win.requestAnimationFrame(tick);
+        }
+      }
+
+      function stopLoop() {
+        if (rafId && typeof win.cancelAnimationFrame === 'function') {
+          try {
+            win.cancelAnimationFrame(rafId);
+          } catch {}
+        }
+        rafId = 0;
+        lastTime = 0;
+        accum = 0;
+      }
+
+      function pointFromEvent(ev) {
+        if (!ev || typeof ev.clientX !== 'number' || typeof ev.clientY !== 'number') return null;
+        if (typeof canvas.getBoundingClientRect !== 'function') return null;
+        const rect = canvas.getBoundingClientRect();
+        if (!rect || rect.width < 10 || rect.height < 10) return null;
+        const nx = (ev.clientX - rect.left) / rect.width;
+        const ny = (ev.clientY - rect.top) / rect.height;
+        if (nx < 0 || nx > 1 || ny < 0 || ny > 1) return null;
+        return { nx, ny };
+      }
+
+      function onPointerDown(ev) {
+        if (disposed || isPaused) return;
+        if (ev && typeof ev.button === 'number' && ev.button !== 0) return;
+        dragging = true;
+        const pt = pointFromEvent(ev);
+        if (pt) drop(pt.nx, pt.ny, 1.15);
+      }
+
+      function onPointerMove(ev) {
+        if (!dragging || disposed || isPaused) return;
+        if (ev && typeof ev.buttons === 'number' && (ev.buttons & 1) === 0) {
+          dragging = false;
+          return;
+        }
+        const now = getNow();
+        if (now - lastDragAt < 42) return;
+        lastDragAt = now;
+        const pt = pointFromEvent(ev);
+        if (pt) drop(pt.nx, pt.ny, 0.44);
+      }
+
+      function onPointerUp() {
+        dragging = false;
+      }
+
+      if (typeof win.addEventListener === 'function') {
+        win.addEventListener('pointerdown', onPointerDown, { passive: true, capture: true });
+        win.addEventListener('pointermove', onPointerMove, { passive: true, capture: true });
+        win.addEventListener('pointerup', onPointerUp, { passive: true, capture: true });
+        win.addEventListener('pointercancel', onPointerUp, { passive: true, capture: true });
+      }
+
+      initBuffers();
+      if (!isPaused) {
+        scheduleLoop();
+        trackTimeout(() => {
+          if (!disposed && !isPaused) drop(0.32, 0.68, 1.05);
+        }, 120);
+        trackTimeout(() => {
+          if (!disposed && !isPaused) drop(0.76, 0.72, 0.95);
+        }, 300);
+      }
+
+      return {
+        resize() {
+          if (!disposed) initBuffers();
+        },
+        setTheme(nextDark) {
+          const d = Boolean(nextDark);
+          if (d !== isDark) {
+            isDark = d;
+            bakeEnv();
+            renderFrame(getNow());
+          }
+        },
+        setPaused(nextPaused) {
+          const p = Boolean(nextPaused);
+          if (p === isPaused) return;
+          isPaused = p;
+          if (isPaused) stopLoop();
+          else scheduleLoop();
+        },
+        drop,
+        dispose() {
+          disposed = true;
+          stopLoop();
+          if (typeof win.removeEventListener === 'function') {
+            win.removeEventListener('pointerdown', onPointerDown, { capture: true });
+            win.removeEventListener('pointermove', onPointerMove, { capture: true });
+            win.removeEventListener('pointerup', onPointerUp, { capture: true });
+            win.removeEventListener('pointercancel', onPointerUp, { capture: true });
+          }
+          hPrev = null;
+          hCur = null;
+          hNext = null;
+          envR = null;
+          envG = null;
+          envB = null;
+          imgData = null;
+          pixels = null;
+        },
+      };
+    }
+
     function clearRootChildren(el) {
+      if (waterEngine) {
+        try {
+          waterEngine.dispose();
+        } catch {}
+        waterEngine = null;
+      }
       if (!el) return;
       while (el.firstChild) {
         if (typeof el.removeChild === 'function') el.removeChild(el.firstChild);
@@ -1734,6 +2568,11 @@
 
         const yarn = buildStationeryYarnCharm(doc, handleYarnClick);
         rootEl.appendChild(yarn.btn);
+      } else if (targetMode === 'water') {
+        const cv = applyNoTr(createHtmlEl(doc, 'canvas', { class: 'ag-scene-water-cv', 'aria-hidden': 'true' }));
+        bgLayer.appendChild(cv);
+        rootEl.appendChild(bgLayer);
+        waterEngine = createSkylightWaterEngine(cv);
       }
     }
 
@@ -1814,6 +2653,9 @@
         rootEl.style.setProperty('--ag-scene-col-half', Math.round(READING_COL_PX / 2) + 'px');
       }
       setAttrIfChanged(rootEl, 'data-narrow', narrow ? '1' : null);
+      if (waterEngine && typeof waterEngine.resize === 'function') {
+        waterEngine.resize();
+      }
     }
 
     function updateRuntimeAttrs() {
@@ -1836,6 +2678,10 @@
         setAttrIfChanged(rootEl, 'data-hole', hiddenByHole ? '1' : null);
         setAttrIfChanged(rootEl, 'data-home', hiddenByHome ? '1' : null);
         setAttrIfChanged(rootEl, 'data-streaming', streaming ? '1' : null);
+      }
+      if (waterEngine) {
+        if (typeof waterEngine.setTheme === 'function') waterEngine.setTheme(dark);
+        if (typeof waterEngine.setPaused === 'function') waterEngine.setPaused(paused);
       }
       syncSparkleLoop();
     }
@@ -1861,6 +2707,12 @@
 
     function unmountRootOnly() {
       stopSparkleLoop();
+      if (waterEngine) {
+        try {
+          waterEngine.dispose();
+        } catch {}
+        waterEngine = null;
+      }
       if (resizeObserver) {
         try {
           resizeObserver.disconnect();
@@ -1909,7 +2761,9 @@
       if (seatParent !== targetSeat || rootEl.parentElement !== targetSeat) {
         seatParent = targetSeat;
         const auraHost =
-          typeof targetSeat.querySelector === 'function' ? targetSeat.querySelector('.ag-cs-conv-aura-host') : null;
+          mode !== 'water' && typeof targetSeat.querySelector === 'function'
+            ? targetSeat.querySelector('.ag-cs-conv-aura-host')
+            : null;
         if (auraHost && auraHost.parentElement === targetSeat && typeof targetSeat.insertBefore === 'function') {
           targetSeat.insertBefore(rootEl, auraHost.nextSibling || null);
         } else if (targetSeat.firstChild && typeof targetSeat.insertBefore === 'function') {
@@ -2168,10 +3022,19 @@
         hiddenByHole,
         sparkleCount,
         seatWidth,
+        waterActive: Boolean(waterEngine),
       };
     }
 
-    return { sync, dispose, getState };
+    function triggerWaterDrop(nx, ny, strength) {
+      if (waterEngine && typeof waterEngine.drop === 'function') {
+        waterEngine.drop(nx, ny, strength);
+        return true;
+      }
+      return false;
+    }
+
+    return { sync, dispose, getState, triggerWaterDrop };
   }
 
   const controller = createChatSceneController();

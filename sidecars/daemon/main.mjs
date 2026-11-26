@@ -3678,7 +3678,7 @@ export class PrismDaemon {
       if (typeof this.cdp?.shouldEnableChatScene === 'function') {
         return Boolean(this.cdp.shouldEnableChatScene(cfg));
       }
-      return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery';
+      return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery' || cfg?.chatScene === 'water';
     } catch {
       return false;
     }
@@ -3733,7 +3733,7 @@ export class PrismDaemon {
     try {
       const cfg = cfgOverride || this.cdp?.readConfig?.() || {};
       if (!this._isChatSceneEnabled(cfg)) return '';
-      const mode = cfg.chatScene === 'stationery' ? 'stationery' : 'sky';
+      const mode = cfg.chatScene === 'water' ? 'water' : cfg.chatScene === 'stationery' ? 'stationery' : 'sky';
       const exprHash = this._getChatSceneExprHash(typeof exprOverride === 'string' ? exprOverride : this.chatSceneExpr);
       return `${mode}:${exprHash}`;
     } catch {

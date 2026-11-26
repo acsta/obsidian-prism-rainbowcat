@@ -124,7 +124,7 @@ const VALIDATORS = {
   catCount: ['1', '2', '4'],
   catProps: ['on', 'off'],
   catQuietMode: ['auto', 'nap'],
-  chatScene: ['off', 'sky', 'stationery'],
+  chatScene: ['off', 'sky', 'stationery', 'water'],
 };
 
 function validateConfigEntry(key, value) {
@@ -242,7 +242,7 @@ function reconcileConfigAliases(raw) {
     out.catQuietMode = out.catQuietMode === 'nap' ? 'nap' : 'auto';
   }
   if (has('chatScene')) {
-    out.chatScene = out.chatScene === 'sky' || out.chatScene === 'stationery' ? out.chatScene : 'off';
+    out.chatScene = out.chatScene === 'sky' || out.chatScene === 'stationery' || out.chatScene === 'water' ? out.chatScene : 'off';
   }
   return out;
 }
@@ -5761,7 +5761,7 @@ function buildConfigRefreshExpression(customConfig, extraMeta = null) {
     codeHash,
     __fromFile: true,
   };
-  return `(()=>{const cfg=${JSON.stringify(bootCfg)},W=window,G=globalThis,D=document,R=D.documentElement,A=W.__agPrism||W.__agClaudeStyle;if(A&&A.version===${JSON.stringify(PLUGIN_VERSION)}&&A.codeHash===${JSON.stringify(codeHash)}&&typeof A.refreshConfig==='function'){if(A.refreshConfig(cfg)===false)return{refreshed:true,skippedStale:true,version:A.version};const c=A.getState?.()?.cfg||cfg;for(const k of['__agPrismTelemetry','__agPrismEffortSlider','__agPrismThought','__agPrismInlineDiff'])try{W[k]?.sync?.(c);}catch{}try{c?.omniModule==='off'?W.__agPrismOmni?.destroy?.():W.__agPrismOmni?.sync?.(c,W.__agPrismOmniServerMeta||null);}catch{}if(c?.sidebarStudio!=='on'){try{W.__agPrismSidebar?.sync?.(c,W.__agPrismSidebarMeta||null);}catch{}try{W.__agPrismSidebar?.destroy?.();}catch{}try{delete W.__agPrismSidebar;}catch{}try{R&&['data-ag-prism-mode','data-ag-prism-chat-kind','data-ag-prism-chat-telemetry','data-ag-cs-space','data-ag-cs-space-palette','data-ag-cs-space-accent'].forEach((a)=>R.removeAttribute(a));}catch{}}else try{W.__agPrismSidebar?.sync?.(c,W.__agPrismSidebarMeta||null);}catch{}try{const m=c?.hostLocalization,l=c?.language,n=String((typeof navigator!=='undefined'&&navigator.language)||'').trim();if(m==='off'||(m!=='on'&&((l&&l!=='zh-CN'&&l!=='auto')||(l==='auto'&&n&&!/^zh(?:$|-(?:cn|hans|sg)(?:-|$))/i.test(n)))))W.__agPrismHostI18n?.destroy?.();}catch{}if(c?.mascot!=='cat'){try{(W.__agCatSanctuaryBridge||G.__agCatSanctuaryBridge)?.dispose?.();}catch{}try{delete W.__agCatSanctuaryFactory;}catch{}try{delete G.__agCatSanctuaryFactory;}catch{}}const sc=c?.chatScene==='sky'||c?.chatScene==='stationery'?c.chatScene:'off';if(sc==='off'){try{(W.__agChatSceneController||G.__agChatSceneController)?.dispose?.();}catch{}try{D.getElementById?.('ag-prism-chat-scene-root')?.remove?.();}catch{}try{D.getElementById?.('ag-prism-chat-scene-css')?.remove?.();}catch{}try{delete W.__agChatSceneController;}catch{}try{delete G.__agChatSceneController;}catch{}}if(R){c?.thoughtTranslate&&c.thoughtTranslate!=='off'?R.setAttribute('data-ag-prism-thought-view',c.thoughtView==='bilingual'?'bilingual':'immersive'):R.removeAttribute('data-ag-prism-thought-view');R.setAttribute('data-ag-prism-sidebar-studio',c?.sidebarStudio==='on'?'on':'off');if(c?.accentTone==='rainbow'){R.setAttribute('data-ag-rainbow-style',c.rainbowStyle==='pixel'?'pixel':'aurora');const p=String(c.rainbowPixelSize||'6');R.setAttribute('data-ag-rainbow-px',p==='4'||p==='6'||p==='8'?p:'6');}else{R.removeAttribute('data-ag-rainbow-style');R.removeAttribute('data-ag-rainbow-px');}if(sc!=='off'){R.setAttribute('data-ag-chat-scene',sc);try{(W.__agChatSceneController||G.__agChatSceneController)?.sync?.(c);}catch{}}else R.removeAttribute('data-ag-chat-scene');}return{refreshed:true,version:A.version};}return{refreshed:false};})()`;
+  return `(()=>{const cfg=${JSON.stringify(bootCfg)},W=window,G=globalThis,D=document,R=D.documentElement,A=W.__agPrism||W.__agClaudeStyle;if(A&&A.version===${JSON.stringify(PLUGIN_VERSION)}&&A.codeHash===${JSON.stringify(codeHash)}&&typeof A.refreshConfig==='function'){if(A.refreshConfig(cfg)===false)return{refreshed:true,skippedStale:true,version:A.version};const c=A.getState?.()?.cfg||cfg;for(const k of['__agPrismTelemetry','__agPrismEffortSlider','__agPrismThought','__agPrismInlineDiff'])try{W[k]?.sync?.(c);}catch{}try{c?.omniModule==='off'?W.__agPrismOmni?.destroy?.():W.__agPrismOmni?.sync?.(c,W.__agPrismOmniServerMeta||null);}catch{}if(c?.sidebarStudio!=='on'){try{W.__agPrismSidebar?.sync?.(c,W.__agPrismSidebarMeta||null);}catch{}try{W.__agPrismSidebar?.destroy?.();}catch{}try{delete W.__agPrismSidebar;}catch{}try{R&&['data-ag-prism-mode','data-ag-prism-chat-kind','data-ag-prism-chat-telemetry','data-ag-cs-space','data-ag-cs-space-palette','data-ag-cs-space-accent'].forEach((a)=>R.removeAttribute(a));}catch{}}else try{W.__agPrismSidebar?.sync?.(c,W.__agPrismSidebarMeta||null);}catch{}try{const m=c?.hostLocalization,l=c?.language,n=String((typeof navigator!=='undefined'&&navigator.language)||'').trim();if(m==='off'||(m!=='on'&&((l&&l!=='zh-CN'&&l!=='auto')||(l==='auto'&&n&&!/^zh(?:$|-(?:cn|hans|sg)(?:-|$))/i.test(n)))))W.__agPrismHostI18n?.destroy?.();}catch{}if(c?.mascot!=='cat'){try{(W.__agCatSanctuaryBridge||G.__agCatSanctuaryBridge)?.dispose?.();}catch{}try{delete W.__agCatSanctuaryFactory;}catch{}try{delete G.__agCatSanctuaryFactory;}catch{}}const sc=c?.chatScene==='sky'||c?.chatScene==='stationery'||c?.chatScene==='water'?c.chatScene:'off';if(sc==='off'){try{(W.__agChatSceneController||G.__agChatSceneController)?.dispose?.();}catch{}try{D.getElementById?.('ag-prism-chat-scene-root')?.remove?.();}catch{}try{D.getElementById?.('ag-prism-chat-scene-css')?.remove?.();}catch{}try{delete W.__agChatSceneController;}catch{}try{delete G.__agChatSceneController;}catch{}}if(R){c?.thoughtTranslate&&c.thoughtTranslate!=='off'?R.setAttribute('data-ag-prism-thought-view',c.thoughtView==='bilingual'?'bilingual':'immersive'):R.removeAttribute('data-ag-prism-thought-view');R.setAttribute('data-ag-prism-sidebar-studio',c?.sidebarStudio==='on'?'on':'off');if(c?.accentTone==='rainbow'){R.setAttribute('data-ag-rainbow-style',c.rainbowStyle==='pixel'?'pixel':'aurora');const p=String(c.rainbowPixelSize||'6');R.setAttribute('data-ag-rainbow-px',p==='4'||p==='6'||p==='8'?p:'6');}else{R.removeAttribute('data-ag-rainbow-style');R.removeAttribute('data-ag-rainbow-px');}if(sc!=='off'){R.setAttribute('data-ag-chat-scene',sc);try{(W.__agChatSceneController||G.__agChatSceneController)?.sync?.(c);}catch{}}else R.removeAttribute('data-ag-chat-scene');}return{refreshed:true,version:A.version};}return{refreshed:false};})()`;
 }
 
 let _injectWrapperTemplate = null;
@@ -6144,7 +6144,7 @@ function getInjectWrapperTemplate() {
             document.documentElement.removeAttribute('data-ag-rainbow-style');
             document.documentElement.removeAttribute('data-ag-rainbow-px');
           }
-          if (effectiveCfg?.chatScene === 'sky' || effectiveCfg?.chatScene === 'stationery') {
+          if (effectiveCfg?.chatScene === 'sky' || effectiveCfg?.chatScene === 'stationery' || effectiveCfg?.chatScene === 'water') {
             document.documentElement.setAttribute('data-ag-chat-scene', effectiveCfg.chatScene);
           } else {
             document.documentElement.removeAttribute('data-ag-chat-scene');
@@ -9064,7 +9064,7 @@ let _chatSceneClientCache = { sig: '', sourceHash: '', minCode: '', codeHash: ''
 function shouldEnableChatScene(config = null) {
   try {
     const cfg = config && typeof config === 'object' ? reconcileConfigAliases(config) : readConfig();
-    return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery';
+    return cfg?.chatScene === 'sky' || cfg?.chatScene === 'stationery' || cfg?.chatScene === 'water';
   } catch {
     return false;
   }
@@ -9142,7 +9142,7 @@ function buildChatSceneExpression(config = null, opts = null) {
   }
 
   const bootCfg = {
-    chatScene: cfg?.chatScene === 'stationery' ? 'stationery' : cfg?.chatScene === 'sky' ? 'sky' : 'off',
+    chatScene: cfg?.chatScene === 'water' ? 'water' : cfg?.chatScene === 'stationery' ? 'stationery' : cfg?.chatScene === 'sky' ? 'sky' : 'off',
   };
   const bootCfgJson = serializeJsonForEval(bootCfg);
   const hashJson = serializeJsonForEval(codeHash);
@@ -9233,7 +9233,7 @@ function buildChatSceneExpression(config = null, opts = null) {
         return { ok: false, status: 'skipped-non-host' };
       }
       const effectiveCfg = getEffectiveCfg();
-      const mode = effectiveCfg?.chatScene === 'sky' || effectiveCfg?.chatScene === 'stationery' ? effectiveCfg.chatScene : 'off';
+      const mode = effectiveCfg?.chatScene === 'sky' || effectiveCfg?.chatScene === 'stationery' || effectiveCfg?.chatScene === 'water' ? effectiveCfg.chatScene : 'off';
       if (mode === 'off') {
         cleanupChatScene();
         return { ok: true, status: 'off', codeHash: targetHash };
